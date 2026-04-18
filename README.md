@@ -13,36 +13,73 @@ The lab is a set of Go tools that run together on a LAN (or a single developer m
 The tools are loosely coupled: each runs as an independent binary, advertises itself via mDNS, and degrades gracefully when peers are absent. `lezz demo` can spin up a complete, self-contained cluster in seconds for local experimentation.
 
 ```
-┌───────────────────────────────────────────────────────────────────┐
-│                            the lab                                │
-│                                                                   │
-│   ┌──────────┐   manages    ┌──────────────────────────────────┐  │
-│   │ lezz.go  │─────────────>│  daemon processes                │  │
-│   │          │   demo       │  ocd-smoke-alarm  adhd  tuner    │  │
-│   └──────────┘              └─────────┬────────────────────────┘  │
-│                                       │ health / status           │
-│   ┌──────────┐   monitors             │                           │
-│   │   adhd   │<───────────────────────┘                          │
-│   │(dashboard│   MCP traffic log                                  │
-│   │  & MCP)  │                                                    │
-│   └──────────┘                                                    │
-│                                                                   │
-│   ┌──────────┐   live data   ┌──────────────────────────────────┐ │
-│   │  tuner   │──────────────>│ channels: NTP / DNS / ping / ... │ │
-│   │(broadcast│   SSE / mDNS  └──────────────────────────────────┘ │
-│   │& receive)│                                                    │
-│   └──────────┘                                                    │
-│                                                                   │
-│   ┌──────────────────────────────────────────────────────────┐   │
-│   │                       isotope                             │   │
-│   │  canonicalization · consensus · 42i trust lattice        │   │
-│   │  wire types · REST client                                 │   │
-│   └──────────────────────────────────────────────────────────┘   │
-│                                                                   │
-│   ┌──────────┐                                                    │
-│   │lab-safety│  <- you are here                                   │
-│   └──────────┘                                                    │
-└───────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                  the lab                                    │
+│                                                                             │
+│  ┌──────────┐   manages    ┌─────────────────────────────────────────────┐  │
+│  │ lezz.go  │────────────>│  daemon processes                            │  │
+│  │          │   demo       │  ocd-smoke-alarm  adhd  tuner               │  │
+│  └──────────┘              └──────────┬──────────────────────────────────┘  │
+│                                       │ health / status                     │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  adhd  (dashboard & MCP)                                             │   │
+│  │                                                                      │   │
+│  │  • monitors daemon health / status                                   │   │
+│  │  • MCP traffic log viewer                                            │   │
+│  │  • configures smoke-alarm instances  ──────────────────────────────┐ │   │
+│  │    └─ sets monitored MCP endpoints                                 │ │   │
+│  │    └─ defines proxy path registrations between alarms              │ │   │
+│  │    └─ sets per-alarm rate limit policies                           │ │   │
+│  └──────────────────────────────────────────────────────────────────┬─┘ │   │
+│                                                                     │   │   │
+│  ┌───────────────────────────────────────────────────────────────┐  │   │   │
+│  │  ocd-smoke-alarm  (MCP watchdog · proxy · rate limiter)       │<─┘   │   │
+│  │                                                               │      │   │
+│  │  monitors ──> MCP endpoints for spec compliance               │      │   │
+│  │               (JSON-RPC envelope · capability negotiation     │      │   │
+│  │                tool schema · lifecycle correctness)           │      │   │
+│  │                                                               │      │   │
+│  │  proxies  ──> MCP tool calls between registered alarm nodes   │      │   │
+│  │               ┌─────────────┐        ┌─────────────┐          │      │   │
+│  │               │ MCP Client  │──────> │ MCP Server  │          │      │   │
+│  │               │  (upstream) │  tool  │ (downstream)│          │      │   │
+│  │               └─────────────┘  call  └─────────────┘          │      │   │
+│  │                        ↑  rate-limit gate  ↑                  │      │   │
+│  │                        └──── alarm owns ───┘                  │      │   │
+│  └───────────────────────────────────────────────────────────────┘      │   │
+│                                                                         │   │
+│  ┌──────────┐   live data   ┌───────────────────────────────────────┐   │   │
+│  │  tuner   │─────────────> │ channels: NTP / DNS / ping / ...      │   │   │
+│  │(broadcast│   SSE / mDNS  └───────────────────────────────────────┘   │   │
+│  │& receive)│                                                           │   │
+│  └──────────┘                                                           │   │
+│                                                                         │   │
+│  ┌──────────────────────────────────────────────────────────────────┐   │   │
+│  │                          isotope                                 │   │   │
+│  │  canonicalization · consensus · 42i trust lattice                │   │   │
+│  │  wire types · REST client                                        │   │   │
+│  │  MCP wire type definitions  ·  tool schema canonicalization      │   │   │
+│  └──────────────────────────────────────────────────────────────────┘   │   │
+│                                                                         │   │
+│  ┌──────────────────────────────────────────────────────────────────┐   │   │
+│  │  lab-safety  <- you are here                                     │ <─┘   │
+│  │                                                                  │       │
+│  │  • policy layer: governs what MCP surfaces are permissible       │       │
+│  │  • must acknowledge all MCP proxy registrations from alarms      │       │
+│  │  • enforces trust boundaries across the 42i lattice              │       │
+│  │  • rate limit policy authority (alarms enforce, safety audits)   │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  MCP flow summary
+  ────────────────
+  adhd configures smoke-alarms
+    └─> alarm monitors an MCP server for spec compliance
+    └─> alarm registers proxy paths to other alarms (tool routing)
+    └─> alarm owns rate-limit enforcement on those paths
+    └─> lab-safety must acknowledge each proxy registration
+          (policy gate — no proxy path is live without its sign-off)
+
 ```
 
 ---
