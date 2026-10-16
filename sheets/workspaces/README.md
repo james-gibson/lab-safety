@@ -21,6 +21,14 @@ disposable — it is the **choices**: every layer lands on an existing standard,
 every fast claim has a slower validator. Lose those and the next agent re-derives
 them, or worse, invents a fourth way.
 
+**Theory is imagination; the prototype is reality.** SPLASH can hold two invariants
+independent by *describing* them so; reality cannot. Independence is not a property a
+diagram has — it is one the running system **manufactures**, in custom code, once it
+exists. And the prototype, **once it exists, is its own virtual space to exist**: it
+is the ground that produces the comparison the theory presupposes. So the theory's
+ideal is the *destination*, never a precondition for starting. Read every "not yet"
+below that way.
+
 ## §1 The 42i premise — there is almost always a slower way to validate
 
 42i is premised on the existence of a slower validator. The fastest claim is a
@@ -94,10 +102,14 @@ its **own isotope tracking** (each run canonicalized to an isotope record in
 sqlite). That is the fastest way to create the two-invariant *shape*.
 
 But one writer producing both stores is **not** two independent measurements:
-a bug in the writer corrupts both identically (SPLASH → *Two invariants*). So the
-dual-write is a **spike, not the contract** — it proves the file model and gives
-isotope tracking early, while the *independence* is what Phase 2 buys. Until the
-split, the sqlite side is a transcript; only after it is a cross-check.
+a bug in the writer corrupts both identically (SPLASH → *Two invariants*). That is a
+fact, not a blocker. Independence cannot be *imported* from the theory either — it is
+**manufactured** by the system, in custom code, once the system exists, and it cannot
+exist before the system does. So the dual-write starts with the *shape* and grows the
+independence (Phase 2); the sqlite side is a transcript until the stores are actually
+separate, and only then a cross-check. The prototype being its own virtual space is
+the point: the comparison lives there, not in the diagram. Do not gate Phase 1 on the
+ideal — the ideal is what Phase 1 makes reachable.
 
 ## §3 Standards register
 
