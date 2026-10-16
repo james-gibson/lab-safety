@@ -118,6 +118,11 @@ The rungs are **additive**: rung 3 audits rung 0; it does not replace it. The
 prototype must be able, for every assumption, to name the rung that supports it
 and the rung that still does not.
 
+**The slow path is worked out by hand:** [slow-path.md](slow-path.md) holds three
+crossing transcripts (*fox-hen-cabbage*) — the constraint-forced sequences a fast
+run must reproduce, with one forbidden move each. A deviation is either a defect in
+the fast path or a finding against the transcript.
+
 ## §2 Command replication and dynamic commands
 
 This is not a preference of the prototype — it is what the lab already requires
