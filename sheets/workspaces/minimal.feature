@@ -147,6 +147,9 @@ Feature: Workspace VFS — minimal contract (Phase 0 gate)
 
   Rule: §8 rotation tracing is the feature, surfaced on the lab's instruments
     # slow: the smoke-alarm test is the authority; the light is the record
+    # finding (2026-10-16): headless adhd renders a target only green/red, so the
+    # -42i light reads green today — yellow has no producer without a dissent
+    # signal (register §2). The Rule stands; the instrument owes the rung.
 
     Scenario: an operation is traced with its plane and rotation
       When "tools/call" is invoked for "echo"

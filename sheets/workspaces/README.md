@@ -89,7 +89,29 @@ is the **pole the build inverts**. Two consequences, and they are requirements:
 
   A **stand-in scratch script** may prime the loop — drive the first transitions
   end to end before the machinery is real. It is scaffolding, not a deliverable,
-  and the lights and alarm tests outlive it.
+  and the lights and alarm tests outlive it. The priming script is
+  [`lab/workspaces/spike.sh`](../../lab/workspaces/spike.sh) (§7).
+
+  **Finding — the instrument's vocabulary is narrower than the plane's.** Probed
+  against the live lab (2026-10-16, via `spike.sh`): headless `adhd` renders a
+  smoke-alarm target as **green** (healthy) or **red**
+  (unhealthy/outage/regression), and **dark** only as the no-light default. There
+  is **no producer of yellow** on that path — `degraded` comes only from the 42i
+  distance route (the MCP server manager), and the *local vs remote disagree* rule
+  lives in the TUI's `localprobe`, which headless does not run. `min_capabilities`
+  mismatch is not checked (still healthy); a partial handshake is `outage` (red).
+
+  So the store reaching `-42i` reads **green**, not yellow — the instrument cannot
+  yet say *"exists but not yet independent"*. Two consequences:
+
+  - the **existence** transition (`42 → -42i`) and the **independence** transition
+    (`-42i → -42`) both read green today; only **torn** (red) separates them;
+  - to *see* `-42i` as yellow, the lab must first express **dissent** — the
+    two-invariant disagreement — which is exactly what the Phase-1 mirror supplies.
+
+  This is a finding against the **instrument**, not the hypothesis: the plane still
+  describes the situation; the lab's lights do not yet have a rung for it. Recorded
+  as a symptom, not a blocker — the frame is unchanged, only the reading changes.
 
 ## §1 The 42i premise — there is almost always a slower way to validate
 
@@ -253,3 +275,8 @@ named cost. Do not invent around a gap; report the gap. See `standards.feature`
   `fortytwointegration.go`, `trust.go`; `isotope/plane`.
 - Lab: smoke-alarm `internal/telemetry`, `internal/targets`; adhd `internal/proxy`,
   `internal/mcpclient`, `internal/telemetry` (stub).
+- Instrument wiring: `adhd/internal/smokelink/watcher.go` (`mapHealthState`,
+  `drainWatcherUpdates` — the `old_status:"dark"` first-transition),
+  `adhd/internal/headless/server.go`; smoke-alarm `internal/knownstate/store.go`,
+  `internal/engine/engine.go` (`toKnownStateStatus`, `httpHandshakeMethods`).
+- Priming script (step 1): [`lab/workspaces/spike.sh`](../../lab/workspaces/spike.sh).
