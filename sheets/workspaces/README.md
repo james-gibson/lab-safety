@@ -259,6 +259,16 @@ adopted, verified}.
    cross-check needs. The Phase-0 suite passes **unchanged**; an edit to make it
    pass is a leak, and a leak is evidence.
 
+**Phase 1 landed** — [`lab/workspaces/`](../../lab/workspaces/) (a Go module, the
+spike). Gate met: Rules §1–§3 (and §5) pass on the tmpdir host **and unchanged** on
+the sqlite host (`42.wsdb`, pure-Go `modernc.org/sqlite`); the mirror holds an
+isotope record per run; the two invariants cross-check, and a seeded dissent reads
+**torn** (red). Still conjugate — one writer, so the residual is empty by
+construction; independence is Phase 2. The dissent is asserted at rung 0 and cannot
+yet be *rendered* (the §2 finding). One host-equivalence finding: a real directory
+has its parents *implicitly*, sqlite does not — the sqlite host now records parents
+so the two trees are identical.
+
 ## §6 Finding rule
 
 If any layer needs a **new standard**, or a hand-written protocol where a standard
@@ -280,3 +290,5 @@ named cost. Do not invent around a gap; report the gap. See `standards.feature`
   `adhd/internal/headless/server.go`; smoke-alarm `internal/knownstate/store.go`,
   `internal/engine/engine.go` (`toKnownStateStatus`, `httpHandshakeMethods`).
 - Priming script (step 1): [`lab/workspaces/spike.sh`](../../lab/workspaces/spike.sh).
+- Dual-write client (Phase 1): [`lab/workspaces/`](../../lab/workspaces/) — a Go
+  module (`go test ./...`).
