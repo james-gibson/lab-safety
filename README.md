@@ -206,6 +206,8 @@ Planned responsibilities (not yet implemented):
 
 Lab-safety will import `github.com/james-gibson/isotope` for wire types and trust verification, and will speak the same mDNS and REST vocabulary as the other tools.
 
+The **policy object** it will read is already being written down: one **safety data sheet per MCP surface** in the lab, in the 16-section SDS format and laid out as Gherkin, under [`sheets/`](sheets/README.md). A surface is not permissible until it is declared — and an SDS makes a surface that does not match its own documentation a failing test rather than a stale sentence.
+
 ---
 
 ## How the Tools Connect
