@@ -2,8 +2,9 @@
 
 > Prototype: [lab-safety#9](https://github.com/james-gibson/lab-safety/issues/9) ·
 > Parent RFC: [#5](https://github.com/james-gibson/lab-safety/issues/5) ·
+> Theory: [lab/SPLASH.md](../../lab/SPLASH.md) ·
 > Artifact style: [../README.md](../README.md) ·
-> Linked scenarios: [standards.feature](standards.feature)
+> Gate: [minimal.feature](minimal.feature) · Punctuation: [standards.feature](standards.feature)
 
 This is a **register**, not a surface safety data sheet. A surface sheet declares
 one MCP surface; a register records a **plan and the standards it commits to**,
@@ -18,7 +19,7 @@ keeps the choice honest* — survives context loss.
 Full plan in #9. The thing worth protecting is not the prototype's code — that is
 disposable — it is the **choices**: every layer lands on an existing standard, and
 every fast claim has a slower validator. Lose those and the next agent re-derives
-them from scratch, or worse, invents a fourth way.
+them, or worse, invents a fourth way.
 
 ## §1 The 42i premise — there is almost always a slower way to validate
 
@@ -31,27 +32,66 @@ fastest ────────────────────────
 
   prototype green      same Gherkin on     smoke-alarm        isotope canonicalization
   on tmpdir      →     sqlite driver   →   MCP spec probe →   + Byzantine consensus   →  seed-42
-  (self-report)        (2nd impl)          (wire-level)       (N ≥ 3F+1)                (42 + 0i)
+  (self-report)        (mirror host)       (wire-level)       (N ≥ 3F+1)                (42 + 0i)
 ```
 
 | rung | validator | independence it buys | how |
 | --- | --- | --- | --- |
 | 0 | the prototype's own suite (tmpdir) | none — self-report | `go test .../workspaces` |
-| 1 | the **sqlite** driver, same Gherkin **unchanged** | a second implementation | driver swap; any Gherkin edit = leak |
+| 1 | the **sqlite** host, same Gherkin | a second host **and the mirror** (see §2) | `CanonicalizeGherkinToIsotope` + mirrored store |
 | 2 | `ocd-smoke-alarm` on the live surface | wire-level, separate process | `ProtocolMCP` target + spec check |
-| 3 | `isotope` canonicalization + consensus | separate *instances* must agree | `CanonicalizeGherkinToIsotope`, `ConsensusReporter`, N ≥ 3F+1 |
-| 4 | `ResultLedger` history | agreement over *time* | `DetectFlakiness`, `DetectRegression`, `VerifyFix` |
+| 3 | `isotope` canonicalization + consensus | separate *instances* must agree | `ConsensusReporter`, N ≥ 3F+1 |
+| 4 | `ResultLedger` history | agreement over *time* | `DetectFlakiness`, `DetectRegression` |
 | — | ground truth `42 + 0i` | the seeds themselves | `pickled-onions` |
 
-The rungs are **additive**: rung 3 does not replace rung 0; it *audits* it. The
-prototype must be able to say, for every assumption, which rung currently supports
-it and which rung still does not.
+The rungs are **additive**: rung 3 audits rung 0; it does not replace it. The
+prototype must be able, for every assumption, to name the rung that supports it
+and the rung that still does not.
 
-## §2 Standards register
+## §2 Command replication and dynamic commands
+
+This is not a preference of the prototype — it is what the lab already requires
+(SPLASH), and the prototype must **exercise** it rather than assume it.
+
+**Commands replicate across hosts.** The same command must be runnable on more than
+one host, and the two runs **compared**:
+
+- *consensus* — "the same capability can be reached under two names through two
+  proxies … run one task through both and compare: agreement corroborates"
+  (SPLASH → *The proxy*);
+- *shortcut validation* — the fast, cheap route is periodically checked against a
+  **slower route**, and "the **isotope** records that the comparison occurred and
+  what it returned" (SPLASH → *Shortcut validation*);
+- *failover* — the failover host "already holds the **mirrored traffic** and the
+  pre-negotiated material; the transfer is a role swap, not a cold start"
+  (SPLASH → *Failover*).
+
+**Commands are dynamic.** A command is registered at runtime and appears or
+disappears without a restart. In the VFS this is already the file form —
+`context/tools/*@` is enumerated at call time, so dropping a file adds a tool and
+removing it takes one away. The lab's precedent is adhd's dynamic tools
+(`adhd.project.<name>.call`, a renamed upstream tool) and its honeypot decoys.
+
+**The in-task example — a tmp dir mirrored by a sqlite store for isotope
+tracking.** This is the concrete instance the prototype must build:
+
+- the **tmpdir** is the fast host (the shortcut);
+- the **sqlite** store is the **mirror** — the slower, offline-capable host — and
+  it carries **isotope records**;
+- the pair is SPLASH's **two invariants**: the traffic log (what *happened*) and
+  the isotope records (what *should have happened*), "deliberately independent
+  measurements" that cross-check — "a log record without a corresponding isotope,
+  or an isotope without a log trace, is a discrepancy."
+
+So "tmpdir → sqlite" is not a backend swap with a personality change. It is the
+prototype of **replicated commands across hosts, with the mirror holding the
+second invariant** — the same shape the cluster uses for consensus, routing and
+failover. If the VFS cannot express it, the VFS cannot be a cluster node.
+
+## §3 Standards register
 
 Every layer adopts an **existing** standard. `status` ∈ {chosen, available,
-adopted, verified} — the vocabulary from `../README.md`, so intent is never
-written as fact.
+adopted, verified}.
 
 | layer | standard adopted | existing tooling | status |
 | --- | --- | --- | --- |
@@ -59,19 +99,14 @@ written as fact.
 | MCP | MCP spec (`tools/*`, `resources/*`, `prompts/*`), JSON-RPC 2.0, protocol `2024-11-05` | an existing Go MCP SDK (lab currently **hand-rolls** it: adhd `internal/mcpclient`, `internal/mcpserver`) | chosen · available |
 | fs → HTTP | WebDAV | `golang.org/x/net/webdav` | chosen · available (harness only) |
 | subscribe | file-watch | `fsnotify` | chosen · available |
-| second backend | SQLite | `modernc.org/sqlite` (pure-Go, no cgo) | chosen · available |
+| second host / mirror | SQLite | `modernc.org/sqlite` (pure-Go, no cgo) | chosen · available |
+| command identity | content address (RFC 6920) | `isotope.CanonicalizeGherkinToIsotope` | chosen · available |
 | telemetry | OTLP | `go.opentelemetry.io/otel` — already a dep in smoke-alarm | chosen · available |
 | formats | JSON / JSONL / JSONC | stdlib `encoding/json` | chosen · available |
-| slow validation | isotope canonicalization + Byzantine consensus | `github.com/james-gibson/isotope` (`CanonicalizeGherkinToIsotope`, `ConsensusReporter`, `ResultLedger`) | chosen · available |
+| slow validation | canonicalization + Byzantine consensus | `github.com/james-gibson/isotope` (`ConsensusReporter`, `ResultLedger`) | chosen · available |
 | seeds (ground truth) | Gherkin seeds | `pickled-onions` | chosen · available |
 
-Nothing is `adopted` or `verified` yet — the prototype has not been built. This
-register is deliberately ahead of the code so the standards are fixed before the
-first commit, not reverse-engineered from it.
-
-## §3 Assumption → validator map
-
-Each assumption from #9 names the rung that supports it.
+## §4 Assumption → validator map
 
 | # | assumption | fast (rung 0–1) | slow (rung 2+) |
 | --- | --- | --- | --- |
@@ -81,30 +116,39 @@ Each assumption from #9 names the rung that supports it.
 | A4 | `tools/call` = file write + result read | correctness + latency | smoke-alarm spec probe |
 | A5 | the state machine is driven by file writes | `messages/*` → `.state/current` | `ResultLedger` over many runs |
 | A6 | `.wsdb`-per-session access is downward-only | access scenarios | consensus across alarm instances |
-| A7 | `subscribe` ⇄ file-watch | both drivers | `DetectFlakiness` (watch races) |
+| A7 | `subscribe` ⇄ file-watch | both hosts | `DetectFlakiness` (watch races) |
 | A8 | a VFS-backed surface passes MCP spec compliance | local probe | smoke-alarm verdict (authoritative) |
-| A9 | standard tooling suffices — no bespoke standard | the §2 table compiles | — (a *design* claim; audited by review) |
+| A9 | standard tooling suffices — no bespoke standard | the §3 table compiles | — (design claim; audited by review) |
+| A10 | a command can be **replicated across hosts** and compared | same command on tmpdir + sqlite | consensus / `ResultLedger` |
+| A11 | a command can be **dynamic** (registered at runtime) | drop `context/tools/x@`, re-list | smoke-alarm re-probe |
+| A12 | the sqlite **mirror** holds isotope records | mirror written on each run | the two invariants cross-check (traffic log vs isotope) |
 
-## §4 The plan (condensed, so it does not get lost)
+## §5 The plan (condensed, so it does not get lost)
 
 1. **Phase 0 — Gherkin first.** The minimal VFS *is* its scenarios. No code until
    they exist. If it cannot be expressed in Gherkin, it is not in the minimal VFS.
    → **the gate: [minimal.feature](minimal.feature)** (each Rule names its slower
    validator).
-2. **Phase 1 — `tmpdir` driver + focused MCP client.** A real temp directory tree;
+2. **Phase 1 — `tmpdir` host + focused MCP client.** A real temp directory tree;
    the experiment itself.
-3. **Phase 2 — `sqlite` driver swap.** The Phase-0 suite passes **unchanged**; an
-   edit to make it pass is a leak, and a leak is evidence.
+3. **Phase 2 — `sqlite` host swap, and the mirror.** The Phase-0 suite passes
+   **unchanged**; the sqlite store additionally **mirrors** the run as isotope
+   records (§2). An edit to the suite to make it pass is a leak, and a leak is
+   evidence.
 
-## §5 Finding rule
+## §6 Finding rule
 
 If any layer needs a **new standard**, or a hand-written protocol where a standard
 already exists, record it as **evidence against** the hypothesis — or at minimum a
 named cost. Do not invent around a gap; report the gap. See `standards.feature`
-→ *Rule: adopting a bespoke standard is evidence against the hypothesis*.
+→ *Rule: a bespoke standard is evidence against the hypothesis*.
 
-## §6 Refs
+## §7 Refs
 
-- Plan + falsification criteria: #9 · RFC: #5 · sheet pattern: [#8](https://github.com/james-gibson/lab-safety/pull/8)
-- `gateway` symbols: `isotope/canonicalization.go`, `consensus.go`, `results.go`, `fortytwointegration.go`, `trust.go`
-- Lab: smoke-alarm `internal/telemetry`, `internal/targets`; adhd `internal/proxy`, `internal/mcpclient`, `internal/telemetry` (stub)
+- Plan + falsification criteria: #9 · RFC: #5 · sheet pattern: #8
+- Theory: `lab/SPLASH.md` → *The proxy*, *Shortcut validation*, *Two invariants*,
+  *Failover*, *Decomposition by feature*, *Derived values*.
+- Symbols: `isotope/canonicalization.go`, `consensus.go`, `results.go`,
+  `fortytwointegration.go`, `trust.go`; `isotope/plane`.
+- Lab: smoke-alarm `internal/telemetry`, `internal/targets`; adhd `internal/proxy`,
+  `internal/mcpclient`, `internal/telemetry` (stub).

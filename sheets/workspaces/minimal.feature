@@ -87,7 +87,42 @@ Feature: Workspace VFS — minimal contract (Phase 0 gate)
       Then the read is refused
       And "s1"'s store is not listed to the ancestor
 
-  Rule: §5 the resulting surface is verifiable by the lab
+  Rule: §5 commands are dynamic (registered at runtime)
+    # slow: smoke-alarm re-probe sees the changed surface (rung 2)
+
+    Scenario: a tool dropped in at runtime becomes listable and callable
+      Given "context/tools/" contains no tool named "late"
+      When the file "context/tools/late@" is written
+      Then "tools/list" includes "late"
+      And "tools/call" for "late" returns without a restart
+
+    Scenario: a tool removed at runtime stops being listed
+      Given "context/tools/echo@" exists
+      When "context/tools/echo@" is removed
+      Then "tools/list" no longer includes "echo"
+
+  Rule: §6 commands replicate across hosts, and the mirror records the comparison
+    # slow: consensus across hosts and ResultLedger over time (rungs 3-4)
+
+    Scenario: the same command runs on two hosts and agrees
+      Given a command "echo" declared in "context/tools/echo@"
+      When it is invoked on the tmpdir host and on the sqlite host
+      Then both return the same result
+      And the agreement is recorded, not assumed
+
+    Scenario: the mirror holds the isotope record of the run
+      Given a run completed on the tmpdir host
+      When the sqlite mirror is read
+      Then it contains the isotope record for that run
+      And a log trace without an isotope record is a discrepancy
+
+    Scenario: the mirror is independent of the traffic log
+      Given the traffic log of the run
+      And the isotope records in the mirror
+      Then the two are independent measurements
+      And their disagreement is the detection signal
+
+  Rule: §7 the resulting surface is verifiable by the lab
     # slow: the smoke-alarm verdict is authoritative (rung 2/3)
 
     Scenario: the surface passes MCP spec compliance
