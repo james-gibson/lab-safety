@@ -61,6 +61,20 @@ build, name the failure mode. If relating the phases needs numbers, then 42i was
 wrong for this situation, and the numbers belong to the **embedder project**, not
 here. We hold the *situation*; the embedder holds the *measure*.
 
+**The Gherkin is the origin point on the plane.** The minimal contract is `42` —
+the concept, the origin; existing (the prototype) is its **inversion**
+(`42 → -42i → -42`). So the gate is not a checklist to clear before building; it
+is the **pole the build inverts**. Two consequences, and they are requirements:
+
+- **Qualitative fit is a gate.** *Every* feature of the prototype must fit the
+  frame qualitatively. A feature that needs numbers to fit is not yet in the frame
+  — it is a finding, not a build item.
+- **Every operation carries its plane.** Log or trace *every* operation the
+  prototype executes with its 42i **plane** or **rotation** — a span attribute, a
+  log field. Then the running system is itself the plane's record, and the trace is
+  the evidence: the prototype becomes its own virtual space *measurably*. If every
+  operation carries its plane or rotation, we are in business.
+
 ## §1 The 42i premise — there is almost always a slower way to validate
 
 42i is premised on the existence of a slower validator. The fastest claim is a
@@ -156,7 +170,7 @@ adopted, verified}.
 | subscribe | file-watch | `fsnotify` | chosen · available |
 | second host / mirror | SQLite | `modernc.org/sqlite` (pure-Go, no cgo) | chosen · available |
 | command identity | content address (RFC 6920) | `isotope.CanonicalizeGherkinToIsotope` | chosen · available |
-| telemetry | OTLP | `go.opentelemetry.io/otel` — already a dep in smoke-alarm | chosen · available |
+| telemetry | OTLP; **every span carries its 42i plane/rotation** | `go.opentelemetry.io/otel` — already a dep in smoke-alarm | chosen · available |
 | formats | JSON / JSONL / JSONC | stdlib `encoding/json` | chosen · available |
 | slow validation | canonicalization + Byzantine consensus | `github.com/james-gibson/isotope` (`ConsensusReporter`, `ResultLedger`) | chosen · available |
 | seeds (ground truth) | Gherkin seeds | `pickled-onions` | chosen · available |

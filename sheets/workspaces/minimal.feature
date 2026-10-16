@@ -134,3 +134,27 @@ Feature: Workspace VFS — minimal contract (Phase 0 gate)
       Given the Phase-0 suite passes on the tmpdir driver
       Then each Rule names the slower validator that audits it
       And the register records which slower rungs have actually run
+
+  Rule: §8 every operation carries its 42i plane or rotation
+    # slow: the trace is the plane's own record, replayable against the ledger
+
+    Scenario: an MCP call is traced with its plane and rotation
+      When "tools/call" is invoked for "echo"
+      Then a span is emitted for the call
+      And the span is annotated with its plane ("42", "-42i" or "-42")
+      And the span is annotated with the quarter-turn it performs
+
+    Scenario: a driver operation carries its rotation
+      When the dual-write writes to tmp and to sqlite
+      Then each write is traced
+      And each trace carries the quarter-turn it performs
+
+    Scenario: a trace without a plane is a defect
+      Given an operation executed with no plane annotation
+      Then the trace is recorded as a defect
+      And it does not count as evidence
+
+    Scenario: a feature that needs numbers is a finding, not a build item
+      Given a prototype feature that needs numbers to fit the frame
+      Then it is recorded as a finding
+      And it is not built until it fits qualitatively
