@@ -89,6 +89,8 @@ Each assumption from #9 names the rung that supports it.
 
 1. **Phase 0 — Gherkin first.** The minimal VFS *is* its scenarios. No code until
    they exist. If it cannot be expressed in Gherkin, it is not in the minimal VFS.
+   → **the gate: [minimal.feature](minimal.feature)** (each Rule names its slower
+   validator).
 2. **Phase 1 — `tmpdir` driver + focused MCP client.** A real temp directory tree;
    the experiment itself.
 3. **Phase 2 — `sqlite` driver swap.** The Phase-0 suite passes **unchanged**; an
