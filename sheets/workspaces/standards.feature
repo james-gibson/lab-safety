@@ -88,6 +88,11 @@ Feature: Workspace VFS — Standards & Validation Register
 
   Rule: the phases are quarter-turns of one shared plane
 
+    Scenario: a single session keeps the pair the only pair
+      Given the prototype assumes a single session, id "42"
+      Then there is exactly one pair of stores to correlate
+      And the session id is a name, while the plane is the store's state
+
     Scenario: the pair is identical at the ground state
       Given neither the tmpfs nor the sqlite store exists
       Then the pair shares exactly one property: nonexistence

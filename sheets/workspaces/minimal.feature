@@ -15,8 +15,13 @@ Feature: Workspace VFS — minimal contract (Phase 0 gate)
   Slowness: the fastest rung is the prototype's own green run. Each Rule names
   the slower validator that keeps it honest (register -> §1 and §3).
 
+  One session. The prototype runs in exactly one session, id "42" — the same 42 the
+  frame anchors on. The id is a *name*; the plane ("42" -> "-42i" -> "-42") is the
+  *state* the store passes through. One session keeps the pair of stores the only
+  pair, so the quarter-turn is not diluted across sessions.
+
   Background:
-    Given a workspace rooted at a driver-managed store for session "s1"
+    Given a workspace rooted at a driver-managed store for session "42"
 
   Rule: §1 the on-disk conventions
     # slow: the same conventions re-read through the sqlite driver (rung 1)
@@ -76,16 +81,21 @@ Feature: Workspace VFS — minimal contract (Phase 0 gate)
   Rule: §4 access is scoped per session, downward only
     # slow: consensus across independent alarm instances (rung 3)
 
+    Scenario: the prototype runs a single session, id "42"
+      Given the prototype opens exactly one session
+      Then the session id is "42"
+      And the session's store is "42.wsdb"
+
     Scenario: a descendant gains the session's access
-      Given the session store is opened for "s1"
-      When an agent is added beneath "s1"
-      Then that agent may read "s1"'s store
+      Given the session store is opened for "42"
+      When an agent is added beneath "42"
+      Then that agent may read "42"'s store
 
     Scenario: access never propagates upward
-      Given the session store is opened for "s1"
-      When an agent above "s1" attempts to read "s1"'s store
+      Given the session store is opened for "42"
+      When an agent above "42" attempts to read "42"'s store
       Then the read is refused
-      And "s1"'s store is not listed to the ancestor
+      And "42"'s store is not listed to the ancestor
 
   Rule: §5 commands are dynamic (registered at runtime)
     # slow: smoke-alarm re-probe sees the changed surface (rung 2)

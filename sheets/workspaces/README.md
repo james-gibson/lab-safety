@@ -158,6 +158,12 @@ tracking.** This is the concrete instance the prototype must build:
   measurements" that cross-check — "a log record without a corresponding isotope,
   or an isotope without a log trace, is a discrepancy."
 
+**A single session, id `42`.** The prototype runs in exactly one session — the id
+`42` the frame anchors on. The id is a *name*; the plane (`42 → -42i → -42`) is the
+*state* the store passes through. `.wsdb` is per session, so the mirror is
+`42.wsdb`, and one session keeps the pair of stores the only pair — the quarter-turn
+is not diluted across sessions.
+
 So "tmpdir → sqlite" is not a backend swap with a personality change. It is the
 prototype of **replicated commands across hosts, with the mirror holding the
 second invariant** — the same shape the cluster uses for consensus, routing and
@@ -212,6 +218,7 @@ adopted, verified}.
 | A10 | a command can be **replicated across hosts** and compared | same command on tmpdir + sqlite | consensus / `ResultLedger` |
 | A11 | a command can be **dynamic** (registered at runtime) | drop `context/tools/x@`, re-list | smoke-alarm re-probe |
 | A12 | the sqlite **mirror** holds isotope records | dual-write spike (one writer, both stores) | two-invariant cross-check — **independence is Phase 2, not the spike** |
+| A13 | the prototype runs a **single session** (`42`) | the run opens `42.wsdb` once | a second session's isolation (rung 3) — **deferred; multi-session is out of scope** |
 
 ## §5 The plan (condensed, so it does not get lost)
 
@@ -222,7 +229,8 @@ adopted, verified}.
 2. **Phase 1 — the focused MCP client, dual-writing (the spike).** Start with the
    client (both later phases need it). It writes each workspace **to tmp and to
    sqlite together**, and records **its own isotope tracking** — the two-invariant
-   *shape* in one artifact, on a real filesystem. The experiment itself.
+   *shape* in one artifact, on a real filesystem. The experiment itself. One
+   session (`42`); the mirror is `42.wsdb` (A13).
 3. **Phase 2 — split the stores; the mirror becomes independent.** Introduce the
    driver interface so tmp and sqlite are swappable hosts, and the sqlite store is
    written/verified from a **different position** — the *independence* the

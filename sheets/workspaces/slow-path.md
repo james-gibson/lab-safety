@@ -7,6 +7,9 @@
 > **reproduces the transcript** — the slower route checked against the shortcut
 > (SPLASH → *Shortcut validation*, *Two invariants*).
 
+All three transcripts run in the prototype's **single session, id `42`** (register
+→ §2): the id is the name; the plane (`42 → -42i → -42`) is the store's state.
+
 ## How the agent uses these
 
 For every prototype run, extract the observed `(state, move, light)` sequence from
