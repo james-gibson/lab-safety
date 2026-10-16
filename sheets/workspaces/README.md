@@ -29,6 +29,38 @@ is the ground that produces the comparison the theory presupposes. So the theory
 ideal is the *destination*, never a precondition for starting. Read every "not yet"
 below that way.
 
+## The 42i frame — the shared plane and the quarter-turn
+
+The two solutions (tmp filesystem, sqlite) share **exactly one property today:
+they do not exist.** That coincidence is the ground state, and the ground state is
+a *plane*: at `42` the pair is **identical** — one concept, not yet two things.
+
+Apply the symmetry 42i was built for, a quarter-turn `×(-i)`:
+
+| stage | anchor | reads as | the pair |
+| --- | --- | --- | --- |
+| now | `42` | the concept, on the real axis | identical (neither exists) |
+| `×(-i)` | `-42i` | exist, on the imaginary axis | a conjugate pair (still one writer) |
+| `×(-i)` | `-42` | work, real, opposite | independent (separate writers) |
+
+So the phases are not a checklist; they are **rotations of one situation**:
+
+- **Phase 0/1 — the spike** = `42 → -42i`: the pair *exists*, but as a conjugate —
+  the dual-write holds both at the same point. That is exactly why it is not yet
+  independent: **identity at a point *is* the shared plane.**
+- **Phase 2 — the split** = `-42i → -42`: the conjugate separates into two real,
+  working halves. Reflection is the operation, and **the residual asymmetry is the
+  evidence** — where the reflection fails is where the two stores genuinely differ.
+
+This is the "abuse": implement **one**, reflect it across the axis to get the
+other, and read the residual — instead of building both in parallel.
+
+**The falsification.** If 42i fits this situation, the plan must be *expressible*
+this way **and** the quarter-turn must *do work* — predict the order, cut the
+build, name the failure mode. If relating the phases needs numbers, then 42i was
+wrong for this situation, and the numbers belong to the **embedder project**, not
+here. We hold the *situation*; the embedder holds the *measure*.
+
 ## §1 The 42i premise — there is almost always a slower way to validate
 
 42i is premised on the existence of a slower validator. The fastest claim is a

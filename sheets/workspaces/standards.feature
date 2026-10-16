@@ -85,3 +85,27 @@ Feature: Workspace VFS — Standards & Validation Register
       When the suite tears on filesystem semantics
       Then the hypothesis reads "bad idea"
       And the tearing scenario is recorded with its location
+
+  Rule: the phases are quarter-turns of one shared plane
+
+    Scenario: the pair is identical at the ground state
+      Given neither the tmpfs nor the sqlite store exists
+      Then the pair shares exactly one property: nonexistence
+      And at the shared plane (42) the pair is identical
+
+    Scenario: a quarter-turn moves the pair into existence
+      When the dual-write spike runs
+      Then both stores exist
+      And they are still conjugate (one writer, two stores)
+      And that stage is the -42i plane
+
+    Scenario: a second quarter-turn separates the pair
+      When the stores are split into separate writers
+      Then both work independently
+      And the residual asymmetry between them is the evidence
+
+    Scenario: the frame is falsified if it needs numbers
+      Given the frame expressed without numbers
+      When relating the phases requires the embedder
+      Then 42i is recorded as wrong for this situation
+      And the measure is deferred to the embedder project
