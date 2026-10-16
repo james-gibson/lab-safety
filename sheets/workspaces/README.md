@@ -69,11 +69,27 @@ is the **pole the build inverts**. Two consequences, and they are requirements:
 - **Qualitative fit is a gate.** *Every* feature of the prototype must fit the
   frame qualitatively. A feature that needs numbers to fit is not yet in the frame
   — it is a finding, not a build item.
-- **Every operation carries its plane.** Log or trace *every* operation the
-  prototype executes with its 42i **plane** or **rotation** — a span attribute, a
-  log field. Then the running system is itself the plane's record, and the trace is
-  the evidence: the prototype becomes its own virtual space *measurably*. If every
-  operation carries its plane or rotation, we are in business.
+- **Every operation carries its plane — and the rotation is *surfaced*.** Trace
+  every operation with its 42i **plane** or **rotation**; then the running system
+  is the plane's own record. But the *evidence* is not a private log. The rotation
+  must be visible on the lab's own instruments: as an **adhd status light** that
+  moves as the quarter-turn proceeds, and as a **smoke-alarm test** that asserts
+  the movement. **Rotation tracing is the feature**; OTel is for a human
+  debugging, not for the verdict. A trace no light and no alarm test can see is
+  not evidence.
+
+  **The light is the plane:**
+
+  | plane | reads as | adhd light |
+  | --- | --- | --- |
+  | `42` | concept / not present | **dark** |
+  | `-42i` | exists | **yellow** |
+  | `-42` | works | **green** |
+  | torn | falsified | **red** |
+
+  A **stand-in scratch script** may prime the loop — drive the first transitions
+  end to end before the machinery is real. It is scaffolding, not a deliverable,
+  and the lights and alarm tests outlive it.
 
 ## §1 The 42i premise — there is almost always a slower way to validate
 

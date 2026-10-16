@@ -135,24 +135,36 @@ Feature: Workspace VFS — minimal contract (Phase 0 gate)
       Then each Rule names the slower validator that audits it
       And the register records which slower rungs have actually run
 
-  Rule: §8 every operation carries its 42i plane or rotation
-    # slow: the trace is the plane's own record, replayable against the ledger
+  Rule: §8 rotation tracing is the feature, surfaced on the lab's instruments
+    # slow: the smoke-alarm test is the authority; the light is the record
 
-    Scenario: an MCP call is traced with its plane and rotation
+    Scenario: an operation is traced with its plane and rotation
       When "tools/call" is invoked for "echo"
-      Then a span is emitted for the call
-      And the span is annotated with its plane ("42", "-42i" or "-42")
-      And the span is annotated with the quarter-turn it performs
+      Then the operation is traced with its plane ("42", "-42i" or "-42")
+      And the operation is traced with the quarter-turn it performs
 
-    Scenario: a driver operation carries its rotation
-      When the dual-write writes to tmp and to sqlite
-      Then each write is traced
-      And each trace carries the quarter-turn it performs
+    Scenario: the rotation is visible as an adhd status light
+      Given a store that does not exist
+      Then its light is dark (plane 42)
+      When the store exists
+      Then its light is yellow (plane -42i)
+      When the store works
+      Then its light is green (plane -42)
 
-    Scenario: a trace without a plane is a defect
-      Given an operation executed with no plane annotation
-      Then the trace is recorded as a defect
-      And it does not count as evidence
+    Scenario: a smoke-alarm test asserts the rotation
+      Given the surface is a smoke-alarm target
+      When the quarter-turn completes
+      Then the smoke-alarm test passes on the transition
+      And the resulting light matches the plane
+
+    Scenario: OTel debugs but does not decide
+      Given an operation with a span but no light and no alarm test
+      Then it does not count as evidence
+
+    Scenario: a scratch script may prime the loop but is not a deliverable
+      Given a stand-in scratch script driving the first transitions
+      Then it may prime the loop
+      And it is removed once the lights and alarm tests carry the evidence
 
     Scenario: a feature that needs numbers is a finding, not a build item
       Given a prototype feature that needs numbers to fit the frame
