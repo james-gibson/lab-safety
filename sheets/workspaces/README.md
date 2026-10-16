@@ -88,6 +88,17 @@ prototype of **replicated commands across hosts, with the mirror holding the
 second invariant** — the same shape the cluster uses for consensus, routing and
 failover. If the VFS cannot express it, the VFS cannot be a cluster node.
 
+**The spike that starts it.** Both later phases need the MCP client, so Phase 1
+begins *with the client* — and has it write tmp and sqlite **together**, recording
+its **own isotope tracking** (each run canonicalized to an isotope record in
+sqlite). That is the fastest way to create the two-invariant *shape*.
+
+But one writer producing both stores is **not** two independent measurements:
+a bug in the writer corrupts both identically (SPLASH → *Two invariants*). So the
+dual-write is a **spike, not the contract** — it proves the file model and gives
+isotope tracking early, while the *independence* is what Phase 2 buys. Until the
+split, the sqlite side is a transcript; only after it is a cross-check.
+
 ## §3 Standards register
 
 Every layer adopts an **existing** standard. `status` ∈ {chosen, available,
@@ -121,7 +132,7 @@ adopted, verified}.
 | A9 | standard tooling suffices — no bespoke standard | the §3 table compiles | — (design claim; audited by review) |
 | A10 | a command can be **replicated across hosts** and compared | same command on tmpdir + sqlite | consensus / `ResultLedger` |
 | A11 | a command can be **dynamic** (registered at runtime) | drop `context/tools/x@`, re-list | smoke-alarm re-probe |
-| A12 | the sqlite **mirror** holds isotope records | mirror written on each run | the two invariants cross-check (traffic log vs isotope) |
+| A12 | the sqlite **mirror** holds isotope records | dual-write spike (one writer, both stores) | two-invariant cross-check — **independence is Phase 2, not the spike** |
 
 ## §5 The plan (condensed, so it does not get lost)
 
@@ -129,12 +140,15 @@ adopted, verified}.
    they exist. If it cannot be expressed in Gherkin, it is not in the minimal VFS.
    → **the gate: [minimal.feature](minimal.feature)** (each Rule names its slower
    validator).
-2. **Phase 1 — `tmpdir` host + focused MCP client.** A real temp directory tree;
-   the experiment itself.
-3. **Phase 2 — `sqlite` host swap, and the mirror.** The Phase-0 suite passes
-   **unchanged**; the sqlite store additionally **mirrors** the run as isotope
-   records (§2). An edit to the suite to make it pass is a leak, and a leak is
-   evidence.
+2. **Phase 1 — the focused MCP client, dual-writing (the spike).** Start with the
+   client (both later phases need it). It writes each workspace **to tmp and to
+   sqlite together**, and records **its own isotope tracking** — the two-invariant
+   *shape* in one artifact, on a real filesystem. The experiment itself.
+3. **Phase 2 — split the stores; the mirror becomes independent.** Introduce the
+   driver interface so tmp and sqlite are swappable hosts, and the sqlite store is
+   written/verified from a **different position** — the *independence* the
+   cross-check needs. The Phase-0 suite passes **unchanged**; an edit to make it
+   pass is a leak, and a leak is evidence.
 
 ## §6 Finding rule
 
