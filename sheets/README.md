@@ -25,11 +25,20 @@ SDS turns that mismatch into a §16 finding instead of a sentence nobody re-read
 
 ## Layout
 
-| path | what |
-| --- | --- |
-| `README.md` | this file — the pattern and the section map |
-| `<surface>.md` | one safety data sheet per MCP surface |
-| `features/<surface>-mcp-surface.feature` | the linked executable scenarios |
+Two artifact kinds share the same style — markdown with linked executable Gherkin:
+
+| path | kind | what |
+| --- | --- | --- |
+| `README.md` | — | this file — the pattern and the section map |
+| `<surface>.md` | **sheet** | one safety data sheet per MCP surface |
+| `features/<surface>-mcp-surface.feature` | **sheet** | the linked executable scenarios |
+| `workspaces/README.md` | **register** | a plan and the standards it commits to |
+| `workspaces/standards.feature` | **register** | the linked executable scenarios |
+
+A **sheet** declares a surface (what exists). A **register** records a *plan* —
+which existing standard each layer adopts, and which slower validator keeps the
+claim honest — so the choices survive context loss. See
+[workspaces/README.md](workspaces/README.md).
 
 ## Hazard classes
 
@@ -120,6 +129,12 @@ Composition` reads as *"the declared inventory does not match the surface"*.
 | --- | --- | --- | --- | --- |
 | adhd MCP server | `adhd` | 18 static + dynamic | [adhd.md](adhd.md) | [features/adhd-mcp-surface.feature](features/adhd-mcp-surface.feature) |
 | hosted service MCP | `ocd-smoke-alarm` | 4 | [ocd-smoke-alarm.md](ocd-smoke-alarm.md) | [features/ocd-smoke-alarm-mcp-surface.feature](features/ocd-smoke-alarm-mcp-surface.feature) |
+
+## Registers
+
+| register | plan | linked scenarios |
+| --- | --- | --- |
+| [workspaces/README.md](workspaces/README.md) | Workspace VFS prototype ([#9](https://github.com/james-gibson/lab-safety/issues/9)) — standards register + the 42i validation ladder | [workspaces/standards.feature](workspaces/standards.feature) |
 
 ## Adding a surface
 
