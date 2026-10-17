@@ -194,6 +194,6 @@ agreeing — and the `ResultLedger` (rung 4).
 
 **Rung 2 has landed** (above), and the middle rung with it: the alarm compares the
 surface to a *declaration* the target carries, so a session that has lost part of what the
-spec declares reads **yellow** — see *The finding this spike lived beside*, below. What is
+spec declares reads **yellow** — see *The finding this spike lived beside*, above. What is
 still ours is where that declaration comes from: the harness writes it by hand, where the
 spec should be its origin.

@@ -110,6 +110,18 @@ is the **pole the build inverts**. Two consequences, and they are requirements:
   instrument has no yellow"* to *"the prober never yields `degraded`"*, and puts the
   fix in the alarm rather than in adhd.
 
+  So the store reaching `-42i` **read green**, not yellow — the instrument could not
+  yet say *"exists but not yet independent"*. Two consequences:
+
+  - the **existence** transition (`42 → -42i`) and the **independence** transition
+    (`-42i → -42`) both read green, and only **torn** (red) separated them;
+  - to *see* `-42i` as yellow, the lab had to first express **dissent** — the
+    two-invariant disagreement — which is exactly what the Phase-1 mirror supplies.
+
+  A finding against the **instrument**, not the hypothesis: the plane still described
+  the situation; the lab's lights did not yet have a rung for it. Recorded as a
+  symptom, not a blocker — the frame unchanged, only the reading changing.
+
   **Closed — the instrument has the rung** (smoke-alarm
   [#34](https://github.com/james-gibson/smoke-alarm/issues/34) → PR
   [#36](https://github.com/james-gibson/smoke-alarm/pull/36), 2026-10-17). The fix
@@ -145,18 +157,6 @@ is the **pole the build inverts**. Two consequences, and they are requirements:
   carries (`min_capabilities`) is written by hand in the harness, where Phase 0's
   rule — *the spec is the origin* — says it should be **derived** from the Gherkin,
   as the store's expectation already is.
-
-  So the store reaching `-42i` reads **green**, not yellow — the instrument cannot
-  yet say *"exists but not yet independent"*. Two consequences:
-
-  - the **existence** transition (`42 → -42i`) and the **independence** transition
-    (`-42i → -42`) both read green today; only **torn** (red) separates them;
-  - to *see* `-42i` as yellow, the lab must first express **dissent** — the
-    two-invariant disagreement — which is exactly what the Phase-1 mirror supplies.
-
-  This is a finding against the **instrument**, not the hypothesis: the plane still
-  describes the situation; the lab's lights do not yet have a rung for it. Recorded
-  as a symptom, not a blocker — the frame is unchanged, only the reading changes.
 
 ## §1 The 42i premise — there is almost always a slower way to validate
 
@@ -335,7 +335,8 @@ and the independent observation; a divergent mirror is caught
 (`TestVerificationCatchesADivergentMirror`) and the pair then reads **green**. This
 is *positional* independence — the check no longer trusts the writer's bookkeeping —
 **not** measurable independence: one writer still corrupts both stores identically.
-The dissent is asserted at rung 0 and still cannot be *rendered* (the §2 finding).
+The dissent is asserted at rung 0, and it can now be **rendered** as well: §2's finding
+is closed and the middle rung belongs to the instrument (§5, *the middle rung landed*).
 
 **Rung 2 landed — the store becomes a service.** `cmd/workspace-mcp` serves the
 store's MCP surface over HTTP from its **own process**, and `seed.go` inverts the
@@ -361,11 +362,14 @@ exercised. Three things this step had to decide, recorded rather than assumed:
   the surface refuses (`-32001`), so in phase 3 the server is *still running* and the
   light goes red. Otherwise a live process would stand in for an existing session and
   the plane `42` — *not present* — would be unreachable on the wire.
-- **what the alarm can assert is the handshake, not the declarations.** The prober
-  never compares the surface to the spec (`min_capabilities` is unchecked). That the
-  surface *serves the spec* is asserted at rung 0 (`TestSeedIsTheSpecInverted`,
-  `TestTheSurfaceServesTheSpec`) and read on the wire by the eye; making the alarm
-  the authority on it is the same ticket.
+- **what the alarm asserts is now the declarations, not only the handshake.** This
+  step originally recorded that the prober never compares the surface to what was
+  declared (`min_capabilities` unchecked); [smoke-alarm#34](https://github.com/james-gibson/smoke-alarm/issues/34)
+  closed that, and the prober reads an unadvertised declared family as `degraded`.
+  What it does **not** do is *derive* that declaration from the spec — the harness
+  writes it by hand today — so "the surface serves the spec" is still asserted at
+  rung 0 (`TestSeedIsTheSpecInverted`, `TestTheSurfaceServesTheSpec`) and is now also
+  readable on the wire.
 
 **Rung 2b landed — the session is a node, not a port.** The session registers
 *itself* by name in the lab's own registry (smoke-alarm `POST /isotope/register`,
@@ -451,8 +455,13 @@ the slower, shared route.
 - Instrument wiring: `adhd/internal/smokelink/watcher.go` (`mapHealthState`,
   `drainWatcherUpdates` — the `old_status:"dark"` first-transition),
   `adhd/internal/headless/server.go`; smoke-alarm `internal/knownstate/store.go`,
-  `internal/engine/engine.go` (`toKnownStateStatus`, `httpHandshakeMethods`).
-- Priming script (step 1) and live driver (rungs 1–2b):
+  `internal/engine/engine.go` (`toKnownStateStatus`, `httpHandshakeMethods`,
+  `probeJSONRPCHandshakeHTTP` — the prober that now produces the middle rung).
+- The middle rung, in the alarm:
+  [smoke-alarm#34](https://github.com/james-gibson/smoke-alarm/issues/34) →
+  [PR #36](https://github.com/james-gibson/smoke-alarm/pull/36) — the fix belongs to
+  the instrument, not to this prototype.
+- Live driver (rungs 1–2b, and the middle rung):
   [`lab/workspaces/spike.sh`](../../lab/workspaces/spike.sh) — builds
   `cmd/workspace-mcp`, seeds a session from the gate, registers it in the lab's
   registry, and puts it on the lab's own instruments (adhd light + smoke-alarm
