@@ -4,7 +4,8 @@
 > Parent RFC: [#5](https://github.com/james-gibson/lab-safety/issues/5) ·
 > Theory: [lab/SPLASH.md](../../lab/SPLASH.md) ·
 > Artifact style: [../README.md](../README.md) ·
-> Gate: [minimal.feature](minimal.feature) · Punctuation: [standards.feature](standards.feature)
+> Gate: [minimal.feature](minimal.feature) · Roots: [filesystem.feature](filesystem.feature) ·
+> Punctuation: [standards.feature](standards.feature)
 
 This is a **register**, not a surface safety data sheet. A surface sheet declares
 one MCP surface; a register records a **plan and the standards it commits to**,
@@ -249,6 +250,13 @@ adopted, verified}.
 | A12 | the sqlite **mirror** holds isotope records | dual-write spike (one writer, both stores) | two-invariant cross-check; independence is **positional** (spec + protocol read), not a second writer |
 | A13 | the prototype runs a **single session** (`42`) | the run opens `42.wsdb` once | a second session's isolation (rung 3) — **deferred; multi-session is out of scope** |
 
+**Note — the roots vs. Rule §4.** [`filesystem.feature`](filesystem.feature) roots every
+session at `/` so a **child session cannot see a parent**. `minimal.feature` §4 has a
+*descendant* (an agent added beneath a session) **gaining that session's access**. These
+agree only if "descendant" means *within one session*, and a *child session* is a new
+namespace with its own root. If a child session is meant to inherit the parent's paths,
+the two rules conflict and one must move.
+
 ## §5 The plan (condensed, so it does not get lost)
 
 1. **Phase 0 — Gherkin first.** The minimal VFS *is* its scenarios. No code until
@@ -307,3 +315,5 @@ named cost. Do not invent around a gap; report the gap. See `standards.feature`
 - Priming script (step 1): [`lab/workspaces/spike.sh`](../../lab/workspaces/spike.sh).
 - Dual-write client (Phase 1): [`lab/workspaces/`](../../lab/workspaces/) — a Go
   module (`go test ./...`).
+- Roots: [`filesystem.feature`](filesystem.feature) — "/" and "~/" per session, and
+  the structural isolation of a child session.

@@ -24,6 +24,8 @@ Feature: Workspace VFS — minimal contract (Phase 0 gate)
     Given a workspace rooted at a driver-managed store for session "42"
 
   Rule: §1 the on-disk conventions
+    # the roots ("/" and "~/") are defined in filesystem.feature; these paths are
+    # the conventions *inside* "/"
     # slow: the same conventions re-read through the sqlite driver (rung 1)
 
     Scenario: the layout is the documented one
