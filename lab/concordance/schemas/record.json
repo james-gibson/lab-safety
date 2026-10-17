@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "concordance record — one comparison of a third party's claim with our own",
+  "description": "The authored half of a comparison. It holds OUR determination and the MINIMUM of theirs needed to compare: a normalised value token, never their prose, never their catalogue. Agreement is not in this file — it is computed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source", "subject", "predicate", "their_claim", "our_claim", "provenance"],
+  "properties": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "url", "retrieved_at"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "url": { "type": "string", "format": "uri" },
+        "retrieved_at": { "type": "string", "format": "date" }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+([-.][a-z0-9]+)*$" },
+        "kind": { "type": "string", "enum": ["mcp-server", "mcp-surface", "tool", "agent"] }
+      }
+    },
+    "predicate": {
+      "type": "string",
+      "description": "what the two claims are about; a comparison with no predicate is a vibe, not a fact",
+      "enum": ["listed", "vendor", "endpoint", "exposes-tool", "auth-method", "transport"]
+    },
+    "their_claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-z0-9][a-z0-9.+:/@_-]*$",
+          "description": "their claim reduced to one normalised token. Prose is refused: if it cannot be a token, the comparison is not well-typed yet."
+        }
+      }
+    },
+    "our_claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "basis"],
+      "properties": {
+        "value": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-z0-9][a-z0-9.+:/@_-]*$"
+        },
+        "basis": {
+          "type": "string",
+          "description": "path, relative to the repo root, of OUR artefact this claim comes from. It must exist. This is what stops the dataset becoming a mirror of theirs: no record may exist that we cannot anchor to something of our own.",
+          "minLength": 1
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checked_at", "review_by", "method"],
+      "properties": {
+        "checked_at": { "type": "string", "format": "date" },
+        "review_by": { "type": "string", "format": "date" },
+        "method": { "type": "string", "enum": ["observed", "read"] },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

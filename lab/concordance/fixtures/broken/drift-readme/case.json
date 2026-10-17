@@ -1,0 +1,21 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "drift: README.md summary region differs",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpmarket/acme-weather/exposes-tool.json",
+      "to": "records/mcpmarket/acme-weather/exposes-tool.json"
+    }
+  ],
+  "post": [
+    {
+      "kind": "rawReplace",
+      "file": "README.md",
+      "find": "| weather.get |",
+      "text": "| weather.get  |"
+    }
+  ]
+}

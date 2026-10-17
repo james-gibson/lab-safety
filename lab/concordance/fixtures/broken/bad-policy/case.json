@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "is not \"pointer\"",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "sources/mcpmarket.json",
+      "path": "policy",
+      "value": "mirror"
+    }
+  ]
+}

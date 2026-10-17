@@ -42,6 +42,7 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 | `TRIPWIRE.md` + `tripwire.sh` | exercise | trusted caller vs probing caller; the honeypot |
 | `RECONCILE.md` + `accounts.sh` | exercise | the verification chain and who enacts a disagreement |
 | `survey/README.md` | dataset | the **model survey** — what agents want from an integration endpoint. `survey/profiles/*.json` are the observations; `models.csv`, the summary table and `survey.feature` are checked projections of them |
+| `concordance/README.md` | dataset | where a third party claims something about a subject we also hold a claim about, **do we agree?** A record may not exist without our own claim, anchored to one of our artefacts, and a third party's claim is stored as one normalised token — never their prose or their catalogue |
 
 `MATH.md`, `PLANE.md` and `THREADS.md` are the ones that save time. The exercises
 are reproducible; the three findings documents are the *conclusions*, so an agent
@@ -51,6 +52,14 @@ can start from the answer rather than the search.
 **data**, and its value is that the data cannot drift from what it claims.
 `survey/README.md` says which way its Gherkin arrow points (the opposite way to
 `sheets/`), and `go run ./cmd/survey --check` is the proof.
+
+`concordance/` is the same shape pointed at someone else's claims: where a third
+party claims something about a subject we also hold a claim about, it records
+whether we agree. Its two rules are structural, not aspirational — a record
+cannot exist without our own claim anchored to a file in this repo, and their
+claim is stored as one normalised token — so a mirror of somebody's catalogue is
+not representable. It ships with no records, on purpose; the reason is in
+`concordance/README.md`.
 
 **Two kinds of document, and the rule that separates them.** A **join artifact** must
 be readable **at once** — if a participant cannot see the pattern in one view, it

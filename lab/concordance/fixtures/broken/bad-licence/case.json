@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "licence",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "sources/mcpmarket.json",
+      "path": "licence",
+      "value": "dunno"
+    }
+  ]
+}

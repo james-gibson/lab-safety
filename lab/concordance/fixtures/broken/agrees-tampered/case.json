@@ -1,0 +1,22 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "recomputed from the two claims",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpmarket/acme-weather/exposes-tool.json",
+      "to": "records/mcpmarket/acme-weather/exposes-tool.json"
+    }
+  ],
+  "post": [
+    {
+      "kind": "csvSetCell",
+      "file": "concordance.csv",
+      "row": "acme-weather",
+      "column": "agrees",
+      "text": "false"
+    }
+  ]
+}

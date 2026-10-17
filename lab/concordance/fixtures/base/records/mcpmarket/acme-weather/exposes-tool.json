@@ -1,0 +1,25 @@
+{
+  "source": {
+    "id": "mcpmarket",
+    "url": "https://mcpmarket.com/server",
+    "retrieved_at": "2026-10-16"
+  },
+  "subject": {
+    "id": "acme-weather",
+    "kind": "mcp-server"
+  },
+  "predicate": "exposes-tool",
+  "their_claim": {
+    "value": "weather.get"
+  },
+  "our_claim": {
+    "value": "weather.get",
+    "basis": "sheets/adhd.md"
+  },
+  "provenance": {
+    "checked_at": "2026-10-17",
+    "review_by": "2026-11-17",
+    "method": "read",
+    "notes": "Illustrative fixture record for the broken-check tests. It is not an observation and it is deliberately NOT under records/ — a synthetic record must not be mistakable for one."
+  }
+}

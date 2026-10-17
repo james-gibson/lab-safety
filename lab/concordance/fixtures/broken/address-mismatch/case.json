@@ -1,0 +1,19 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "the path is the key",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpmarket/acme-weather/exposes-tool.json",
+      "to": "records/mcpmarket/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/mcpmarket/acme-weather/exposes-tool.json",
+      "path": "subject.id",
+      "value": "other-subject"
+    }
+  ]
+}

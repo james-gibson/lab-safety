@@ -1,0 +1,19 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "escapes the repo root",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpmarket/acme-weather/exposes-tool.json",
+      "to": "records/mcpmarket/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/mcpmarket/acme-weather/exposes-tool.json",
+      "path": "our_claim.basis",
+      "value": "../../etc/hosts"
+    }
+  ]
+}

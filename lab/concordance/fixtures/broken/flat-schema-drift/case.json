@@ -1,0 +1,21 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "the schema and the projector disagree",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpmarket/acme-weather/exposes-tool.json",
+      "to": "records/mcpmarket/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "schemas/flat.json",
+      "path": "properties.zzz_extra",
+      "value": {
+        "type": "string"
+      }
+    }
+  ]
+}

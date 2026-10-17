@@ -1,0 +1,19 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "orphan record: other/acme-weather/exposes-tool names source",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpmarket/acme-weather/exposes-tool.json",
+      "to": "records/other/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/other/acme-weather/exposes-tool.json",
+      "path": "source.id",
+      "value": "other"
+    }
+  ]
+}

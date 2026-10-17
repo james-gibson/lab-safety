@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "concordance — flat row (the projection)",
+  "description": "One row per record: the two claims, where ours comes from, and the computed agreement. `agrees` is here and ONLY here — a record cannot author it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source_id", "source_url", "retrieved_at", "subject_id", "subject_kind", "predicate", "their_claim", "our_claim", "our_basis", "checked_at", "review_by", "method", "agrees"],
+  "properties": {
+    "source_id": { "type": "string" },
+    "source_url": { "type": "string" },
+    "retrieved_at": { "type": "string" },
+    "subject_id": { "type": "string" },
+    "subject_kind": { "type": "string" },
+    "predicate": { "type": "string" },
+    "their_claim": { "type": "string" },
+    "our_claim": { "type": "string" },
+    "our_basis": { "type": "string" },
+    "checked_at": { "type": "string" },
+    "review_by": { "type": "string" },
+    "method": { "type": "string" },
+    "agrees": { "type": "boolean" }
+  }
+}
