@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "is not after checked_at",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/netlify-api.json",
+      "path": "provenance.review_by",
+      "value": "2020-01-01"
+    }
+  ]
+}

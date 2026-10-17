@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "drift: tools.feature differs",
+  "ops": [
+    {
+      "kind": "rawReplace",
+      "file": "tools.feature",
+      "find": "Scenario: vs-code-extension-api",
+      "text": "Scenario: vscode"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "drift: tools.csv differs",
+  "ops": [
+    {
+      "kind": "csvSetCell",
+      "file": "tools.csv",
+      "row": "vs-code-extension-api",
+      "column": "notes",
+      "text": "edited by hand"
+    }
+  ]
+}

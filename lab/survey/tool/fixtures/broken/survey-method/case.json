@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "survey_method",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/netlify-api.json",
+      "path": "provenance.survey_method",
+      "value": "guess"
+    }
+  ]
+}

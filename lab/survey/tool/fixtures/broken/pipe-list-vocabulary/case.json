@@ -1,0 +1,15 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "not in",
+  "ops": [
+    {
+      "kind": "csvSetCell",
+      "file": "tools.csv",
+      "row": "slack-api",
+      "column": "auth_families",
+      "text": "carrier-pigeon"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315175145",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "GitHub REST/GraphQL API",
+    "toolVendorOrProject": "GitHub (Microsoft)",
+    "toolVersion": "2026-03-10",
+    "description": "Programmatic interface for managing repositories, issues, PRs, and GitHub Actions CI/CD workflows.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 8.0,
+      "acceptableDirectionLabels": [
+        "Protocol-Compliant",
+        "Upstream-Stable"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "git push",
+        "delete repository",
+        "create secret"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Unauthorized force-push to protected branches",
+        "Exposure of organization-level secrets",
+        "Incorrect merge conflict resolution"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": true,
+      "stateMutability": "Critical (Remote source of truth mutation)",
+      "blastRadius": "Repository / Organization / Infrastructure"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST / GraphQL",
+      "schemaStandard": "OpenAPI 3.0 / GraphQL Schema",
+      "parameterComplexity": "Moderate (Stateless HTTP verbs)",
+      "payloadSizeSensitivity": "High (Subject to rate limits and pagination)"
+    },
+    "authAndVerification": {
+      "authMechanism": "Personal Access Token (PAT) / GitHub App (JWT)",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Automated code review",
+        "CI/CD workflow generation",
+        "Issue triage"
+      ],
+      "commonAgentFailureModes": [
+        "Rate limit exhaustion",
+        "Schema mismatch on experimental endpoints",
+        "Hallucinating PR labels"
+      ],
+      "recoveryMechanisms": [
+        "Webhook retries",
+        "PAT revocation",
+        "Branch protection overrides"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4",
+        "Claude"
+      ]
+    },
+    "notes": "Authenticating as a GitHub App installation is the preferred method for agentic integration to minimize credential exposure."
+  }
+}

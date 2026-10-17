@@ -1,0 +1,22 @@
+{
+  "args": [
+    "--stale",
+    "--as-of",
+    "2026-10-17"
+  ],
+  "want": "stale: netlify-api review_by 2020-01-01 is before 2026-10-17",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/netlify-api.json",
+      "path": "provenance.review_by",
+      "value": "2020-01-01"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "profiles/netlify-api.json",
+      "path": "provenance.checked_at",
+      "value": "2019-01-01"
+    }
+  ]
+}

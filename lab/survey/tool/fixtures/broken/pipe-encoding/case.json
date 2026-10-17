@@ -1,0 +1,15 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "encoding:",
+  "ops": [
+    {
+      "kind": "csvSetCell",
+      "file": "tools.csv",
+      "row": "slack-api",
+      "column": "interface_families",
+      "text": "events | mcp | rest"
+    }
+  ]
+}

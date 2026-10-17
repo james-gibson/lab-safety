@@ -1,0 +1,16 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "has 47 properties",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "schemas/flat.json",
+      "path": "properties.extra_note",
+      "value": {
+        "type": "string"
+      }
+    }
+  ]
+}

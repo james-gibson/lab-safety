@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "no class mapping for",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/vs-code-extension-api.json",
+      "path": "answer.toolExecutionProfile.stateMutability",
+      "value": "Extreme (a value the vocabulary does not cover)"
+    }
+  ]
+}

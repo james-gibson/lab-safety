@@ -1,0 +1,78 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315192126",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "Apollo GraphQL (via Apollo MCP Server)",
+    "toolVendorOrProject": "Apollo GraphQL",
+    "toolVersion": "2026-03 (Agent-Ready)",
+    "description": "Bridges AI agents to GraphQL schemas using Model Context Protocol (MCP), providing type-safe introspection and operation execution.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 3,
+      "maxAcceptableImaginaryDistance": 15.0,
+      "acceptableDirectionLabels": [
+        "Schema-Aligned",
+        "Type-Safe-Execution"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "mutation.execute",
+        "introspection.query",
+        "persistedQuery.trigger"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Hallucinating non-existent schema fields",
+        "Bypassing demand control cost limits",
+        "Unauthorized introspection of sensitive subgraphs"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": null,
+      "supportsDryRunMode": true,
+      "stateMutability": "Variable (Depends on mutation/query type)",
+      "blastRadius": "Application Data / Graph State"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "MCP / GraphQL",
+      "schemaStandard": "GraphQL SDL / Introspection JSON",
+      "parameterComplexity": "High (Strongly typed, nested inputs)",
+      "payloadSizeSensitivity": "Moderate (Managed by cost-based demand control)"
+    },
+    "authAndVerification": {
+      "authMechanism": "API Key / OAuth2 / Persisted Query Safelisting",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Dynamic data discovery",
+        "Type-safe state mutation",
+        "Enterprise graph navigation"
+      ],
+      "commonAgentFailureModes": [
+        "Complex input object validation errors",
+        "Query depth/complexity limit rejection",
+        "Misinterpreting nullability vs optionality"
+      ],
+      "recoveryMechanisms": [
+        "Schema introspection retry",
+        "Persisted query fallback",
+        "Apollo Studio audit logs"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "Claude",
+        "GPT-4o"
+      ]
+    },
+    "notes": "Utilizes Pattern 1 (Pre-defined operations) for high-safety environments and Pattern 3 (Dynamic introspection) for exploratory agents."
+  }
+}

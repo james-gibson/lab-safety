@@ -1,0 +1,16 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "orphan row: tools.csv has \"ghost\" with no profile",
+  "ops": [
+    {
+      "kind": "csvDuplicateRow",
+      "file": "tools.csv",
+      "row": "netlify-api",
+      "set": {
+        "tool_id": "ghost"
+      }
+    }
+  ]
+}

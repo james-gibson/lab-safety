@@ -1,13 +1,14 @@
-// Command survey is the model survey's tool: it projects profiles/*.json onto
-// models.csv, the README summary and survey.feature, and proves none of the
-// projections drifted.
+// Command survey is the survey tool: it projects profiles/*.json onto the
+// dataset's CSV, README summary and Gherkin, and proves none of the projections
+// drifted.
 //
 //	survey --check                 # validate + prove no drift (exit 1 on failure)
 //	survey --render                # regenerate the artifacts from the profiles
 //	survey --stale [--as-of DATE]  # list profiles whose review_by has passed
 //
-// See lab/survey/README.md for the method, the schema, and exactly what is and
-// is not checked.
+// --dataset model (default) reads lab/survey; --dataset tool reads
+// lab/survey/tool. See each dataset's README.md for its method, schema and
+// exactly what is and is not checked.
 package main
 
 import (
@@ -20,12 +21,27 @@ import (
 )
 
 func main() {
-	root := flag.String("root", ".", "survey root: the directory holding profiles/, schemas/ and the generated artifacts")
-	check := flag.Bool("check", false, "validate every profile and prove models.csv, the README summary and survey.feature have not drifted")
-	render := flag.Bool("render", false, "regenerate models.csv, the README summary and survey.feature from the profiles")
+	dataset := flag.String("dataset", "model", "survey dataset: model | tool")
+	root := flag.String("root", "", "survey root (default: . for model, tool for tool)")
+	check := flag.Bool("check", false, "validate every profile and prove the generated artifacts have not drifted")
+	render := flag.Bool("render", false, "regenerate the CSV, the README summary and the feature from the profiles")
 	stale := flag.Bool("stale", false, "list profiles whose review_by falls before --as-of (default: today)")
 	asOf := flag.String("as-of", "", "date for --stale, YYYY-MM-DD (default: today)")
 	flag.Parse()
+
+	var ds *survey.Dataset
+	switch *dataset {
+	case "model":
+		ds = survey.Model()
+	case "tool":
+		ds = survey.Tool()
+	default:
+		fail(fmt.Errorf("unknown --dataset %q (want model or tool)", *dataset))
+	}
+	r := *root
+	if r == "" {
+		r = ds.Root
+	}
 
 	if !*check && !*render && !*stale {
 		flag.Usage()
@@ -34,7 +50,7 @@ func main() {
 
 	switch {
 	case *render:
-		fails, err := survey.Render(*root)
+		fails, err := survey.RenderDataset(ds, r)
 		if err != nil {
 			fail(err)
 		}
@@ -43,13 +59,13 @@ func main() {
 			fmt.Fprintln(os.Stderr, "refused to render: fix the profiles first")
 			os.Exit(1)
 		}
-		fmt.Println("rendered models.csv, README.md and survey.feature from profiles/")
+		fmt.Printf("rendered %s, %s and %s from profiles/\n", ds.CSVPath, ds.ReadmePath, ds.FeaturePath)
 	case *stale:
 		as, err := parseAsOf(*asOf)
 		if err != nil {
 			fail(err)
 		}
-		fails, err := survey.Stale(*root, as)
+		fails, err := survey.StaleDataset(ds, r, as)
 		if err != nil {
 			fail(err)
 		}
@@ -59,7 +75,7 @@ func main() {
 		}
 		fmt.Printf("no stale profiles as of %s\n", as.Format("2006-01-02"))
 	default:
-		fails, err := survey.Check(*root)
+		fails, err := survey.CheckDataset(ds, r)
 		if err != nil {
 			fail(err)
 		}
@@ -67,7 +83,7 @@ func main() {
 			report(fails)
 			os.Exit(1)
 		}
-		fmt.Println("check: profiles are the source of truth; no drift")
+		fmt.Printf("check: %s profiles are the source of truth; no drift\n", ds.Name)
 	}
 }
 

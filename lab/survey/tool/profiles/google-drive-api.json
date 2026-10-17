@@ -1,0 +1,77 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315192126",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "Google Drive API",
+    "toolVendorOrProject": "Google Cloud",
+    "toolVersion": "v3",
+    "description": "Comprehensive API for managing files and folders within Google Drive, including permission control and content indexing.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 10.0,
+      "acceptableDirectionLabels": [
+        "Filesystem-Aligned",
+        "Permission-Sensitive"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "files.delete",
+        "permissions.create",
+        "files.update"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Accidental broad permission escalation (e.g., public sharing)",
+        "Silent overwriting of critical user documents",
+        "Misinterpretation of 'trash' vs 'permanent delete'"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": false,
+      "stateMutability": "High (Cloud filesystem mutation)",
+      "blastRadius": "User Cloud Storage / Organizational Data"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST",
+      "schemaStandard": "OpenAPI / Discovery Service",
+      "parameterComplexity": "Moderate",
+      "payloadSizeSensitivity": "High (Large file uploads/downloads)"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth 2.0 (Scopes-based)",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Autonomous document organization",
+        "Automated report distribution",
+        "Cross-platform data syncing"
+      ],
+      "commonAgentFailureModes": [
+        "Token expiration during long operations",
+        "Handling shared drive vs personal drive boundaries",
+        "Improper mime-type detection"
+      ],
+      "recoveryMechanisms": [
+        "Drive Trash folder restoration",
+        "Revision history rollback",
+        "OAuth scope narrowing"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4o"
+      ]
+    },
+    "notes": "Requires strict OAuth scope management to minimize blast radius (e.g., drive.file instead of drive full access)."
+  }
+}

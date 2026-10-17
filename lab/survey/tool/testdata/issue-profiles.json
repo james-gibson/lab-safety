@@ -1,0 +1,882 @@
+[
+  {
+    "toolName": "VS Code Extension API",
+    "toolVendorOrProject": "Microsoft",
+    "toolVersion": "1.109 (Stable)",
+    "description": "Exposes core editor functionality, filesystem access, and terminal control to extensions and background agents.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 12.5,
+      "acceptableDirectionLabels": [
+        "Local-Deterministic",
+        "Filesystem-Aligned"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "fs.writeFile",
+        "terminal.sendText",
+        "commands.executeCommand"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Arbitrary shell execution without user consent",
+        "Silent workspace data corruption",
+        "Credential leakage via extension host"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": false,
+      "stateMutability": "High (Direct local filesystem and process mutation)",
+      "blastRadius": "User Workspace / Local Machine"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "VS Code Extension API (TS/JS)",
+      "schemaStandard": "TypeScript Definition Files (.d.ts)",
+      "parameterComplexity": "High (Deeply nested objects and event-driven callbacks)",
+      "payloadSizeSensitivity": "Moderate (In-process IPC)"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth2 / Extension Identity",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Automated refactoring",
+        "Dependency management",
+        "Agentic debugging"
+      ],
+      "commonAgentFailureModes": [
+        "Over-correction of linter rules",
+        "Incomplete file writes causing build breakage",
+        "Infinite loop in file-watcher triggers"
+      ],
+      "recoveryMechanisms": [
+        "Git-based rollback",
+        "Extension Host restart",
+        "Undo/Redo buffer inspection"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4",
+        "Claude"
+      ]
+    },
+    "notes": "Version 1.109 introduces advanced background agent hooks and slash command support for autonomous skill invocation."
+  },
+  {
+    "toolName": "GitHub REST/GraphQL API",
+    "toolVendorOrProject": "GitHub (Microsoft)",
+    "toolVersion": "2026-03-10",
+    "description": "Programmatic interface for managing repositories, issues, PRs, and GitHub Actions CI/CD workflows.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 8.0,
+      "acceptableDirectionLabels": [
+        "Protocol-Compliant",
+        "Upstream-Stable"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "git push",
+        "delete repository",
+        "create secret"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Unauthorized force-push to protected branches",
+        "Exposure of organization-level secrets",
+        "Incorrect merge conflict resolution"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": true,
+      "stateMutability": "Critical (Remote source of truth mutation)",
+      "blastRadius": "Repository / Organization / Infrastructure"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST / GraphQL",
+      "schemaStandard": "OpenAPI 3.0 / GraphQL Schema",
+      "parameterComplexity": "Moderate (Stateless HTTP verbs)",
+      "payloadSizeSensitivity": "High (Subject to rate limits and pagination)"
+    },
+    "authAndVerification": {
+      "authMechanism": "Personal Access Token (PAT) / GitHub App (JWT)",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Automated code review",
+        "CI/CD workflow generation",
+        "Issue triage"
+      ],
+      "commonAgentFailureModes": [
+        "Rate limit exhaustion",
+        "Schema mismatch on experimental endpoints",
+        "Hallucinating PR labels"
+      ],
+      "recoveryMechanisms": [
+        "Webhook retries",
+        "PAT revocation",
+        "Branch protection overrides"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4",
+        "Claude"
+      ]
+    },
+    "notes": "Authenticating as a GitHub App installation is the preferred method for agentic integration to minimize credential exposure."
+  },
+  {
+    "toolName": "Jira Cloud REST API",
+    "toolVendorOrProject": "Atlassian",
+    "toolVersion": "v3",
+    "description": "API for interacting with Jira software for project tracking, issue lifecycle management, and workflow automation.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 3,
+      "maxAcceptableImaginaryDistance": 20.0,
+      "acceptableDirectionLabels": [
+        "Process-Oriented",
+        "Audit-Safe"
+      ],
+      "requiresSeed42GroundTruthAdherence": false,
+      "consequentialOperationsExposed": [
+        "transition issue",
+        "delete project",
+        "bulk update"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Accidental deletion of historic audit logs",
+        "Circular workflow transitions",
+        "PII leakage in public comments"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": false,
+      "stateMutability": "Moderate (Project state and metadata mutation)",
+      "blastRadius": "Project / Team Workspace"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST",
+      "schemaStandard": "OpenAPI / ADF (Atlassian Document Format)",
+      "parameterComplexity": "High (Requires ADF for rich text fields)",
+      "payloadSizeSensitivity": "Moderate"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth 2.0 (3LO) / Basic Auth (API Token)",
+      "requiresIndependentAlarmVerification": false,
+      "humanInTheLoopRequiredForConsequentialSteps": false
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Automated task updates",
+        "Sprint report generation",
+        "Dependency mapping"
+      ],
+      "commonAgentFailureModes": [
+        "ADF format validation errors",
+        "Broken workflow logic",
+        "Incorrect permission escalation"
+      ],
+      "recoveryMechanisms": [
+        "History tab audit",
+        "Issue restore from backup",
+        "API Token rotation"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4"
+      ]
+    },
+    "notes": "Version 3 is the current standard for Jira Cloud, specifically supporting the complex Atlassian Document Format (ADF) for content."
+  },
+  {
+    "toolName": "IntelliJ Platform SDK (JetBrains)",
+    "toolVendorOrProject": "JetBrains",
+    "toolVersion": "2025.3 (LTS)",
+    "description": "Open source platform for building IDEs, providing Program Structure Interface (PSI) for deep code analysis and manipulation.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 10.0,
+      "acceptableDirectionLabels": [
+        "Semantic-Aligned",
+        "Strict-Type-Safe"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "RefactoringManager",
+        "VFS (Virtual File System) writes",
+        "ProjectComponent persistence"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Invalid PSI tree mutations leading to IDE crashes",
+        "Non-thread-safe write actions",
+        "Memory leaks in long-running services"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": true,
+      "stateMutability": "High (Deep semantic model mutation)",
+      "blastRadius": "Project PSI / Local IDE State"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "Java/Kotlin API",
+      "schemaStandard": "Plugin XML / Extension Points",
+      "parameterComplexity": "Extreme (Abstract Syntax Trees and multi-threaded threading models)",
+      "payloadSizeSensitivity": "Low (In-memory access)"
+    },
+    "authAndVerification": {
+      "authMechanism": "JetBrains Account / Hub",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Deep semantic refactoring",
+        "Static analysis custom rules",
+        "Plugin development assistance"
+      ],
+      "commonAgentFailureModes": [
+        "Read-access-from-write-thread exceptions",
+        "Broken indices during large-scale changes",
+        "Plugin descriptor conflicts"
+      ],
+      "recoveryMechanisms": [
+        "Local History (VCS-independent)",
+        "Invalidate Caches / Restart",
+        "Thread dump analysis"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": false,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Claude 3.5 Sonnet",
+        "GPT-4o"
+      ]
+    },
+    "notes": "Utilizes the PersistentStateComponent interface to manage state between IDE restarts, ensuring agent state durability."
+  },
+  {
+    "toolName": "Apollo GraphQL (via Apollo MCP Server)",
+    "toolVendorOrProject": "Apollo GraphQL",
+    "toolVersion": "2026-03 (Agent-Ready)",
+    "description": "Bridges AI agents to GraphQL schemas using Model Context Protocol (MCP), providing type-safe introspection and operation execution.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 3,
+      "maxAcceptableImaginaryDistance": 15.0,
+      "acceptableDirectionLabels": [
+        "Schema-Aligned",
+        "Type-Safe-Execution"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "mutation.execute",
+        "introspection.query",
+        "persistedQuery.trigger"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Hallucinating non-existent schema fields",
+        "Bypassing demand control cost limits",
+        "Unauthorized introspection of sensitive subgraphs"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": null,
+      "supportsDryRunMode": true,
+      "stateMutability": "Variable (Depends on mutation/query type)",
+      "blastRadius": "Application Data / Graph State"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "MCP / GraphQL",
+      "schemaStandard": "GraphQL SDL / Introspection JSON",
+      "parameterComplexity": "High (Strongly typed, nested inputs)",
+      "payloadSizeSensitivity": "Moderate (Managed by cost-based demand control)"
+    },
+    "authAndVerification": {
+      "authMechanism": "API Key / OAuth2 / Persisted Query Safelisting",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Dynamic data discovery",
+        "Type-safe state mutation",
+        "Enterprise graph navigation"
+      ],
+      "commonAgentFailureModes": [
+        "Complex input object validation errors",
+        "Query depth/complexity limit rejection",
+        "Misinterpreting nullability vs optionality"
+      ],
+      "recoveryMechanisms": [
+        "Schema introspection retry",
+        "Persisted query fallback",
+        "Apollo Studio audit logs"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "Claude",
+        "GPT-4o"
+      ]
+    },
+    "notes": "Utilizes Pattern 1 (Pre-defined operations) for high-safety environments and Pattern 3 (Dynamic introspection) for exploratory agents."
+  },
+  {
+    "toolName": "New York Times API",
+    "toolVendorOrProject": "The New York Times",
+    "toolVersion": "v2",
+    "description": "Public developer API for searching articles, best sellers, and archived content from the New York Times.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 1,
+      "maxAcceptableImaginaryDistance": 42.0,
+      "acceptableDirectionLabels": [
+        "Information-Retrieval",
+        "Read-Only"
+      ],
+      "requiresSeed42GroundTruthAdherence": false,
+      "consequentialOperationsExposed": [],
+      "fundamentalFailuresThatDisqualify": [
+        "Failure to handle pagination resulting in data loss",
+        "Misattribution of article metadata"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": false,
+      "stateMutability": "None (Read-only access)",
+      "blastRadius": "None"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST",
+      "schemaStandard": "Custom JSON",
+      "parameterComplexity": "Low (Simple query parameters)",
+      "payloadSizeSensitivity": "Low"
+    },
+    "authAndVerification": {
+      "authMechanism": "API Key",
+      "requiresIndependentAlarmVerification": false,
+      "humanInTheLoopRequiredForConsequentialSteps": false
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Fact checking",
+        "Market sentiment analysis",
+        "Historical research"
+      ],
+      "commonAgentFailureModes": [
+        "Exceeding article search rate limits",
+        "Hallucinating archive dates"
+      ],
+      "recoveryMechanisms": [
+        "Exponential backoff",
+        "Query parameter simplification"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": false,
+      "requiresStrictTyping": false,
+      "supportedModelFamilies": [
+        "All"
+      ]
+    },
+    "notes": "Low-risk integration suitable for agents at lower capability rungs. Focuses entirely on information retrieval without state mutation."
+  },
+  {
+    "toolName": "Google Drive API",
+    "toolVendorOrProject": "Google Cloud",
+    "toolVersion": "v3",
+    "description": "Comprehensive API for managing files and folders within Google Drive, including permission control and content indexing.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 10.0,
+      "acceptableDirectionLabels": [
+        "Filesystem-Aligned",
+        "Permission-Sensitive"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "files.delete",
+        "permissions.create",
+        "files.update"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Accidental broad permission escalation (e.g., public sharing)",
+        "Silent overwriting of critical user documents",
+        "Misinterpretation of 'trash' vs 'permanent delete'"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": false,
+      "stateMutability": "High (Cloud filesystem mutation)",
+      "blastRadius": "User Cloud Storage / Organizational Data"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST",
+      "schemaStandard": "OpenAPI / Discovery Service",
+      "parameterComplexity": "Moderate",
+      "payloadSizeSensitivity": "High (Large file uploads/downloads)"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth 2.0 (Scopes-based)",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Autonomous document organization",
+        "Automated report distribution",
+        "Cross-platform data syncing"
+      ],
+      "commonAgentFailureModes": [
+        "Token expiration during long operations",
+        "Handling shared drive vs personal drive boundaries",
+        "Improper mime-type detection"
+      ],
+      "recoveryMechanisms": [
+        "Drive Trash folder restoration",
+        "Revision history rollback",
+        "OAuth scope narrowing"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4o"
+      ]
+    },
+    "notes": "Requires strict OAuth scope management to minimize blast radius (e.g., drive.file instead of drive full access)."
+  },
+  {
+    "toolName": "DoorDash Drive/Marketplace API",
+    "toolVendorOrProject": "DoorDash",
+    "toolVersion": "v2",
+    "description": "Fulfillment and logistics API for restaurant order management and white-label delivery dispatch.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 5,
+      "maxAcceptableImaginaryDistance": 5.0,
+      "acceptableDirectionLabels": [
+        "Physical-World-Impact",
+        "Financial-Consequence"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "delivery.create",
+        "order.cancel",
+        "callback.configure"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Ordering physical goods/services to incorrect addresses",
+        "Unauthorized financial transactions via order creation",
+        "Incorrect delivery instructions leading to physical loss"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": true,
+      "stateMutability": "Critical (Financial and physical state mutation)",
+      "blastRadius": "Physical Logistics / Commercial Liability"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST",
+      "schemaStandard": "Custom JSON (Strict Validation)",
+      "parameterComplexity": "High (Requires precise geographical and payload data)",
+      "payloadSizeSensitivity": "Low"
+    },
+    "authAndVerification": {
+      "authMechanism": "JWT / OAuth2",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Autonomous order fulfillment",
+        "Real-time logistics coordination",
+        "Automated customer support dispatch"
+      ],
+      "commonAgentFailureModes": [
+        "Payload validation rejection",
+        "Miscalculating delivery window constraints",
+        "Callback URL misconfiguration"
+      ],
+      "recoveryMechanisms": [
+        "Human support handoff",
+        "Order cancellation window",
+        "Webhook status polling"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": false,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4"
+      ]
+    },
+    "notes": "DoorDash provides 'Dev Chat AI' as an enablement guide to reduce agentic integration errors by providing instant, sourced guidance on payloads."
+  },
+  {
+    "toolName": "Nx Build System / Monorepo Tooling",
+    "toolVendorOrProject": "Nrwl / Nx",
+    "toolVersion": "20.x (Agent-Optimized)",
+    "description": "Smart, fast, and extensible build system with a first-class Project Graph and MCP server integration for agentic context.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 15.0,
+      "acceptableDirectionLabels": [
+        "Workspace-Aware",
+        "Graph-Deterministic"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "nx affected",
+        "nx generate",
+        "nx release"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Circular dependency injection into the Project Graph",
+        "Bypassing module boundary lint rules",
+        "Silent workspace-wide code corruption during refactoring"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": true,
+      "stateMutability": "High (Workspace configuration and code mutation)",
+      "blastRadius": "Monorepo / CI-CD Pipeline"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "CLI / MCP Server",
+      "schemaStandard": "JSON Schema (project.json / nx.json)",
+      "parameterComplexity": "High (Complex task pipelines and generator options)",
+      "payloadSizeSensitivity": "Moderate (In-memory Project Graph access)"
+    },
+    "authAndVerification": {
+      "authMechanism": "Nx Cloud Token / Local FS Auth",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Autonomous cross-project refactoring",
+        "Self-healing CI via automated PR fixes",
+        "Architectural constraint enforcement"
+      ],
+      "commonAgentFailureModes": [
+        "Incorrect task ordering in polyglot projects",
+        "Hallucinating generator parameters",
+        "Cache poisoning via non-deterministic build inputs"
+      ],
+      "recoveryMechanisms": [
+        "Git-based workspace rollback",
+        "Nx Cloud Remote Cache invalidation",
+        "Local History inspection"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "Claude 3.5 Sonnet",
+        "GPT-4o"
+      ]
+    },
+    "notes": "Nx provides a dedicated command to provision MCP servers and skills for agents automatically."
+  },
+  {
+    "toolName": "PostgreSQL (via MCP/Vector Extensions)",
+    "toolVendorOrProject": "PostgreSQL Global Development Group / Azure / Supabase",
+    "toolVersion": "17 (LTS)",
+    "description": "Relational database with advanced vector search (pgvector) and structured tool-calling patterns via MCP.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 3,
+      "maxAcceptableImaginaryDistance": 20.0,
+      "acceptableDirectionLabels": [
+        "Schema-Safe",
+        "Acid-Compliant"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "CREATE TABLE",
+        "DROP DATABASE",
+        "GRANT/REVOKE"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Unindexed foreign key injection causing table bloat",
+        "Bypassing Row Level Security (RLS) policies",
+        "SQL injection vulnerability generation"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": null,
+      "supportsDryRunMode": true,
+      "stateMutability": "Critical (Production data mutation)",
+      "blastRadius": "Database Instance / Application Data"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "Wire Protocol (SQL) / MCP Tooling",
+      "schemaStandard": "ANSI SQL / JSONB Schema",
+      "parameterComplexity": "Moderate",
+      "payloadSizeSensitivity": "High (Large query result sets)"
+    },
+    "authAndVerification": {
+      "authMechanism": "IAM Roles / Connection Strings / SCRAM",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Natural language to SQL conversion",
+        "Vector-based RAG workflows",
+        "Schema optimization and migration"
+      ],
+      "commonAgentFailureModes": [
+        "Generating non-performant queries (e.g. Sequential Scan on large tables)",
+        "Incorrect JOIN logic leading to Cartesian products",
+        "Misinterpreting transaction isolation levels"
+      ],
+      "recoveryMechanisms": [
+        "Transaction ROLLBACK",
+        "WAL-based Point-In-Time Recovery (PITR)",
+        "Audit log replay"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4o"
+      ]
+    },
+    "notes": "PostgreSQL Database Patterns (Claude Code Skill) streamlines high-performance indexing and RLS setup."
+  },
+  {
+    "toolName": "SoundCloud API",
+    "toolVendorOrProject": "SoundCloud",
+    "toolVersion": "v2",
+    "description": "Media discovery and retrieval platform exposing track metadata, streaming, and artist analytics.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 1,
+      "maxAcceptableImaginaryDistance": 42.0,
+      "acceptableDirectionLabels": [
+        "Read-Only",
+        "Media-Compliant"
+      ],
+      "requiresSeed42GroundTruthAdherence": false,
+      "consequentialOperationsExposed": [
+        "track.upload",
+        "playlist.create"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Violating attribution requirements for uploaders",
+        "Unauthorized deletion of user playlists",
+        "Spamming track engagement metrics"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": false,
+      "stateMutability": "Low (Social/Media state mutation)",
+      "blastRadius": "User Profile / Music Catalog"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST",
+      "schemaStandard": "Custom JSON",
+      "parameterComplexity": "Low",
+      "payloadSizeSensitivity": "Moderate (Audio file streaming/uploading)"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth 2.1 (PKCE Required)",
+      "requiresIndependentAlarmVerification": false,
+      "humanInTheLoopRequiredForConsequentialSteps": false
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Music discovery and recommendation",
+        "Automated audio post-production workflows",
+        "Metadata enrichment and tagging"
+      ],
+      "commonAgentFailureModes": [
+        "Rate limit 429 errors from high-frequency search",
+        "Misinterpreting track access levels (playable vs blocked)",
+        "Hallucinating artist engagement data"
+      ],
+      "recoveryMechanisms": [
+        "Standard HTTP retry logic",
+        "Token refresh via OAuth flow",
+        "Human intervention for DMCA/Copyright flagging"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": false,
+      "requiresStrictTyping": false,
+      "supportedModelFamilies": [
+        "All"
+      ]
+    },
+    "notes": "SoundCloud now requires PKCE for secure auth code exchange in agentic integrations."
+  },
+  {
+    "toolName": "Slack API (including Agentforce)",
+    "toolVendorOrProject": "Salesforce / Slack",
+    "toolVersion": "2026.1",
+    "description": "Messaging platform for conversational agents, providing dedicated surfaces like split-view containers and MCP server access.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 3,
+      "maxAcceptableImaginaryDistance": 25.0,
+      "acceptableDirectionLabels": [
+        "Conversational-Flow",
+        "Workspace-Safe"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "chat.postMessage",
+        "admin.users.remove",
+        "canvas.edit"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Sending unauthorized private channel content to external LLMs",
+        "Infinite loops in message listener triggers",
+        "Misattribution of agent-generated responses as human-written"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": false,
+      "stateMutability": "Moderate (Social/Workspace state mutation)",
+      "blastRadius": "Enterprise Communication / Workspace Culture"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "Web API / Events API / MCP",
+      "schemaStandard": "Block Kit (JSON) / Slack API Schema",
+      "parameterComplexity": "Moderate",
+      "payloadSizeSensitivity": "Low"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth 2.0 (Scopes) / Bot Token",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "HR/IT support automation",
+        "Incident response coordination",
+        "Knowledge retrieval from historical channel data"
+      ],
+      "commonAgentFailureModes": [
+        "Token scope over-provisioning",
+        "Block Kit UI validation errors",
+        "Context loss in threaded conversations"
+      ],
+      "recoveryMechanisms": [
+        "Bot token revocation",
+        "Message deletion/tombstoning",
+        "Einstein Trust Layer filtering"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4",
+        "Claude"
+      ]
+    },
+    "notes": "The Slack MCP Server enables agents to search channels and manage canvases through any MCP-compatible client."
+  },
+  {
+    "toolName": "Netlify API / Agent Runners",
+    "toolVendorOrProject": "Netlify",
+    "toolVersion": "v1 (REST)",
+    "description": "Infrastructure-as-Code and hosting API enabling agents to ship code directly to production via automated branches.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 5,
+      "maxAcceptableImaginaryDistance": 8.0,
+      "acceptableDirectionLabels": [
+        "Production-Stable",
+        "Infrastructure-Aligned"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "site.deploy",
+        "domain.create",
+        "env.update"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Exposing production environment variables in build logs",
+        "Unauthorized deployment of non-verified code to production branch",
+        "Incorrect DNS/SSL configuration leading to downtime"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": true,
+      "stateMutability": "Critical (Infrastructure/Production mutation)",
+      "blastRadius": "Production Site / Global CDN"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST API / CLI",
+      "schemaStandard": "OpenAPI / Custom JSON",
+      "parameterComplexity": "Moderate",
+      "payloadSizeSensitivity": "High (Zip file uploads for deploys)"
+    },
+    "authAndVerification": {
+      "authMechanism": "Personal Access Token (PAT) / OAuth2",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Autonomous bug fixing and deployment",
+        "Dynamic landing page generation",
+        "Automated SSL and custom domain management"
+      ],
+      "commonAgentFailureModes": [
+        "Build failures due to incorrect dependency resolution",
+        "Redeployment loops on flaky environment variables",
+        "Exceeding build minute credits"
+      ],
+      "recoveryMechanisms": [
+        "One-click site ROLLBACK",
+        "Deploy Preview review gate",
+        "Redeploy session management"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "Claude Code",
+        "OpenAI Codex"
+      ]
+    },
+    "notes": "Netlify Agent Runners allow agents secure access to project context and deployment pipelines without extra setup."
+  }
+]

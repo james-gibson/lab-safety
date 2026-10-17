@@ -1,0 +1,13 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "orphan profile: extra-tool has no row",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "profiles/netlify-api.json",
+      "to": "profiles/extra-tool.json"
+    }
+  ]
+}

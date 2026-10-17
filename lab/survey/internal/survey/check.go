@@ -16,15 +16,6 @@ import (
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
-// mappingColumns returns the projected column names in projection order.
-func mappingColumns() []string {
-	out := make([]string, 0, len(mapping))
-	for _, f := range mapping {
-		out = append(out, f.Col)
-	}
-	return out
-}
-
 func equalStrings(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
@@ -51,47 +42,57 @@ func roundTrip(v any) (any, error) {
 	return jsonschema.UnmarshalJSON(bytes.NewReader(raw))
 }
 
-// Check runs the accuracy contract and returns one line per failure, sorted.
-// An empty result means the survey is consistent: every profile is valid, every
-// projection matches disk, and every derived metric recomputes.
+// Check runs the model survey's accuracy contract.
 func Check(root string) ([]string, error) {
-	sc, err := LoadSchemas(root)
-	if err != nil {
-		return nil, err
-	}
-	return CheckWith(sc, root)
+	return CheckDataset(Model(), root)
 }
 
 // CheckWith is Check against already-loaded schemas (used by tests).
 func CheckWith(sc *Schemas, root string) ([]string, error) {
+	return checkWith(Model(), sc, root)
+}
+
+// CheckDataset runs a dataset's accuracy contract and returns one line per
+// failure, sorted. An empty result means the survey is consistent: every
+// profile is valid, every projection matches disk, and every derived metric
+// recomputes.
+func CheckDataset(ds *Dataset, root string) ([]string, error) {
+	sc, err := LoadSchemas(root)
+	if err != nil {
+		return nil, err
+	}
+	return checkWith(ds, sc, root)
+}
+
+func checkWith(ds *Dataset, sc *Schemas, root string) ([]string, error) {
 	var fails []string
 	add := func(format string, a ...any) { fails = append(fails, fmt.Sprintf(format, a...)) }
 
-	// (1) The flat schema is the issue's 91 columns, then 5 authored
-	// provenance fields, then 4 computed metrics; and the projector covers
-	// exactly those 91. If these disagree, every later check is meaningless.
-	want := append([]string{"agent_id"}, mappingColumns()...)
-	if len(sc.Flat.Order) != 100 {
-		add("schema: %s has %d properties, want 100 (91 issue columns + 5 provenance + 4 derived)",
-			sc.Flat.Name, len(sc.Flat.Order))
+	// (1) The flat schema is the answer columns, then the authored provenance,
+	// then the computed metrics; and the projector covers exactly the answer
+	// columns. If these disagree, every later check is meaningless.
+	want := append([]string{ds.IDField}, mappingColumns(ds.Mapping)...)
+	if len(sc.Flat.Order) != ds.FlatCount {
+		add("schema: %s has %d properties, want %d (answer + 5 provenance + %d derived)",
+			sc.Flat.Name, len(sc.Flat.Order), ds.FlatCount, len(ds.DerivedKeys))
 	} else if !equalStrings(sc.Flat.Order[:len(want)], want) {
-		add("schema: %s properties[:%d] are not [agent_id] + the projection; the schema and the projector disagree",
-			sc.Flat.Name, len(want))
+		add("schema: %s properties[:%d] are not [%s] + the projection; the schema and the projector disagree",
+			sc.Flat.Name, len(want), ds.IDField)
 	}
 
 	// (2) The raw export the profiles were normalised from, and its digest.
-	knownSources, err := SourceURLs(root)
+	knownSources, err := SourceURLsAt(root, ds.SourceJSON)
 	if err != nil {
 		add("source: %v", err)
 		knownSources = nil
 	}
-	if err := SourceDigest(root); err != nil {
+	if err := SourceDigestAt(root, ds.SourceJSON, ds.SourceSHA); err != nil {
 		add("source: %v", err)
 	}
 
 	// (3) Every profile: strict decode, provenance, nested schema, projection,
 	// and the flat schema over the projected row.
-	profiles, problems, err := LoadProfiles(root)
+	profiles, problems, err := LoadProfilesWith(ds, root)
 	if err != nil {
 		return fails, err
 	}
@@ -99,7 +100,7 @@ func CheckWith(sc *Schemas, root string) ([]string, error) {
 
 	var rows []Row
 	for _, p := range profiles {
-		fails = append(fails, p.CheckProvenance(knownSources)...)
+		fails = append(fails, p.CheckProvenanceWith(ds, knownSources)...)
 
 		inst, err := roundTrip(p.Answer)
 		if err != nil {
@@ -110,7 +111,7 @@ func CheckWith(sc *Schemas, root string) ([]string, error) {
 			add("schema: %s answer fails %s: %s", p.AgentID, sc.Nested.Name, oneLine(err))
 			continue
 		}
-		row, err := Project(sc, p)
+		row, err := ProjectWith(ds, sc, p)
 		if err != nil {
 			add("projection: %v", err)
 			continue
@@ -121,59 +122,51 @@ func CheckWith(sc *Schemas, root string) ([]string, error) {
 		rows = append(rows, row)
 	}
 
-	// (4) The artifacts on disk: header, duplicates, orphans, encoding, and
-	// an independent recompute of the derived metrics from the CSV itself.
-	disk, header, err := readCSV(filepath.Join(root, CSVPath))
+	// (4) The artifacts on disk: header, duplicates, orphans, encoding, and an
+	// independent recompute of the derived metrics from the CSV itself.
+	disk, header, err := readCSV(filepath.Join(root, ds.CSVPath))
 	if err != nil {
-		add("drift: %s: %v", CSVPath, err)
+		add("drift: %s: %v", ds.CSVPath, err)
 	} else {
 		if !equalStrings(header, sc.Flat.Order) {
-			add("header: %s header is not %s's properties in order", CSVPath, sc.Flat.Name)
+			add("header: %s header is not %s's properties in order", ds.CSVPath, sc.Flat.Name)
 		}
 		seen := map[string]bool{}
 		for _, r := range disk {
-			id := r["agent_id"]
+			id := r[ds.IDField]
 			if seen[id] {
-				add("duplicate agent_id: %s has %q twice", CSVPath, id)
+				add("duplicate %s: %s has %q twice", ds.IDField, ds.CSVPath, id)
 			}
 			seen[id] = true
-			fails = append(fails, checkEncoding(sc, id, r)...)
-			d := Derive(r)
-			for k, got := range map[string]string{
-				"mcp_ready":        strconv.FormatBool(d.MCPReady),
-				"autonomous_ready": strconv.FormatBool(d.AutonomousReady),
-				"production_grade": strconv.FormatBool(d.ProductionGrade),
-			} {
-				if r[k] != got {
-					add("derived: %s %s is %q, recomputed from the row: %q", id, k, r[k], got)
+			fails = append(fails, checkEncoding(ds, sc, id, r)...)
+			d := ds.Derive(r)
+			for _, k := range ds.DerivedKeys {
+				if r[k] != d[k] {
+					add("derived: %s %s is %q, recomputed from the row: %q", id, k, r[k], d[k])
 				}
-			}
-			if r["strictness_score"] != strconv.Itoa(d.StrictnessScore) {
-				add("derived: %s strictness_score is %q, recomputed from the row: %d",
-					id, r["strictness_score"], d.StrictnessScore)
 			}
 		}
 		profIDs := map[string]bool{}
 		for _, p := range profiles {
 			profIDs[p.AgentID] = true
 			if !seen[p.AgentID] {
-				add("orphan profile: %s has no row in %s", p.AgentID, CSVPath)
+				add("orphan profile: %s has no row in %s", p.AgentID, ds.CSVPath)
 			}
 		}
 		for id := range seen {
 			if !profIDs[id] {
-				add("orphan row: %s has %q with no profile", CSVPath, id)
+				add("orphan row: %s has %q with no profile", ds.CSVPath, id)
 			}
 		}
 	}
 
-	// (5) The three generated artifacts must equal their projections, byte for
-	// byte. This is what makes the profiles the source of truth.
-	art, err := Artifacts(sc, rows)
+	// (5) The generated artifacts must equal their projections, byte for byte.
+	// This is what makes the profiles the source of truth.
+	art, err := ArtifactsWith(ds, sc, rows)
 	if err != nil {
 		add("render: %v", err)
 	}
-	for _, path := range []string{CSVPath, FeaturePath} {
+	for _, path := range []string{ds.CSVPath, ds.FeaturePath} {
 		got, err := os.ReadFile(filepath.Join(root, path))
 		if err != nil {
 			add("drift: %s: %v", path, err)
@@ -183,25 +176,25 @@ func CheckWith(sc *Schemas, root string) ([]string, error) {
 			add("drift: %s differs from the projection — run `survey --render`", path)
 		}
 	}
-	summary, err := RenderSummary(sc, rows)
+	summary, err := RenderSummaryWith(ds, sc, rows)
 	if err != nil {
 		add("render: %v", err)
-	} else if readme, err := os.ReadFile(filepath.Join(root, ReadmePath)); err != nil {
-		add("drift: %s: %v", ReadmePath, err)
-	} else if wantReadme, err := ApplySummary(readme, summary); err != nil {
-		add("drift: %s: %v", ReadmePath, err)
+	} else if readme, err := os.ReadFile(filepath.Join(root, ds.ReadmePath)); err != nil {
+		add("drift: %s: %v", ds.ReadmePath, err)
+	} else if wantReadme, err := ApplySummaryWith(ds, readme, summary); err != nil {
+		add("drift: %s: %v", ds.ReadmePath, err)
 	} else if !bytes.Equal(readme, wantReadme) {
-		add("drift: %s summary region differs from the projection — run `survey --render`", ReadmePath)
+		add("drift: %s summary region differs from the projection — run `survey --render`", ds.ReadmePath)
 	}
 
 	// (6) The generated spec must be a spec the canonicaliser can read: a
 	// projection that canonicalises to nothing would sign nothing.
-	if feat, err := os.ReadFile(filepath.Join(root, FeaturePath)); err != nil {
+	if feat, err := os.ReadFile(filepath.Join(root, ds.FeaturePath)); err != nil {
 		add("feature: %v", err)
 	} else if ast, err := isotope.ParseGherkin(string(feat)); err != nil {
-		add("feature: %s does not parse: %v", FeaturePath, err)
+		add("feature: %s does not parse: %v", ds.FeaturePath, err)
 	} else if n := len(ast.Canonicalize()); n == 0 {
-		add("feature: %s canonicalises to zero tokens (the projection carries no data)", FeaturePath)
+		add("feature: %s canonicalises to zero tokens (the projection carries no data)", ds.FeaturePath)
 	}
 
 	sort.Strings(fails)
@@ -218,10 +211,10 @@ func validateFlat(sc *Schemas, row Row) error {
 
 // checkEncoding enforces the cell conventions the schema cannot: no spaces
 // around a pipe, pipe-lists of vocabulary values, and integer code lists.
-func checkEncoding(sc *Schemas, id string, row map[string]string) []string {
+func checkEncoding(ds *Dataset, sc *Schemas, id string, row map[string]string) []string {
 	var out []string
 	kinds := map[string]kind{}
-	for _, f := range mapping {
+	for _, f := range ds.Mapping {
 		kinds[f.Col] = f.Kind
 	}
 	for col, cell := range row {
@@ -229,7 +222,7 @@ func checkEncoding(sc *Schemas, id string, row map[string]string) []string {
 			out = append(out, fmt.Sprintf("encoding: %s %s=%q has a space around a pipe", id, col, cell))
 		}
 		switch kinds[col] {
-		case kList:
+		case kList, kMappedList:
 			if info := sc.Flat.Props[col]; len(info.Enum) > 0 {
 				for _, part := range strings.Split(cell, "|") {
 					if part == "" {
@@ -263,7 +256,7 @@ func contains(list []string, v string) bool {
 	return false
 }
 
-// readCSV reads models.csv into rows keyed by column, with the header.
+// readCSV reads a generated CSV into rows keyed by column, with the header.
 func readCSV(path string) ([]map[string]string, []string, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -295,9 +288,14 @@ func readCSV(path string) ([]map[string]string, []string, error) {
 	return rows, header, nil
 }
 
-// Stale lists profiles whose review_by falls before as-of.
+// Stale lists the model survey's profiles whose review_by falls before as-of.
 func Stale(root string, asOf time.Time) ([]string, error) {
-	profiles, _, err := LoadProfiles(root)
+	return StaleDataset(Model(), root, asOf)
+}
+
+// StaleDataset lists a dataset's profiles whose review_by falls before as-of.
+func StaleDataset(ds *Dataset, root string, asOf time.Time) ([]string, error) {
+	profiles, _, err := LoadProfilesWith(ds, root)
 	if err != nil {
 		return nil, err
 	}
@@ -317,22 +315,28 @@ func Stale(root string, asOf time.Time) ([]string, error) {
 	return out, nil
 }
 
-// Render validates every profile, then writes models.csv, survey.feature and
-// the README summary region atomically. It refuses to write if any profile is
-// invalid: a projection of an invalid observation is not worth committing.
+// Render validates the model survey's profiles, then writes its artifacts.
 func Render(root string) ([]string, error) {
+	return RenderDataset(Model(), root)
+}
+
+// RenderDataset validates every profile, then writes models.csv/tools.csv, the
+// feature and the README summary region atomically. It refuses to write if any
+// profile is invalid: a projection of an invalid observation is not worth
+// committing.
+func RenderDataset(ds *Dataset, root string) ([]string, error) {
 	sc, err := LoadSchemas(root)
 	if err != nil {
 		return nil, err
 	}
-	profiles, problems, err := LoadProfiles(root)
+	profiles, problems, err := LoadProfilesWith(ds, root)
 	if err != nil {
 		return nil, err
 	}
 	fails := append([]string(nil), problems...)
 	var rows []Row
 	for _, p := range profiles {
-		fails = append(fails, p.CheckProvenance(nil)...)
+		fails = append(fails, p.CheckProvenanceWith(ds, nil)...)
 		inst, err := roundTrip(p.Answer)
 		if err != nil {
 			fails = append(fails, fmt.Sprintf("schema: %s answer is not JSON: %v", p.AgentID, err))
@@ -342,7 +346,7 @@ func Render(root string) ([]string, error) {
 			fails = append(fails, fmt.Sprintf("schema: %s answer fails %s: %s", p.AgentID, sc.Nested.Name, oneLine(err)))
 			continue
 		}
-		row, err := Project(sc, p)
+		row, err := ProjectWith(ds, sc, p)
 		if err != nil {
 			fails = append(fails, fmt.Sprintf("projection: %v", err))
 			continue
@@ -362,27 +366,27 @@ func Render(root string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	feature, err := RenderFeature(sc, rows)
+	feature, err := RenderFeatureWith(ds, sc, rows)
 	if err != nil {
 		return nil, err
 	}
-	summary, err := RenderSummary(sc, rows)
+	summary, err := RenderSummaryWith(ds, sc, rows)
 	if err != nil {
 		return nil, err
 	}
-	readmePath := filepath.Join(root, ReadmePath)
+	readmePath := filepath.Join(root, ds.ReadmePath)
 	readme, err := os.ReadFile(readmePath)
 	if err != nil {
 		return nil, err
 	}
-	newReadme, err := ApplySummary(readme, summary)
+	newReadme, err := ApplySummaryWith(ds, readme, summary)
 	if err != nil {
 		return nil, err
 	}
 	for path, body := range map[string][]byte{
-		filepath.Join(root, CSVPath):     csvBytes,
-		filepath.Join(root, FeaturePath): feature,
-		readmePath:                       newReadme,
+		filepath.Join(root, ds.CSVPath):     csvBytes,
+		filepath.Join(root, ds.FeaturePath): feature,
+		readmePath:                          newReadme,
 	} {
 		if err := writeAtomic(path, body); err != nil {
 			return nil, err

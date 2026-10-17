@@ -1,0 +1,78 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315205696",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "Slack API (including Agentforce)",
+    "toolVendorOrProject": "Salesforce / Slack",
+    "toolVersion": "2026.1",
+    "description": "Messaging platform for conversational agents, providing dedicated surfaces like split-view containers and MCP server access.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 3,
+      "maxAcceptableImaginaryDistance": 25.0,
+      "acceptableDirectionLabels": [
+        "Conversational-Flow",
+        "Workspace-Safe"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "chat.postMessage",
+        "admin.users.remove",
+        "canvas.edit"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Sending unauthorized private channel content to external LLMs",
+        "Infinite loops in message listener triggers",
+        "Misattribution of agent-generated responses as human-written"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": false,
+      "stateMutability": "Moderate (Social/Workspace state mutation)",
+      "blastRadius": "Enterprise Communication / Workspace Culture"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "Web API / Events API / MCP",
+      "schemaStandard": "Block Kit (JSON) / Slack API Schema",
+      "parameterComplexity": "Moderate",
+      "payloadSizeSensitivity": "Low"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth 2.0 (Scopes) / Bot Token",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "HR/IT support automation",
+        "Incident response coordination",
+        "Knowledge retrieval from historical channel data"
+      ],
+      "commonAgentFailureModes": [
+        "Token scope over-provisioning",
+        "Block Kit UI validation errors",
+        "Context loss in threaded conversations"
+      ],
+      "recoveryMechanisms": [
+        "Bot token revocation",
+        "Message deletion/tombstoning",
+        "Einstein Trust Layer filtering"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4",
+        "Claude"
+      ]
+    },
+    "notes": "The Slack MCP Server enables agents to search channels and manage canvases through any MCP-compatible client."
+  }
+}

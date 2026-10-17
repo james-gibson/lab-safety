@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "canonicalises to zero tokens",
+  "ops": [
+    {
+      "kind": "rawReplace",
+      "file": "tools.feature",
+      "find": "Feature: Tool survey",
+      "text": "Note: Tool survey"
+    }
+  ]
+}

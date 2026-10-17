@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "authors mcp_ready",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/vs-code-extension-api.json",
+      "path": "answer.mcp_ready",
+      "value": true
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315205696",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "SoundCloud API",
+    "toolVendorOrProject": "SoundCloud",
+    "toolVersion": "v2",
+    "description": "Media discovery and retrieval platform exposing track metadata, streaming, and artist analytics.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 1,
+      "maxAcceptableImaginaryDistance": 42.0,
+      "acceptableDirectionLabels": [
+        "Read-Only",
+        "Media-Compliant"
+      ],
+      "requiresSeed42GroundTruthAdherence": false,
+      "consequentialOperationsExposed": [
+        "track.upload",
+        "playlist.create"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Violating attribution requirements for uploaders",
+        "Unauthorized deletion of user playlists",
+        "Spamming track engagement metrics"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": false,
+      "stateMutability": "Low (Social/Media state mutation)",
+      "blastRadius": "User Profile / Music Catalog"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST",
+      "schemaStandard": "Custom JSON",
+      "parameterComplexity": "Low",
+      "payloadSizeSensitivity": "Moderate (Audio file streaming/uploading)"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth 2.1 (PKCE Required)",
+      "requiresIndependentAlarmVerification": false,
+      "humanInTheLoopRequiredForConsequentialSteps": false
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Music discovery and recommendation",
+        "Automated audio post-production workflows",
+        "Metadata enrichment and tagging"
+      ],
+      "commonAgentFailureModes": [
+        "Rate limit 429 errors from high-frequency search",
+        "Misinterpreting track access levels (playable vs blocked)",
+        "Hallucinating artist engagement data"
+      ],
+      "recoveryMechanisms": [
+        "Standard HTTP retry logic",
+        "Token refresh via OAuth flow",
+        "Human intervention for DMCA/Copyright flagging"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": false,
+      "requiresStrictTyping": false,
+      "supportedModelFamilies": [
+        "All"
+      ]
+    },
+    "notes": "SoundCloud now requires PKCE for secure auth code exchange in agentic integrations."
+  }
+}

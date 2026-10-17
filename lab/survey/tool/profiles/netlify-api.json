@@ -1,0 +1,78 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315205696",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "Netlify API / Agent Runners",
+    "toolVendorOrProject": "Netlify",
+    "toolVersion": "v1 (REST)",
+    "description": "Infrastructure-as-Code and hosting API enabling agents to ship code directly to production via automated branches.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 5,
+      "maxAcceptableImaginaryDistance": 8.0,
+      "acceptableDirectionLabels": [
+        "Production-Stable",
+        "Infrastructure-Aligned"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "site.deploy",
+        "domain.create",
+        "env.update"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Exposing production environment variables in build logs",
+        "Unauthorized deployment of non-verified code to production branch",
+        "Incorrect DNS/SSL configuration leading to downtime"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": true,
+      "stateMutability": "Critical (Infrastructure/Production mutation)",
+      "blastRadius": "Production Site / Global CDN"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST API / CLI",
+      "schemaStandard": "OpenAPI / Custom JSON",
+      "parameterComplexity": "Moderate",
+      "payloadSizeSensitivity": "High (Zip file uploads for deploys)"
+    },
+    "authAndVerification": {
+      "authMechanism": "Personal Access Token (PAT) / OAuth2",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Autonomous bug fixing and deployment",
+        "Dynamic landing page generation",
+        "Automated SSL and custom domain management"
+      ],
+      "commonAgentFailureModes": [
+        "Build failures due to incorrect dependency resolution",
+        "Redeployment loops on flaky environment variables",
+        "Exceeding build minute credits"
+      ],
+      "recoveryMechanisms": [
+        "One-click site ROLLBACK",
+        "Deploy Preview review gate",
+        "Redeploy session management"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "Claude Code",
+        "OpenAI Codex"
+      ]
+    },
+    "notes": "Netlify Agent Runners allow agents secure access to project context and deployment pipelines without extra setup."
+  }
+}
