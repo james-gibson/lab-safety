@@ -5,42 +5,44 @@
 @domain-workspace-vfs
 Feature: Workspace VFS — the session filesystem
 
-  Every session is given its own filesystem, and that filesystem is its origin.
-  This file defines the *roots*: where a session starts, where it originates, and
-  what it defines at its root. The conventions *inside* the root are
-  minimal.feature §1; this file says what "/" and "~/" are.
+  The metaphor: **a session is the root filesystem**, and all unix assumptions
+  apply. "/" *is* the session. "~/" is a home directory **under** "/" — it is not
+  "/" itself. Paths are absolute, and "/" is the top. And, as on unix, two trees
+  can be joined at a mount point, so **sessions may share** paths.
 
-  The isolation is **structural**, not a permission check: a session cannot see a
-  parent because there is no path above its own root — not because a rule refuses
-  it. A rule can be misconfigured; a root cannot be walked out of.
+  This file defines the roots. The conventions *inside* the root are
+  minimal.feature §1.
 
   Background:
     Given a session "42"
 
-  Rule: a session originates as "/"
+  Rule: a session is the root, and unix assumptions apply
     # slow: a second, independent session cannot see the first's paths (rung 3)
 
-    Scenario: the session's root is its own
-      Then the session's root is "/"
+    Scenario: the session is "/"
+      Then the session is "/"
+      And "/" is the session's own root
       And there is no parent above "/"
-      And "/" is the session's own root, not a shared or host root
+      And paths are absolute, and "/" is the top
 
     Scenario: a path above the root does not resolve
       When the session requests "/.."
       Then the request is refused
       And it does not reach any path outside the session's own root
 
-  Rule: a session starts in its home, "~/"
+  Rule: a session's home is under the root
+    # slow: the same home re-read through the sqlite driver (rung 1)
 
-    Scenario: the session's home is its origin
+    Scenario: the home is a directory under "/", not "/" itself
       Then the session's home is "~/"
+      And "~/" is under "/"
+      And "~/" is not "/"
       And the session starts in "~/"
-      And "~/" and "/" name the same place
 
-    Scenario: a path under the home is a path under the root
-      When the session reads "~/state"
-      Then it reads "/state"
-      And the two name one path
+    Scenario: the home is a normal unix home
+      Given the session's home "/root"
+      Then its parent is "/"
+      And "~" is a home directory, not a mount of the root
 
   Rule: the session's data, state and MCP tools are defined in "/"
     # slow: the same definitions re-read through the sqlite driver (rung 1)
@@ -53,8 +55,7 @@ Feature: Workspace VFS — the session filesystem
 
     Scenario: the definitions sit in the root, and are the session's own
       Then "/data", "/state" and "/tools" are the session's definitions
-      And no definition lives above "/"
-      And no definition is shared with another session
+      And no definition lives outside "/"
 
     Scenario: the root is the container, not a definition
       Then "/" holds the session's definitions
@@ -66,23 +67,31 @@ Feature: Workspace VFS — the session filesystem
     Scenario: a child session originates at its own "/"
       Given the parent session "42"
       When a child session originates beneath "42"
-      Then the child's root is "/"
+      Then the child is "/"
       And the child's "~/" is the child's own home
       And the child cannot see any path of the parent
 
-    Scenario: the parent is not reachable from the child
+  Rule: sessions may share
+    # slow: consensus across independent sessions (rung 3)
+
+    Scenario: two sessions may share a path
+      Given the sessions "42" and "43"
+      When a path of "42" is joined into "43"
+      Then "43" reads the same path
+      And the sharing is a join at a mount point, not a parent-relative path
+
+    Scenario: sharing is explicit, not inherited
       Given a child session of "42"
-      When the child requests the parent's "/data"
-      Then the request is refused
-      And the parent is not listed to the child
+      Then it does not see the parent's paths by default
+      And a shared path must be joined, not assumed
 
   Rule: the two hosts present the same filesystem
     # slow: the Phase-0 suite passes unchanged on the sqlite host (rung 1)
 
     Scenario Outline: the roots are host-independent
       Given the session on the "<host>" host
-      Then the session's root is "/"
-      And the session's home is "~/"
+      Then the session is "/"
+      And the session's home is under "/"
       And "/data", "/state" and "/tools" are defined
 
       Examples:

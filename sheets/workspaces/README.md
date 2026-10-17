@@ -250,12 +250,13 @@ adopted, verified}.
 | A12 | the sqlite **mirror** holds isotope records | dual-write spike (one writer, both stores) | two-invariant cross-check; independence is **positional** (spec + protocol read), not a second writer |
 | A13 | the prototype runs a **single session** (`42`) | the run opens `42.wsdb` once | a second session's isolation (rung 3) — **deferred; multi-session is out of scope** |
 
-**Note — the roots vs. Rule §4.** [`filesystem.feature`](filesystem.feature) roots every
-session at `/` so a **child session cannot see a parent**. `minimal.feature` §4 has a
-*descendant* (an agent added beneath a session) **gaining that session's access**. These
-agree only if "descendant" means *within one session*, and a *child session* is a new
-namespace with its own root. If a child session is meant to inherit the parent's paths,
-the two rules conflict and one must move.
+**Note — the roots vs. Rule §4.** [`filesystem.feature`](filesystem.feature): a session
+**is** the root (`/`); `~/` is a home directory **under** it, not `/` itself; and — unix
+assumptions — **sessions may share** a path by an explicit join. That resolves §4: a
+*descendant* (an agent added beneath a session) **gaining that session's access** is a
+*join*, not inheritance; and a child session sees nothing of its parent *by default*. If
+a child session is instead meant to *inherit* the parent's paths automatically, the two
+conflict and one must move.
 
 ## §5 The plan (condensed, so it does not get lost)
 
@@ -315,5 +316,5 @@ named cost. Do not invent around a gap; report the gap. See `standards.feature`
 - Priming script (step 1): [`lab/workspaces/spike.sh`](../../lab/workspaces/spike.sh).
 - Dual-write client (Phase 1): [`lab/workspaces/`](../../lab/workspaces/) — a Go
   module (`go test ./...`).
-- Roots: [`filesystem.feature`](filesystem.feature) — "/" and "~/" per session, and
-  the structural isolation of a child session.
+- Roots: [`filesystem.feature`](filesystem.feature) — a session **is** the root (`/`),
+  its home `~/` is under it, and sessions may **share** a path by an explicit join.
