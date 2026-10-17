@@ -673,7 +673,52 @@ plainly: **shed rather than queue** — 429 with `Retry-After` is the standard f
 **admission** failure into a **latency** failure, and latency is the promise this model never
 made (§6). Bounding the door is what lets it keep not making it.
 
-## 12. What the client sees
+## 12. Routing, the BGP way
+
+The isotope pattern does not invent a routing scheme: it leans on **BGP practice** — thirty-five
+years of routing between parties that do not fully trust each other, under policy, **over
+time** (RFC 4271). Adopting it is the same discipline as everywhere else here: a standard with
+tooling and a documented failure history beats a fresh scheme. And it comes with a bonus —
+**BGP's known holes are as useful as its practices**, because they name what to add.
+
+| BGP practice | the isotope pattern |
+| --- | --- |
+| **path vector, not distance vector** — a router rejects a route whose `AS_PATH` contains its own AS | the isotope carries the **path**, so a route containing the node is rejected: loops are structural, not policed |
+| an advertisement is **reachability, not authority** | presence (mDNS: *I am here*) and authority (isotope records: *I am authorized to this degree*) are announced separately — *holding an isotope is not reachability* |
+| selection is **local policy**, not shortest path | the rung and the treatment are policy decisions; a cheaper route is an improvement, and the improvement is the reward (§7) |
+| **communities** — metadata a peer acts on by policy without knowing the advertiser (RFC 1997) | the **declared feature combination**, from which the isotope is derived: a tag acted on without knowing who sent it |
+| **route dampening** (RFC 2439) — a flapping route accrues a decaying penalty and is *suppressed*, not deleted | the measure over time: a flapping member is **suppressed**, not banned — rung 4's flakiness and regression, and *"an alarm that never resolves is … deprioritized"* |
+| **withdrawal** | self-demotion: *"It requires no instruction; it removes itself."* |
+| **graceful restart** (RFC 4724) — forwarding state survives the restart | pre-negotiated failover: the peer already holds the mirrored traffic, so the switch is a role swap rather than a cold start |
+| **route reflection** (RFC 4456) — no full mesh required | recursive sub-clusters: a sub-cluster is a node to its parent and a cluster to its members |
+| **hold timer / keepalive** | **not adopted — and it is the filed gap**: *a name is not a heartbeat* (smoke-alarm#35) |
+| origin validation is BGP's **known hole** (RPKI, RFC 6480; BGPsec, RFC 8205) | the isotope is canonicalised and **re-derived** rather than trusted, so a hijacked advertisement is *detectable* — the signature BGP never had |
+
+**Dampening is the one worth pausing on**, because it is the standard practice that already
+matches the model's most counter-intuitive behaviour. A flapping route is not refused: it is
+**suppressed on a penalty that decays over time**, and it returns as the penalty decays. That
+is §6's permissiveness with a mechanism attached, §7's answer to timing-gaming (a boundary
+optimiser shows up as variance), and the reason the model can be agreeable without being
+naive. **Nothing is banned; the record over time does the work.**
+
+**And the cluster can shed load to peers.** §11 bounded the door, so the answer to more traffic
+is another door — and a peer *is* another door, reached by an advertisement rather than by
+configuration. An overloaded node hands arrivals to a peer, the peer applies its own policy
+(which is what peering *means*), and the tap records the shift, so the shedding is auditable
+rather than invisible. Two properties are worth naming: it is still **shedding, not queueing**
+— the arrival goes to a door with width, not to a buffer (§11) — and it is
+**policy-symmetric**, because the node that sheds does not decide for the peer. It advertises
+and lets the peer's policy answer, which is the same *names, not authority* split as everywhere
+else here.
+
+**Named cost.** BGP converges slowly, and by **path exploration**: it transiently advertises
+routes it will withdraw (Labovitz, Malan & Jahanian, *Delayed Internet Routing Convergence*,
+SIGCOMM 2000). A cluster on a tick inherits that shape, so convergence is a property *over
+time* rather than an instant — which is why the ledger (rung 4) is what makes the routing
+state readable, and why a route's **history** belongs in its score rather than in a footnote
+to it.
+
+## 13. What the client sees
 
 | client | what it gets |
 | --- | --- |

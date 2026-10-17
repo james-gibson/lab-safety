@@ -354,7 +354,10 @@ The dashboard service proxies upstream tools and renames them (one tool appears 
   path, find a cheaper route for a task, and update the cluster's routing tables.
   This is the legitimate form of exploration: it produces an improvement and is
   shared. Exploration with a plan is optimization; exploration without one is the
-  signal.
+  signal. The routing follows **BGP practice** — path vectors (so a route cannot
+  contain itself), local policy over shortest path, communities as the declared
+  combination, dampening for a flapping route, and peers that can be handed load
+  ([`SPLASH-SLA.md`](SPLASH-SLA.md) §12).
 - **Masking.** A participant may encapsulate one request within another. Since
   logging is deployment-specific (see *Audit and logging*), the log need not
   resolve a masked request. Masking is what allows routing discovery to occur
