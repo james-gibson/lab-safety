@@ -38,7 +38,7 @@ Consequences, stated plainly:
    claim by the caller. The asymmetry is deliberate and load-bearing: a self-report
    can only move standing **down**, never up, so the honest strategy is weakly
    dominant and no claim ever has to be believed
-   ([`SPLASH-SLA.md`](SPLASH-SLA.md) §9).
+   ([`SLA.md`](SLA.md) §9).
 
 ## Enrollment and one-time credentials
 
@@ -247,7 +247,7 @@ determined.
     bandwidth means more ingress nodes, not a larger one. A doorway has a width, so
     the answer to more traffic is another doorway — the bound is *per door*, and
     nothing is promised about a single point
-    ([`SPLASH-SLA.md`](SPLASH-SLA.md) §11). The tick has a second
+    ([`SLA.md`](SLA.md) §11). The tick has a second
     function: it **consumes the one-time credentials** (see *Entry*), without which
     they would be replayable and the burst would return.
   - **The alignment is a deliberate queueing cost.** Synchronised arrivals are a
@@ -256,12 +256,12 @@ determined.
     trades queueing for predictability, and the horizontal-capacity rule above is what
     pays for it. It is also why **an SLA and the tick pull in opposite directions**: a
     latency promise fights the alignment it synchronises
-    ([`SPLASH-SLA.md`](SPLASH-SLA.md) §6). And a herd is a **correlation generator** —
+    ([`SLA.md`](SLA.md) §6). And a herd is a **correlation generator** —
     callers who share their moment share their failures, which is the one term redundancy
     cannot reduce ([math.md](../sheets/workspaces/math.md) §5). It also synchronises
     *susceptibility*, and herd immunity is bought by asynchrony — which is why
     verification stays **staggered** (an *idle* sibling verifies a *busy* node) even though
-    the credentials are aligned ([`SPLASH-SLA.md`](SPLASH-SLA.md) §6).
+    the credentials are aligned ([`SLA.md`](SLA.md) §6).
   - It has a **third** function: it is the **window the consumption filter slides on**.
     The filter holds the isotopes consumed in *one* tick, so the tick's length *is* the
     dedupe window — and must therefore exceed a caller's retry interval, or a retry
@@ -278,7 +278,7 @@ determined.
   path is standard (HTTP 429 and Retry-After, RFC 9110 §15.5.4/§10.2.3). The
   worked example is `rm -rf /` — nearly never useful, genuinely right in a handful
   of cases, and therefore *routed* rather than banned or silently permitted
-  ([`SPLASH-SLA.md`](SPLASH-SLA.md) §9).
+  ([`SLA.md`](SLA.md) §9).
 - **Contributed resources.** A participant may contribute capacity rather than
   consume it, so the marginal cost of an additional participant is carried by that
   participant. This is the horizontal-scaling rule applied to compute.
@@ -357,7 +357,7 @@ The dashboard service proxies upstream tools and renames them (one tool appears 
   signal. The routing follows **BGP practice** — path vectors (so a route cannot
   contain itself), local policy over shortest path, communities as the declared
   combination, dampening for a flapping route, and peers that can be handed load
-  ([`SPLASH-SLA.md`](SPLASH-SLA.md) §12).
+  ([`SLA.md`](SLA.md) §12).
 - **Masking.** A participant may encapsulate one request within another. Since
   logging is deployment-specific (see *Audit and logging*), the log need not
   resolve a masked request. Masking is what allows routing discovery to occur
@@ -709,7 +709,7 @@ the record rather than held as somebody's grudge. The village that came the firs
 was never the boy's punishment; **his standing was spent**, and the third call found nobody
 coming. Here that is the incentive in full: the cluster *is* the motivation not to cry wolf
 — herd immunity's free-rider problem, answered by measurement rather than by refusal
-([`SPLASH-SLA.md`](SPLASH-SLA.md) §6).
+([`SLA.md`](SLA.md) §6).
 
 ### Metering
 
@@ -842,7 +842,7 @@ point). The caller does not declare its rung and is not told a field was omitted
 Filtering without announcing it is also why the **reply** is closure rather than refusal:
 an answer in the shape of success teaches the caller nothing and does not invite a retry,
 whereas a refusal is information — it confirms a boundary and the thing behind it.
-**Closure terminates the loop; ambiguity feeds it** ([`SPLASH-SLA.md`](SPLASH-SLA.md) §10).
+**Closure terminates the loop; ambiguity feeds it** ([`SLA.md`](SLA.md) §10).
 
 Failure weights quantise the distance. They differ in taxonomy but share one
 coordinate — departure from nominal at a point in linear time:

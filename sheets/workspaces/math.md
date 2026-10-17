@@ -134,7 +134,7 @@ P(≥2 delivered) = 1 - (1-q)^k - k·q·(1-q)^(k-1)     // the duplicates you bu
 which is at-least-once semantics in one line — and in a file-backed model a duplicate is
 a **second identical write**. The lab's answer is designed, and it is **not** per-tool
 idempotence: the **consumption filter** (`SPLASH.md` → *The consumption filter*;
-[`../../lab/SPLASH-SLA.md`](../../lab/SPLASH-SLA.md) §3) makes the isotope single-use, so
+[`../../lab/SLA.md`](../../lab/SLA.md) §3) makes the isotope single-use, so
 a repeat is filtered *before* it becomes an effect and the retry is safe by
 construction. That is the model's answer — designed in `SPLASH.md`, **not yet exercised
 in the spike**, which has the isotope record but no filter. What it costs depends on

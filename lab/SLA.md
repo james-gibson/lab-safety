@@ -1,10 +1,16 @@
-# SLA vs Lab-safety(SLA)
+# SLA vs Lab-safety(SLA) — the mechanisms
 
 **Same wire. A different set of exposed failure modes — and a different thing being
 promised.**
 
-This is the second splash page. [`SPLASH.md`](SPLASH.md) states the trust model; this page
-compares a **service-level agreement** with **lab-safety applied to the same concept** —
+This is the **mechanisms** document, not the join artifact: it is long because an argument has
+to be. The artifact a participant must be able to read **at once** is [`JOIN.md`](JOIN.md) —
+the join decision — and the rule that separates the two is in its first section: **if a
+participant cannot see the pattern at once, it cannot agree to join.** The trust model is
+[`SPLASH.md`](SPLASH.md); the loss mathematics is
+[`../sheets/workspaces/math.md`](../sheets/workspaces/math.md).
+
+It compares a **service-level agreement** with **lab-safety applied to the same concept** —
 `Lab-safety(SLA)` — and says which default failure modes each one leaves exposed.
 
 The two are not the same kind of thing, which is the point. An SLA promises each caller a
@@ -558,7 +564,8 @@ the host.
 
 **The pitch, then, is a list of questions rather than a claim** — every one of them
 answerable for your own deployment, in public, without taking anyone's word for it (§5,
-*the basis is verifiable, not asserted*):
+*the basis is verifiable, not asserted*). The canonical list, as the **join decision**, is in
+[`JOIN.md`](JOIN.md) — where it has to be, because that page must be readable at once:
 
 1. Can a **member demote itself** — and can its own report ever *raise* its standing?
 2. Can a **credential be replayed**, and does the second attempt fail *visibly*?
