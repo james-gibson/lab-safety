@@ -73,6 +73,16 @@ of nothing.
 Rows 12 and 13 are the point of the page's title. **With the cluster, a few remain** —
 and they are named rather than rounded away.
 
+**Status, so the table is not read as shipped.** Each row says what the *model*
+covers. Two things are demonstrated in the lab today: the **declared-vs-advertised**
+comparison (row 13, verified live on both hosts), and the **spec adherence** of §4 (a
+surface answering the specification's handshake, with its refusal in the reserved
+error range). The workspace spike also has the **isotope record** that rows 2 and 8
+lean on — bound to the spec's isotope and re-derived by the check rather than trusted.
+The rest — the tick, one-time credentials, the consumption filter, the rungs, failover,
+and mDNS presence — is the design in [`SPLASH.md`](SPLASH.md), not yet exercised here.
+Where a row reads "covered", read **covered by the model**.
+
 ## 3. Idempotence: why the delivery gap had to be prepared first
 
 Row 3 is worth its own section, because it is where the layer earns the right to retry —

@@ -132,13 +132,15 @@ P(≥2 delivered) = 1 - (1-q)^k - k·q·(1-q)^(k-1)     // the duplicates you bu
 ```
 
 which is at-least-once semantics in one line — and in a file-backed model a duplicate is
-a **second identical write**. The lab does **not** leave that to per-tool idempotence:
-the **consumption filter** (`SPLASH.md` → *The consumption filter*; [`../../lab/SPLASH-MCP.md`](../../lab/SPLASH-MCP.md) §3)
-makes the isotope single-use, so a repeat is filtered *before* it becomes an effect and
-the retry is safe by construction. What that costs is a Bloom **false positive** — a
-legitimate first use suppressed — which is deliberately the liveness direction rather
-than the silent-corruption one. The residual is that the filter's rate is unmeasured
-(§7), not that the mechanism is missing.
+a **second identical write**. The lab's answer is designed, and it is **not** per-tool
+idempotence: the **consumption filter** (`SPLASH.md` → *The consumption filter*;
+[`../../lab/SPLASH-MCP.md`](../../lab/SPLASH-MCP.md) §3) makes the isotope single-use, so
+a repeat is filtered *before* it becomes an effect and the retry is safe by
+construction. That is the model's answer — designed in `SPLASH.md`, **not yet exercised
+in the spike**, which has the isotope record but no filter. What it costs is a Bloom
+**false positive** — a legitimate first use suppressed — deliberately the liveness
+direction rather than the silent-corruption one. The residual is that the filter's rate
+is unmeasured (§7), not that the mechanism is missing.
 
 **Fan-out.** If the graph offers `κ` disjoint paths of `h` hops, redundancy is parallel
 and the result is the complement:
