@@ -31,7 +31,9 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 | file | kind | what it holds |
 | --- | --- | --- |
 | `README.md` | map | this page — the index and the one-paragraph spine |
-| `SPLASH.md` | reusable | the post-connection trust summary, to place in a library README |
+| `JOIN.md` | **join artifact** | the pattern at a glance — the one page that must be readable **at once**, because a participant that cannot see the pattern cannot agree to join |
+| `SPLASH.md` | reusable | the post-connection trust model (a mechanism doc; long by design) |
+| `SLA.md` | reusable | **SLA vs Lab-safety(SLA)** — the mechanisms: the exposure table, idempotence, herd immunity, the reward path, the instrument with no licence, BGP routing |
 | `TRUST-FLOWS.md` | diagrams | the trust flows as pictures — admission, the triangle, the plane, failover, partitions |
 | `MATH.md` | findings | the grounded figures, and which of the others are not grounded |
 | `PLANE.md` | findings | the measure as a plane in local-time: delivered vs promised vs linear time |
@@ -43,6 +45,14 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 `MATH.md`, `PLANE.md` and `THREADS.md` are the ones that save time. The exercises
 are reproducible; the three findings documents are the *conclusions*, so an agent
 can start from the answer rather than the search.
+
+**Two kinds of document, and the rule that separates them.** A **join artifact** must
+be readable **at once** — if a participant cannot see the pattern in one view, it
+cannot agree to join, and an agent decides per turn under partial visibility anyway.
+A **mechanism doc** may be as long as the argument requires, because it is read to
+*argue with*, not to join. `JOIN.md` is the join artifact; `SPLASH.md`, `SLA.md`,
+`MATH.md` and `PLANE.md` are mechanisms. When something here grows, it grows into a
+mechanism doc — never into the join artifact.
 
 ## Summary
 

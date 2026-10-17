@@ -35,7 +35,10 @@ Consequences, stated plainly:
 2. **Trust is graded, not binary.** It is a quantity, not a flag.
 3. **A declared state is information, not authority.** A caller announcing a
    problem is offering input; the response is a decision by the authority, not a
-   claim by the caller.
+   claim by the caller. The asymmetry is deliberate and load-bearing: a self-report
+   can only move standing **down**, never up, so the honest strategy is weakly
+   dominant and no claim ever has to be believed
+   ([`SLA.md`](SLA.md) §9).
 
 ## Enrollment and one-time credentials
 
@@ -241,15 +244,41 @@ determined.
   tick makes it predictable, not smaller.
   - The tick synchronises the burst but does not reduce it. The herd still arrives
     at the ingress node (A). Capacity is therefore added **horizontally**: more
-    bandwidth means more ingress nodes, not a larger one. The tick has a second
+    bandwidth means more ingress nodes, not a larger one. A doorway has a width, so
+    the answer to more traffic is another doorway — the bound is *per door*, and
+    nothing is promised about a single point
+    ([`SLA.md`](SLA.md) §11). The tick has a second
     function: it **consumes the one-time credentials** (see *Entry*), without which
     they would be replayable and the burst would return.
+  - **The alignment is a deliberate queueing cost.** Synchronised arrivals are a
+    **bulk-arrival** process (`M[X]/M/1`), and by Kingman's approximation the mean wait
+    is linear in the squared coefficient of variation of arrivals (`C²_a`) — so the tick
+    trades queueing for predictability, and the horizontal-capacity rule above is what
+    pays for it. It is also why **an SLA and the tick pull in opposite directions**: a
+    latency promise fights the alignment it synchronises
+    ([`SLA.md`](SLA.md) §6). And a herd is a **correlation generator** —
+    callers who share their moment share their failures, which is the one term redundancy
+    cannot reduce ([math.md](../sheets/workspaces/math.md) §5). It also synchronises
+    *susceptibility*, and herd immunity is bought by asynchrony — which is why
+    verification stays **staggered** (an *idle* sibling verifies a *busy* node) even though
+    the credentials are aligned ([`SLA.md`](SLA.md) §6).
+  - It has a **third** function: it is the **window the consumption filter slides on**.
+    The filter holds the isotopes consumed in *one* tick, so the tick's length *is* the
+    dedupe window — and must therefore exceed a caller's retry interval, or a retry
+    escapes it and lands as a duplicate. The current lab value is **5s** (a configuration
+    value, not a constant), and the check timeout currently defaults to the same 5s,
+    which puts the window and the retry horizon exactly **equal** — the boundary case is
+    the normal one. Sizing and the escape analysis:
+    [`../sheets/workspaces/math.md`](../sheets/workspaces/math.md) §4.
 - **Early enrollment.** Participants are expected to enroll before they need to be
   trusted, so the trust decision is made when it is inexpensive.
 - **Suspicious actions are routed, not merely refused.** An action that appears
   incorrect is sent along a different path where it is observed, rather than
   dropped. Routing and observation are the same mechanism. Rate limiting on that
-  path is standard (HTTP 429 and Retry-After, RFC 9110 §15.5.4/§10.2.3).
+  path is standard (HTTP 429 and Retry-After, RFC 9110 §15.5.4/§10.2.3). The
+  worked example is `rm -rf /` — nearly never useful, genuinely right in a handful
+  of cases, and therefore *routed* rather than banned or silently permitted
+  ([`SLA.md`](SLA.md) §9).
 - **Contributed resources.** A participant may contribute capacity rather than
   consume it, so the marginal cost of an additional participant is carried by that
   participant. This is the horizontal-scaling rule applied to compute.
@@ -325,7 +354,10 @@ The dashboard service proxies upstream tools and renames them (one tool appears 
   path, find a cheaper route for a task, and update the cluster's routing tables.
   This is the legitimate form of exploration: it produces an improvement and is
   shared. Exploration with a plan is optimization; exploration without one is the
-  signal.
+  signal. The routing follows **BGP practice** — path vectors (so a route cannot
+  contain itself), local policy over shortest path, communities as the declared
+  combination, dampening for a flapping route, and peers that can be handed load
+  ([`SLA.md`](SLA.md) §12).
 - **Masking.** A participant may encapsulate one request within another. Since
   logging is deployment-specific (see *Audit and logging*), the log need not
   resolve a masked request. Masking is what allows routing discovery to occur
@@ -670,6 +702,15 @@ This is why the alarm holder is treated carefully: a real alarm is not a request
 be argued with, and the answer is not a stream of updates. It is one
 acknowledgement, one ticket, and the event belongs to the cluster from then on.
 
+**And the permissiveness is the mechanism, not a laxity.** The model does not refuse an
+alarm; it *measures* it. Raise one and the cluster takes custody — and what disciplines the
+caller is that the alarm is consumed, metered and priced, and that standing is derived from
+the record rather than held as somebody's grudge. The village that came the first two times
+was never the boy's punishment; **his standing was spent**, and the third call found nobody
+coming. Here that is the incentive in full: the cluster *is* the motivation not to cry wolf
+— herd immunity's free-rider problem, answered by measurement rather than by refusal
+([`SLA.md`](SLA.md) §6).
+
 ### Metering
 
 Three consequences follow from metering the one-time credentials:
@@ -797,6 +838,11 @@ The distance maps to a **rung**, a coarse bucket that gates what a caller may re
 The authority is the server: it looks up the caller's rung in its own registry and
 filters before transmission (RFC 3552's guidance that the server is the enforcement
 point). The caller does not declare its rung and is not told a field was omitted.
+
+Filtering without announcing it is also why the **reply** is closure rather than refusal:
+an answer in the shape of success teaches the caller nothing and does not invite a retry,
+whereas a refusal is information — it confirms a boundary and the thing behind it.
+**Closure terminates the loop; ambiguity feeds it** ([`SLA.md`](SLA.md) §10).
 
 Failure weights quantise the distance. They differ in taxonomy but share one
 coordinate — departure from nominal at a point in linear time:
