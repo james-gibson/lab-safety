@@ -38,11 +38,18 @@ func GateRef(key []byte) (SpecRef, error) {
 	return LoadSpec(GatePath, key, "workspace-vfs", 1)
 }
 
-// Expectation is what the spec *declares* — isotope's step definitions over the
-// parse (isotope.WorkspaceStepDefinitions). The spec is the origin: the
-// expectation is not a hand-written list.
+// Declarations is what the spec declares — isotope's step definitions over the
+// parse. Nothing is executed: a step declares, and the caller decides what a
+// declaration is worth (the seed, the expectation, a layout check).
+func (s SpecRef) Declarations() (*isotope.Spec, error) {
+	return isotope.Define(string(s.Source), isotope.WorkspaceStepDefinitions()...)
+}
+
+// Expectation is what the spec *declares* about the MCP surface — the names the
+// surface must present. The spec is the origin: the expectation is not a
+// hand-written list.
 func (s SpecRef) Expectation() (Expectation, error) {
-	spec, err := isotope.Define(string(s.Source), isotope.WorkspaceStepDefinitions()...)
+	spec, err := s.Declarations()
 	if err != nil {
 		return Expectation{}, err
 	}

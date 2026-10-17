@@ -24,6 +24,9 @@ go test ./...
 | `driver.go` | the `Driver` host interface + `TmpDir` and `SQLite` |
 | `store.go` | the VFS conventions — the tree, the state machine — and the MCP mapping as *file* operations |
 | `protocol.go` | the MCP surface (JSON-RPC 2.0) over a store: `initialize`, `tools/*`, `resources/*`, `prompts/*` |
+| `http.go` | the surface over the wire: `Server` (`http.Handler`) — the MCP surface from a separate process, plus `/healthz` |
+| `seed.go` | the spec, inverted: `Seed` materializes what the spec declares, `BindTools`, `CheckLayout` |
+| `cmd/workspace-mcp` | the process: serves a session's surface on `-addr`, seeded from `-spec` |
 | `mirror.go` | the two invariants, the dual-write client, the cross-check, the plane/light mapping, `Residual` |
 | `gherkin.go` | the spec reference: `SpecRef`, what the spec *declares* (isotope's step definitions), and the spec's signed isotope |
 | `verify.go` | the independent measurement: the expectation from the spec, the observation through the protocol |
@@ -79,6 +82,40 @@ and the read path is caught (`TestVerificationCatchesADivergentMirror`). It is n
 consistent writer bug is invisible. The register (§2 → *Two invariants*) says exactly
 this; the step makes the position independent, not the writer.
 
+## Rung 2 — the store becomes a service
+
+`go test` is rung 0: the writer's own report. Rung 2 puts the surface in its **own
+process** and lets the lab's own instrument decide:
+
+```sh
+./spike.sh                 # the tmpdir host
+DRIVER=sqlite ./spike.sh   # the sqlite host
+```
+
+The script builds `cmd/workspace-mcp`, seeds session `42` from the gate, and registers
+it as a smoke-alarm `mcp` target (the alarm's `strict` handshake). The observed
+sequence, identical on both hosts:
+
+```
+dark ──▶ green ──▶ red
+(no session)   (the session exists)   (the session goes away, server still alive)
+```
+
+The wire contract is the **prober's**, not this package's: `initialize` + `tools/list`,
+each a JSON-RPC 2.0 POST that must answer 2xx with no `error`. `http_test.go` replays
+that exact request shape, so a disagreement between the test and the live alarm would
+be a defect in the surface, not in the guess about what the prober sends.
+
+The surface answers for its **session**, not for its process: with no session behind it
+it refuses (`-32001`), which is why phase 3 shows red while the server is still up. A
+process being alive is not a session existing — and plane `42`, *not present*, would
+otherwise be unreachable on the wire.
+
+What the alarm asserts is the **handshake**, not the declarations: it never compares
+the surface to the spec (`min_capabilities` is unchecked). That the surface serves the
+spec is asserted at rung 0 (`TestSeedIsTheSpecInverted`, `TestTheSurfaceServesTheSpec`)
+and read on the wire by the eye.
+
 ## The finding this spike lives beside (register §2)
 
 The lab's **headless** `adhd` renders a smoke-alarm target only **green**/*red*;
@@ -86,6 +123,13 @@ The lab's **headless** `adhd` renders a smoke-alarm target only **green**/*red*;
 `-42i` currently *reads* green. The dissent this spike manufactures is asserted here
 (rung 0) and must be surfaced as a yellow light only once the instrument has a rung
 for it — see [`james-gibson/smoke-alarm#34`](https://github.com/james-gibson/smoke-alarm/issues/34).
+
+**Rung 2 located it.** `adhd` *does* map `degraded` → yellow
+(`internal/smokelink/watcher.go`, `mapHealthState`); the gap is smoke-alarm's **prober**,
+where `healthy` → green and *anything else* → red, and a capability mismatch is never
+examined. So the ticket is a prober fix in the alarm, not a light fix in adhd — and what
+the alarm must be able to say is *"answering, but not what was declared"*, which is
+exactly the dissent.
 
 ## The conjugate, before independence
 
@@ -103,3 +147,7 @@ trusted; the run's traffic log is named by a content address of its own operatio
 whole reading of the spec is isotope's — parse, meaning (step definitions), identity.
 Still open: **consensus** (`isotope.ConsensusReporter`, N ≥ 3F+1) — separate instances
 agreeing — and the `ResultLedger` (rung 4).
+
+**Rung 2 has landed** (above). What the alarm still cannot do is the **spec check** —
+it never compares the surface to the spec — so the authority on "the surface serves what
+the spec declares" is rung 0 and the eye, not the instrument. Same ticket as the yellow.

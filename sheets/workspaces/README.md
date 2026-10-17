@@ -102,6 +102,14 @@ is the **pole the build inverts**. Two consequences, and they are requirements:
   lives in the TUI's `localprobe`, which headless does not run. `min_capabilities`
   mismatch is not checked (still healthy); a partial handshake is `outage` (red).
 
+  **Rung 2 pinned it to one component.** `adhd` *does* map `degraded` → yellow
+  (`internal/smokelink/watcher.go`, `mapHealthState`), so the missing producer is
+  **smoke-alarm's own prober** — any failure there is `unhealthy`/`outage` → red, and
+  a capability mismatch is never examined. That sharpens
+  [smoke-alarm#34](https://github.com/james-gibson/smoke-alarm/issues/34) from *"the
+  instrument has no yellow"* to *"the prober never yields `degraded`"*, and puts the
+  fix in the alarm rather than in adhd.
+
   So the store reaching `-42i` reads **green**, not yellow — the instrument cannot
   yet say *"exists but not yet independent"*. Two consequences:
 
@@ -293,6 +301,36 @@ is *positional* independence — the check no longer trusts the writer's bookkee
 **not** measurable independence: one writer still corrupts both stores identically.
 The dissent is asserted at rung 0 and still cannot be *rendered* (the §2 finding).
 
+**Rung 2 landed — the store becomes a service.** `cmd/workspace-mcp` serves the
+store's MCP surface over HTTP from its **own process**, and `seed.go` inverts the
+spec into it (the Gherkin is the origin: what the spec declares is what must exist,
+at the path the spec names). `spike.sh` now drives the real server — step 1's python
+stand-in is **retired** — and the lab's own `ocd-smoke-alarm` probes it with its
+`strict` handshake (`initialize` + `tools/list`). On **both** hosts:
+
+```
+dark ──▶ green ──▶ red
+(no session)   (the session exists)   (the session goes away, server still alive)
+```
+
+So the verdict is the instrument's, not this package's suite: **A8's slow validator**,
+exercised. Three things this step had to decide, recorded rather than assumed:
+
+- **the wire contract is the prober's, not ours.** The required methods come from
+  smoke-alarm's `httpHandshakeMethods` (profile `strict`); the surface is written to
+  answer *that*, and `http_test.go` replays its exact request shape (A8 at rung 0).
+  Where the MCP spec leaves the method list open, the lab's prober closes it — a
+  named cost, not a bespoke standard.
+- **the surface reports its *session*, not its process.** With no session behind it
+  the surface refuses (`-32001`), so in phase 3 the server is *still running* and the
+  light goes red. Otherwise a live process would stand in for an existing session and
+  the plane `42` — *not present* — would be unreachable on the wire.
+- **what the alarm can assert is the handshake, not the declarations.** The prober
+  never compares the surface to the spec (`min_capabilities` is unchecked). That the
+  surface *serves the spec* is asserted at rung 0 (`TestSeedIsTheSpecInverted`,
+  `TestTheSurfaceServesTheSpec`) and read on the wire by the eye; making the alarm
+  the authority on it is the same ticket.
+
 **Rung 3 closed — canonicalization.** The isotope **record** is now the *spec's* signed
 isotope: `Client.Run` signs the gate with `isotope.CanonicalizeGherkinToIsotope` (family
 `workspace-vfs`, v1, key = the session seed), and the mirror stores
@@ -314,11 +352,22 @@ named cost. Do not invent around a gap; report the gap. See `standards.feature`
 in `lab/workspaces` while `isotope.ParseGherkin` already existed — and §3 already named
 `isotope.CanonicalizeGherkinToIsotope` as the standard for *command identity / content
 address*. It was caught in review, deleted, and the module now depends on isotope
-(v0.4.1): `gherkin.go` keeps only the **step definitions**, over isotope's AST.
+(`v0.4.2-0.…`, the step-definition branch — awaiting a release): `gherkin.go` keeps
+only the **step definitions**, over isotope's AST.
 
 **Named cost:** one bespoke standard, briefly — exactly the code A9 claims we will not
 write. Note where it happened: in *our* layer, not the filesystem's. The hypothesis was
 not damaged; our own discipline was. Which is the point of recording it.
+
+**Instance — 2026-10-16 (rung 2): a named cost, not a new standard.** The HTTP
+transport for the MCP surface ([`http.go`](../../lab/workspaces/http.go)) is
+hand-written — about thirty lines over `net/http` — where §3 names *an existing Go MCP
+SDK* as the standard. This adds **no new standard** and touches no wire format: it is
+the JSON-RPC surface (`protocol.go`) carried over HTTP, and the contract it must meet
+is the lab's own prober, not a choice of ours. §3 already records the lab as
+hand-rolling MCP (`adhd/internal/mcpclient`, `internal/mcpserver`), so the second
+instance has the same shape as the first — again in *our* layer — and the SDK remains
+the slower, shared route.
 
 ## §7 Refs
 
@@ -333,7 +382,11 @@ not damaged; our own discipline was. Which is the point of recording it.
   `drainWatcherUpdates` — the `old_status:"dark"` first-transition),
   `adhd/internal/headless/server.go`; smoke-alarm `internal/knownstate/store.go`,
   `internal/engine/engine.go` (`toKnownStateStatus`, `httpHandshakeMethods`).
-- Priming script (step 1): [`lab/workspaces/spike.sh`](../../lab/workspaces/spike.sh).
+- Priming script (step 1) and live driver (rungs 1–2):
+  [`lab/workspaces/spike.sh`](../../lab/workspaces/spike.sh) — builds
+  `cmd/workspace-mcp`, seeds a session from the gate, and puts it on the lab's own
+  instruments (adhd light + smoke-alarm target), on either host
+  (`DRIVER=sqlite`).
 - Dual-write client (Phase 1): [`lab/workspaces/`](../../lab/workspaces/) — a Go
   module (`go test ./...`).
 - Roots: [`filesystem.feature`](filesystem.feature) — a session **is** the root (`/`),

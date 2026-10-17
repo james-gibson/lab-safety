@@ -91,6 +91,14 @@ func (s *Store) Init(ctx context.Context) error {
 	return s.transition(ctx, "SUBMITTED", "init")
 }
 
+// Present reports whether the session is really there: the store holds the
+// session's own mark, its task file. A surface with no session behind it has
+// nothing to answer — and saying so is how "not present" (plane `42`) reaches the
+// wire, instead of a process being alive standing in for a session existing.
+func (s *Store) Present(ctx context.Context) (bool, error) {
+	return s.drv.Exists(ctx, PathTask)
+}
+
 // State returns "/state/current".
 func (s *Store) State(ctx context.Context) (string, error) {
 	b, err := s.drv.Get(ctx, PathState)

@@ -52,6 +52,16 @@ func (p *Protocol) Handle(ctx context.Context, raw []byte) []byte {
 	if err := json.Unmarshal(raw, &req); err != nil {
 		return mustJSON(rpcResponse{JSONRPC: "2.0", Error: &rpcError{Code: -32700, Message: "parse error"}})
 	}
+	// The surface reports its session. With no session behind it there is nothing
+	// to answer, and saying so is how "not present" reaches a caller over the
+	// wire — rather than a live process standing in for an existing session.
+	if ok, err := p.store.Present(ctx); err == nil && !ok {
+		return mustJSON(rpcResponse{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &rpcError{Code: -32001, Message: "no session here: " + p.store.Session()},
+		})
+	}
 	res, rerr := p.dispatch(ctx, req)
 	if rerr != nil {
 		return mustJSON(rpcResponse{JSONRPC: "2.0", ID: req.ID, Error: rerr})

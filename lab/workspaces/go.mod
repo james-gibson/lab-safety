@@ -3,7 +3,7 @@ module github.com/james-gibson/lab-safety/workspaces
 go 1.27.2
 
 require (
-	github.com/james-gibson/isotope v0.4.2-0.20261017003609-cacd266f2098
+	github.com/james-gibson/isotope v0.4.2-0.20261017004323-9cae21124db1
 	modernc.org/sqlite v1.60.1
 )
 
