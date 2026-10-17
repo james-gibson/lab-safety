@@ -250,12 +250,12 @@ determined.
     trades queueing for predictability, and the horizontal-capacity rule above is what
     pays for it. It is also why **an SLA and the tick pull in opposite directions**: a
     latency promise fights the alignment it synchronises
-    ([`SPLASH-MCP.md`](SPLASH-MCP.md) §6). And a herd is a **correlation generator** —
+    ([`SPLASH-SLA.md`](SPLASH-SLA.md) §6). And a herd is a **correlation generator** —
     callers who share their moment share their failures, which is the one term redundancy
     cannot reduce ([math.md](../sheets/workspaces/math.md) §5). It also synchronises
     *susceptibility*, and herd immunity is bought by asynchrony — which is why
     verification stays **staggered** (an *idle* sibling verifies a *busy* node) even though
-    the credentials are aligned ([`SPLASH-MCP.md`](SPLASH-MCP.md) §6).
+    the credentials are aligned ([`SPLASH-SLA.md`](SPLASH-SLA.md) §6).
   - It has a **third** function: it is the **window the consumption filter slides on**.
     The filter holds the isotopes consumed in *one* tick, so the tick's length *is* the
     dedupe window — and must therefore exceed a caller's retry interval, or a retry
@@ -697,7 +697,7 @@ the record rather than held as somebody's grudge. The village that came the firs
 was never the boy's punishment; **his standing was spent**, and the third call found nobody
 coming. Here that is the incentive in full: the cluster *is* the motivation not to cry wolf
 — herd immunity's free-rider problem, answered by measurement rather than by refusal
-([`SPLASH-MCP.md`](SPLASH-MCP.md) §6).
+([`SPLASH-SLA.md`](SPLASH-SLA.md) §6).
 
 ### Metering
 

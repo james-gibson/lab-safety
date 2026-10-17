@@ -1,10 +1,18 @@
-# MCP vs Lab-safety(MCP)
+# SLA vs Lab-safety(SLA)
 
-**Same wire. A different set of exposed failure modes.**
+**Same wire. A different set of exposed failure modes — and a different thing being
+promised.**
 
-This is the second splash page. [`SPLASH.md`](SPLASH.md) states the trust model; this
-page compares **stock MCP** with **MCP under the lab** — the same protocol, plus the
-cluster — and says which default failure modes each one leaves exposed.
+This is the second splash page. [`SPLASH.md`](SPLASH.md) states the trust model; this page
+compares a **service-level agreement** with **lab-safety applied to the same concept** —
+`Lab-safety(SLA)` — and says which default failure modes each one leaves exposed.
+
+The two are not the same kind of thing, which is the point. An SLA promises each caller a
+level; `Lab-safety(SLA)` measures each member against a level and *pays* accordingly. The
+label follows that: the parenthetical names what the layer governs — the agreement — and
+**MCP is the wire it is realised on**, which is why §1 and §4 are about the specification.
+The MCP-specific material stays, because an argument about a layer is only fair if the layer
+is the same protocol.
 
 The comparison is only worth making if it is **fair**, so one rule governs it:
 
@@ -53,7 +61,7 @@ Same wire in both columns. The difference is which failure modes are *covered*, 
 last column says what remains — because a comparison that claims everything is evidence
 of nothing.
 
-| # | failure mode | stock MCP | Lab-safety(MCP) | mechanism | what remains |
+| # | failure mode | stock MCP | Lab-safety(SLA) | mechanism | what remains |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **request lost in flight** | exposed | **covered** | at-least-once retry is *safe* (§3) | the retry's cost |
 | 2 | **reply lost → ambiguous outcome** | exposed, and unfixable at the wire | **bounded, not synchronous** | the isotope record is the receipt; the two invariants are reconciled after the fact | the caller still cannot know *at the moment of the call*; it learns by verification |
@@ -348,12 +356,86 @@ weakness of a public good — and it is answered the way a public good has to be
 barring entry, but by keeping **coverage above its threshold**. The wolf-crier is not
 refused; it is **priced**, and the price is measured rather than negotiated.
 
-## 7. What the client sees
+## 7. The path: synchronised rewards for the greater cluster's SLA
+
+§6 left the tick with three jobs — synchronise the burst, consume the credentials, and be
+the window the consumption filter slides on — and treated the alignment mostly as a cost.
+It is not only a cost, and the job that was missing is the one that makes the incentives
+work.
+
+**There is a path whose purpose is to motivate the synchronisation of rewards.** Not the
+synchronisation of *demand* — that is the herd, and §6 showed where it must not align — but
+of the **reward**: on the shared tick, contribution is judged, and on the shared tick it is
+paid. Good members get rewarded, on the same clock, against the same record, as everyone
+else.
+
+**Why the reward has to share a clock.** A reward granted on private clocks cannot be
+compared, and what cannot be compared cannot be *attributed*: you cannot separate
+contribution from timing, or a steady member from a lucky one. A common tick makes the
+judgement **comparable** and the payment **legible**. Synchronisation is therefore a
+precondition of *fairness* here, not merely of load.
+
+**And it rides a path — which is this lab's own idiom.** [`SPLASH.md`](SPLASH.md) already
+has the pattern twice: a **zero-cost validation path**, where "the routing is internal, the
+check is real, and the caller sees neither the detour nor a price"; and, for routing
+discovery, "**the improvement is the reward**, so no separate exploration event is needed."
+The reward path is that shape with the reward as its payload: the cluster routes a member
+along a path that carries the judgement, and the treatment is granted in band. There is no
+separate reward ceremony to capture, because **the reward is the improvement**.
+
+**What is rewarded is contribution, not consumption** — which is the whole reason it answers
+the free-rider. An SLA pays a caller in proportion to what it *consumes*: its own service
+level. `Lab-safety(SLA)` pays a member in proportion to the **coverage it contributes** —
+the treatment, the rung, and the capacity to mint more pads
+([`SPLASH.md`](SPLASH.md) → *Metering*) follow the measure of behaviour, not the volume of
+demand. The two frames therefore point demand in **opposite directions**, and this is the
+mechanism: under an SLA, consuming everything while contributing nothing is optimal; here it
+is the worst strategy available — and the reward path is what makes that true *without
+refusing anyone at the door* (§6, *the boy who cried wolf*).
+
+**And it is cumulative, which is what makes it a reward rather than a bribe.** A single
+generous act is *accepted* — self-election works exactly that way, since "the act, like the
+isotope, is used once" — but **standing comes from the record**, so the reward follows a
+pattern rather than a moment. One act is not a bribe; a hundred are a standing.
+
+### The greater cluster's SLA
+
+Note what the reward is *for*: not the member's own service level, but **the cluster's**.
+The cluster has a service level of its own — what it guarantees to a member in good standing
+— and the reward path is what motivates members to maintain the coverage that level depends
+on. This is where §6's herd immunity becomes *operable*: a public good is maintained by
+paying its contributors, so the reward path is the cluster's answer to free-riding. The
+cluster is *greater* exactly because the reward is aimed at the whole rather than at the
+part.
+
+**So synchronise the judgement, and stagger the exposure.**
+
+| what the tick aligns | why | hazard? |
+| --- | --- | --- |
+| arrivals — **demand** | predictable load; capacity is added horizontally | **yes** — it raises `C²_a` (Kingman, §6) and synchronises susceptibility |
+| **credentials** | "once" becomes enforceable: a one-time pad cannot be replayed | no — this is the point |
+| the **reward** | comparable, legible, attributable: contribution is visible to everyone at the same moment | no — this is the incentive |
+| **exposure / verification** | — | **must not align**: an *idle* sibling verifies a *busy* node, so the phases differ |
+
+Aligning demand is signal; aligning reward is the incentive; aligning **susceptibility** is
+the herd. One tick, and three things that *should* be on it — with exactly one alignment
+that is the mistake.
+
+**Named cost, recorded rather than hidden.** A published reward schedule invites
+**timing-gaming**: a member that contributes just before the tick in order to be seen at it.
+The answer is already in the ladder — the measure is derived from the **record over time**,
+not from the instant, so gaming surfaces as **variance** rather than as contribution. That
+is what rung 4 exists for (`ResultLedger`, `DetectFlakiness`, `DetectRegression`): flakiness
+and regression are precisely the signatures of a member optimising for the boundary instead
+of for the work. Rung 4 is not a reporting feature; it is what makes the reward path
+**non-gameable**.
+
+## 8. What the client sees
 
 | client | what it gets |
 | --- | --- |
 | **stock MCP client** | the specification: connect, enumerate, call. All fourteen rows as the spec leaves them. |
-| **stock MCP client against a Lab-safety(MCP) surface** | the same, plus whatever it chooses to read: the refusals are in-range, the errors are specced, and the layer's guarantees are simply not exercised. **Graceful degradation, not a fork.** |
+| **stock MCP client against a Lab-safety(SLA) surface** | the same, plus whatever it chooses to read: the refusals are in-range, the errors are specced, and the layer's guarantees are simply not exercised. **Graceful degradation, not a fork.** |
 | **a client that also speaks the lab's model** | the guarantees: single-use identity, reconciliation by verification, graded authority, and an instrument that reads *"answers, but not as declared"* as its own state rather than as silence. |
 
 **And the comparison is observable, not asserted.** The lab's own monitoring surface is a
