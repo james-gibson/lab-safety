@@ -1,0 +1,21 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "header is not",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
+    }
+  ],
+  "post": [
+    {
+      "kind": "rawReplace",
+      "file": "concordance.csv",
+      "find": ",source_operators\n",
+      "text": ",operators\n"
+    }
+  ]
+}

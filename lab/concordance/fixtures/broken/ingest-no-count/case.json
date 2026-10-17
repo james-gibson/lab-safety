@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "a census with no count is not a census",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "ingest/awesome-mcp-servers.json",
+      "path": "entries",
+      "value": 0
+    }
+  ]
+}

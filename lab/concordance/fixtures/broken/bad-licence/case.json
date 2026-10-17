@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "licence",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "sources/mcpregistry.json",
+      "path": "licence",
+      "value": "dunno"
+    }
+  ]
+}

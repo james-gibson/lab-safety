@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "exists, but sources/awesome-mcp-servers.json has policy \"pointer\"",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "sources/awesome-mcp-servers.json",
+      "path": "policy",
+      "value": "pointer"
+    }
+  ]
+}

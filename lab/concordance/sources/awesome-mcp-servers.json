@@ -1,0 +1,16 @@
+{
+  "id": "awesome-mcp-servers",
+  "url": "https://github.com/punkpeye/awesome-mcp-servers",
+  "terms_url": "https://github.com/punkpeye/awesome-mcp-servers/blob/main/LICENSE",
+  "licence": "permissive",
+  "policy": "ingest",
+  "notice": "MIT License — Copyright © 2024 Frank Fiegel (frank@glama.ai)",
+  "operators": ["frank-fiegel"],
+  "retrieved_at": "2026-10-17",
+  "credit": {
+    "text": "MCP server list from punkpeye/awesome-mcp-servers (MIT)",
+    "url": "https://github.com/punkpeye/awesome-mcp-servers"
+  },
+  "listing_link_required": false,
+  "notes": "MIT, so the licence permits holding the content — this is the one source here we may copy, provided the copyright notice is reproduced. SAME OPERATOR AS glama: the LICENSE is Copyright © 2024 Frank Fiegel (frank@glama.ai), and every entry carries a glama.ai score badge and a glama.ai listing link. So 'glama ingests awesome-mcp-servers' is one operator ingesting its own list, and a comparison between the two is self-comparison. Not mirrored here: 4,259 entries in a 1.4 MB README, pushed daily — a copy would be stale on arrival. What is ingested is a census (ingest/awesome-mcp-servers.json)."
+}

@@ -1,0 +1,19 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "predicate",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/mcpregistry/acme-weather/exposes-tool.json",
+      "path": "predicate",
+      "value": "smells-nice"
+    }
+  ]
+}

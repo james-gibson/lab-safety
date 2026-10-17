@@ -1,0 +1,19 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "is not after checked_at",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/mcpregistry/acme-weather/exposes-tool.json",
+      "path": "provenance.review_by",
+      "value": "2026-10-01"
+    }
+  ]
+}

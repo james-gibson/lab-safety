@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "policy \"mirror\" is not one of",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "sources/mcpregistry.json",
+      "path": "policy",
+      "value": "mirror"
+    }
+  ]
+}

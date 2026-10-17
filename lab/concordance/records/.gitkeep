@@ -1,0 +1,9 @@
+No records yet — and that is a determination, not an omission.
+
+A record may only exist where we hold our own claim about the same subject and the
+same predicate, anchored to one of our artefacts (`our_claim.basis`). The first
+source, `mcpmarket`, is declared in `sources/mcpmarket.json`; its catalogue is not
+readable under its own terms without their API or a scrape, so no claim of theirs
+has been recorded. See README.md → "Adding the first record".
+
+This file exists so the empty directory is tracked by git.

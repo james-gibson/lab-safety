@@ -1,0 +1,13 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "records no waiver route",
+  "ops": [
+    {
+      "kind": "jsonDelete",
+      "file": "sources/glama.json",
+      "path": "waiver"
+    }
+  ]
+}

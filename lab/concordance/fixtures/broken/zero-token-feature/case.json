@@ -1,0 +1,21 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "canonicalises to zero tokens",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
+    }
+  ],
+  "post": [
+    {
+      "kind": "rawReplace",
+      "file": "concordance.feature",
+      "find": "Feature: Concordance",
+      "text": "Note: Concordance"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "mcpmarket",
+  "url": "https://mcpmarket.com/server",
+  "terms_url": "https://mcpmarket.com/terms",
+  "licence": "all-rights-reserved",
+  "policy": "pointer",
+  "retrieved_at": "2026-10-17",
+  "notes": "The source the original proposal named. Its catalogue is rendered client-side and the page footer reserves all rights, so a claim cannot be read out of the HTML \u2014 it needs their API or a scrape. Kept declared because it is the source the question was asked about, and because 'we looked and could not read it under its own terms' is the answer to part of that question. Two licensed alternatives are declared beside it: `mcpregistry` (permissive, unauthenticated) and `glama` (attribution-required). Nothing is recorded against this source. Under `policy: pointer` this dataset may store at most one normalised value token per subject and the listing's URL; it may never store their prose, their selection, or their arrangement.",
+  "operators": [
+    "mcpmarket"
+  ]
+}

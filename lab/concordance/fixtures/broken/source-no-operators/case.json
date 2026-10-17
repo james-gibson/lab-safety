@@ -1,0 +1,13 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "declares no operators",
+  "ops": [
+    {
+      "kind": "jsonDelete",
+      "file": "sources/mcpregistry.json",
+      "path": "operators"
+    }
+  ]
+}

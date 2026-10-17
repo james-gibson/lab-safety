@@ -1,0 +1,9 @@
+{
+  "source": "awesome-mcp-servers",
+  "notice": "MIT License \u2014 Copyright \u00a9 2024 Frank Fiegel (frank@glama.ai)",
+  "credit": "MCP server list from punkpeye/awesome-mcp-servers (MIT)",
+  "retrieved_at": "2026-10-17",
+  "entries": 4259,
+  "entry_shape": "one `- [name](repo) [![badge](glama score.svg)](glama listing) <flags> - <description>` line per server",
+  "notes": "A census, not a mirror. What we hold is the denominator and the operator: the list is 4,259 entries and it is glama's own, so an agreement between it and the glama directory is one operator agreeing with itself."
+}

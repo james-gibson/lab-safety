@@ -1,0 +1,21 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "drift: concordance.feature differs",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
+    }
+  ],
+  "post": [
+    {
+      "kind": "rawReplace",
+      "file": "concordance.feature",
+      "find": "Scenario: mcpregistry/acme-weather/exposes-tool",
+      "text": "Scenario: mcpregistry/acme-weather/exposes_tool"
+    }
+  ]
+}

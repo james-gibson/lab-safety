@@ -1,0 +1,22 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "drift: concordance.csv differs",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
+    }
+  ],
+  "post": [
+    {
+      "kind": "csvSetCell",
+      "file": "concordance.csv",
+      "row": "acme-weather",
+      "column": "method",
+      "text": "observed"
+    }
+  ]
+}

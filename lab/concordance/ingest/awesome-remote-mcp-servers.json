@@ -1,0 +1,9 @@
+{
+  "source": "awesome-remote-mcp-servers",
+  "notice": "MIT License \u2014 Copyright \u00a9 2026 Frank Fiegel (frank@glama.ai)",
+  "credit": "Remote MCP server list from punkpeye/awesome-remote-mcp-servers (MIT)",
+  "retrieved_at": "2026-10-17",
+  "entries": 1071,
+  "entry_shape": "one `- [name](homepage) `endpoint-url`` line per remote server",
+  "notes": "A census, not a mirror. Every entry names a live endpoint, so this list is the natural subject universe for a probe: a bounded slice of it can be fetched and then *observed* rather than copied, which is what gives a record its own claim."
+}
