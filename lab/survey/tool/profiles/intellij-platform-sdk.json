@@ -1,0 +1,77 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315175145",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "IntelliJ Platform SDK (JetBrains)",
+    "toolVendorOrProject": "JetBrains",
+    "toolVersion": "2025.3 (LTS)",
+    "description": "Open source platform for building IDEs, providing Program Structure Interface (PSI) for deep code analysis and manipulation.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 10.0,
+      "acceptableDirectionLabels": [
+        "Semantic-Aligned",
+        "Strict-Type-Safe"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "RefactoringManager",
+        "VFS (Virtual File System) writes",
+        "ProjectComponent persistence"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Invalid PSI tree mutations leading to IDE crashes",
+        "Non-thread-safe write actions",
+        "Memory leaks in long-running services"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": true,
+      "stateMutability": "High (Deep semantic model mutation)",
+      "blastRadius": "Project PSI / Local IDE State"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "Java/Kotlin API",
+      "schemaStandard": "Plugin XML / Extension Points",
+      "parameterComplexity": "Extreme (Abstract Syntax Trees and multi-threaded threading models)",
+      "payloadSizeSensitivity": "Low (In-memory access)"
+    },
+    "authAndVerification": {
+      "authMechanism": "JetBrains Account / Hub",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Deep semantic refactoring",
+        "Static analysis custom rules",
+        "Plugin development assistance"
+      ],
+      "commonAgentFailureModes": [
+        "Read-access-from-write-thread exceptions",
+        "Broken indices during large-scale changes",
+        "Plugin descriptor conflicts"
+      ],
+      "recoveryMechanisms": [
+        "Local History (VCS-independent)",
+        "Invalidate Caches / Restart",
+        "Thread dump analysis"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": false,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Claude 3.5 Sonnet",
+        "GPT-4o"
+      ]
+    },
+    "notes": "Utilizes the PersistentStateComponent interface to manage state between IDE restarts, ensuring agent state durability."
+  }
+}

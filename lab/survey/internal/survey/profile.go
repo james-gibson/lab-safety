@@ -48,10 +48,15 @@ var agentIDRe = regexp.MustCompile(`^[a-z0-9]+([-.][a-z0-9]+)*$`)
 // DerivedKeys are computed by the tool and must never be authored.
 var DerivedKeys = []string{"mcp_ready", "autonomous_ready", "production_grade", "strictness_score"}
 
-// LoadProfiles reads profiles/*.json under root, decoding each strictly, and
-// returns them sorted by AgentID together with per-file problems (a bad file is
-// reported, not fatal — Check reports every failure it can).
+// LoadProfiles reads the model survey's profiles/*.json under root.
 func LoadProfiles(root string) ([]Profile, []string, error) {
+	return LoadProfilesWith(Model(), root)
+}
+
+// LoadProfilesWith reads a dataset's profiles/*.json under root, decoding each
+// strictly, and returns them sorted by ID together with per-file problems (a
+// bad file is reported, not fatal — Check reports every failure it can).
+func LoadProfilesWith(ds *Dataset, root string) ([]Profile, []string, error) {
 	dir := filepath.Join(root, "profiles")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -75,12 +80,12 @@ func LoadProfiles(root string) ([]Profile, []string, error) {
 			continue
 		}
 		id := strings.TrimSuffix(name, ".json")
-		if !agentIDRe.MatchString(id) {
-			problems = append(problems, fmt.Sprintf("orphan profile: %q is not a kebab-case agent_id", id))
+		if !ds.IDRe.MatchString(id) {
+			problems = append(problems, fmt.Sprintf("orphan profile: %q is not a kebab-case %s", id, ds.IDField))
 			continue
 		}
 		if prev, ok := seen[id]; ok {
-			problems = append(problems, fmt.Sprintf("duplicate agent_id %q: %s and %s", id, prev, name))
+			problems = append(problems, fmt.Sprintf("duplicate %s %q: %s and %s", ds.IDField, id, prev, name))
 			continue
 		}
 		seen[id] = name
@@ -119,10 +124,15 @@ func decodeProfile(id, path string, raw []byte) (Profile, error) {
 	return Profile{AgentID: id, Path: path, Provenance: doc.Provenance, Answer: doc.Answer}, nil
 }
 
-// CheckProvenance validates the authored evidence: the fields a JSON Schema
-// does not express — date ordering, the re-check window, the source's
-// existence, and the ban on authoring a derived metric.
+// CheckProvenance validates the model survey's authored evidence.
 func (p Profile) CheckProvenance(knownSources map[string]bool) []string {
+	return p.CheckProvenanceWith(Model(), knownSources)
+}
+
+// CheckProvenanceWith validates the authored evidence for a dataset: the fields
+// a JSON Schema does not express — date ordering, the re-check window, the
+// source's existence, and the ban on authoring a derived metric.
+func (p Profile) CheckProvenanceWith(ds *Dataset, knownSources map[string]bool) []string {
 	var out []string
 	pr := p.Provenance
 	for _, f := range []struct{ name, val string }{
@@ -153,14 +163,15 @@ func (p Profile) CheckProvenance(knownSources map[string]bool) []string {
 		out = append(out, fmt.Sprintf("provenance: %s survey_method %q is not one of self-report|documentation|observed",
 			p.AgentID, pr.SurveyMethod))
 	}
-	if pr.SchemaVersion != 2 {
-		out = append(out, fmt.Sprintf("provenance: %s schema_version is %d, want 2", p.AgentID, pr.SchemaVersion))
+	if pr.SchemaVersion != ds.SchemaVersion {
+		out = append(out, fmt.Sprintf("provenance: %s schema_version is %d, want %d",
+			p.AgentID, pr.SchemaVersion, ds.SchemaVersion))
 	}
 	if pr.SourceURL != "" && knownSources != nil && !knownSources[pr.SourceURL] {
-		out = append(out, fmt.Sprintf("provenance: %s source_url %s is not in sources/issue-3.json",
-			p.AgentID, pr.SourceURL))
+		out = append(out, fmt.Sprintf("provenance: %s source_url %s is not in %s",
+			p.AgentID, pr.SourceURL, ds.SourceJSON))
 	}
-	for _, k := range DerivedKeys {
+	for _, k := range ds.DerivedKeys {
 		if _, ok := p.Answer[k]; ok {
 			out = append(out, fmt.Sprintf("derived: %s authors %s; the tool computes it", p.AgentID, k))
 		}
@@ -168,11 +179,17 @@ func (p Profile) CheckProvenance(knownSources map[string]bool) []string {
 	return out
 }
 
-// SourceURLs reads sources/issue-3.json and returns the set of comment
+// SourceURLs reads the model survey's sources/issue-3.json and returns the set
+// of comment permalinks it carries.
+func SourceURLs(root string) (map[string]bool, error) {
+	return SourceURLsAt(root, "sources/issue-3.json")
+}
+
+// SourceURLsAt reads a source export at root/rel and returns the set of comment
 // permalinks it carries, so a profile's source_url can be checked against the
 // raw export rather than taken on trust.
-func SourceURLs(root string) (map[string]bool, error) {
-	raw, err := os.ReadFile(filepath.Join(root, "sources", "issue-3.json"))
+func SourceURLsAt(root, rel string) (map[string]bool, error) {
+	raw, err := os.ReadFile(filepath.Join(root, rel))
 	if err != nil {
 		return nil, err
 	}
@@ -191,25 +208,30 @@ func SourceURLs(root string) (map[string]bool, error) {
 	return out, nil
 }
 
-// SourceDigest verifies sources/issue-3.sha256 against sources/issue-3.json.
-// The export is the raw material the survey was normalised from; if it can be
-// edited silently, no check downstream means anything.
+// SourceDigest verifies the model survey's source export against its sidecar.
 func SourceDigest(root string) error {
-	body, err := os.ReadFile(filepath.Join(root, "sources", "issue-3.json"))
+	return SourceDigestAt(root, "sources/issue-3.json", "sources/issue-3.sha256")
+}
+
+// SourceDigestAt verifies a source export against its sidecar. The export is the
+// raw material the survey was normalised from; if it can be edited silently, no
+// check downstream means anything.
+func SourceDigestAt(root, jsonRel, shaRel string) error {
+	body, err := os.ReadFile(filepath.Join(root, jsonRel))
 	if err != nil {
 		return err
 	}
-	sidecar, err := os.ReadFile(filepath.Join(root, "sources", "issue-3.sha256"))
+	sidecar, err := os.ReadFile(filepath.Join(root, shaRel))
 	if err != nil {
 		return err
 	}
 	fields := strings.Fields(string(sidecar))
 	if len(fields) == 0 {
-		return fmt.Errorf("sources/issue-3.sha256 is empty")
+		return fmt.Errorf("%s is empty", shaRel)
 	}
 	got := sha256.Sum256(body)
 	if fields[0] != hex.EncodeToString(got[:]) {
-		return fmt.Errorf("sources/issue-3.json does not match sources/issue-3.sha256 (the raw export was edited)")
+		return fmt.Errorf("%s does not match %s (the raw export was edited)", jsonRel, shaRel)
 	}
 	return nil
 }

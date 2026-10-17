@@ -11,9 +11,11 @@ import (
 type kind int
 
 const (
-	kScalar  kind = iota // one string, boolean, integer or null
-	kList                // a list of strings, pipe-encoded into one cell
-	kIntList             // a list of integers, pipe-encoded into one cell
+	kScalar      kind = iota // one string, boolean, integer or null
+	kList                    // a list of strings, pipe-encoded into one cell
+	kIntList                 // a list of integers, pipe-encoded into one cell
+	kMappedClass             // one authored vocabulary class, derived from a raw answer
+	kMappedList              // a pipe-list of authored vocabulary classes
 )
 
 // field is one flat column and the nested path it projects from.
@@ -128,18 +130,30 @@ type Row struct {
 	Values  map[string]any
 }
 
-// Project turns a profile into a flat row and computes the derived metrics.
-// It does not consult the profile for the derived values — it computes them
-// from the projected cells, which is what makes "authored derived" detectable.
+// Project turns a model profile into a flat row and computes the derived
+// metrics. It is the model dataset's wrapper around ProjectWith.
 func Project(s *Schemas, p Profile) (Row, error) {
-	vals := map[string]any{"agent_id": p.AgentID}
-	for _, f := range mapping {
+	return ProjectWith(Model(), s, p)
+}
+
+// ProjectWith turns a profile into a flat row under a dataset. It does not
+// consult the profile for the derived values — it computes them from the
+// projected cells, which is what makes "authored derived" detectable.
+func ProjectWith(ds *Dataset, s *Schemas, p Profile) (Row, error) {
+	vals := map[string]any{ds.IDField: p.AgentID}
+	for _, f := range ds.Mapping {
 		info := s.Flat.Props[f.Col]
 		v, ok := lookup(p.Answer, f.Path)
 		if !ok {
 			return Row{}, fmt.Errorf("%s: answer has no %s (for %s)", p.AgentID, f.Path, f.Col)
 		}
-		out, err := encode(info, f, v)
+		var out any
+		var err error
+		if fn, ok := ds.Mapped[f.Col]; ok {
+			out, err = fn(v)
+		} else {
+			out, err = encode(info, f, v)
+		}
 		if err != nil {
 			return Row{}, fmt.Errorf("%s: %s: %w", p.AgentID, f.Col, err)
 		}
@@ -150,11 +164,21 @@ func Project(s *Schemas, p Profile) (Row, error) {
 	vals["review_by"] = p.Provenance.ReviewBy
 	vals["survey_method"] = p.Provenance.SurveyMethod
 	vals["schema_version"] = p.Provenance.SchemaVersion
-	d := Derive(cells(vals, s.Flat.Order))
-	vals["mcp_ready"] = d.MCPReady
-	vals["autonomous_ready"] = d.AutonomousReady
-	vals["production_grade"] = d.ProductionGrade
-	vals["strictness_score"] = d.StrictnessScore
+	cells := cells(vals, s.Flat.Order)
+	for k, sv := range ds.Derive(cells) {
+		switch s.Flat.Props[k].Type {
+		case "boolean":
+			vals[k] = sv == "true"
+		case "integer":
+			n, err := strconv.Atoi(sv)
+			if err != nil {
+				return Row{}, fmt.Errorf("%s: %s: %w", p.AgentID, k, err)
+			}
+			vals[k] = n
+		default:
+			vals[k] = sv
+		}
+	}
 	return Row{AgentID: p.AgentID, Values: vals}, nil
 }
 
@@ -257,6 +281,23 @@ func encode(info Prop, f field, v any) (any, error) {
 				return nil, fmt.Errorf("want a boolean, got %T", v)
 			}
 			return b, nil
+		case "integer":
+			n, err := asInt(v)
+			if err != nil {
+				return nil, err
+			}
+			return n, nil
+		case "number":
+			switch t := v.(type) {
+			case float64:
+				return t, nil
+			case json.Number:
+				return t, nil
+			case int:
+				return t, nil
+			default:
+				return nil, fmt.Errorf("want a number, got %T", v)
+			}
 		default:
 			s, err := asString(v)
 			if err != nil {

@@ -218,7 +218,7 @@ The full 100-column projection of each row is in `models.csv`.
 The same thread carries a **tool survey** — 13 tool profiles (VS Code, GitHub,
 Jira, IntelliJ, Apollo GraphQL, NYT, Google Drive, DoorDash, Nx, PostgreSQL,
 SoundCloud, Slack, Netlify) against a *different* schema (`toolName`,
-`labSafetyFitnessRequirements`, …). It is out of scope here and tracked in
-[`#14`](https://github.com/james-gibson/lab-safety/issues/14); this directory is
-the pattern it should reuse — share the tool, share the discipline, author the
-vocabulary.
+`labSafetyFitnessRequirements`, …). It now lives in [`tool/`](tool/README.md),
+reusing this directory's engine with its own vocabulary; `survey --dataset
+tool --check` is its proof. The original ticket is
+[`#14`](https://github.com/james-gibson/lab-safety/issues/14).

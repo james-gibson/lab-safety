@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "schema: vs-code-extension-api answer fails nested.json",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/vs-code-extension-api.json",
+      "path": "answer.labSafetyFitnessRequirements.minimumCapabilityRung",
+      "value": 9
+    }
+  ]
+}

@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "tool survey - flat row",
+  "description": "The projection: the nested answer's raw columns, the authored vocabulary classes, provenance, and computed metrics.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tool_id",
+    "tool_name",
+    "tool_vendor",
+    "minimum_capability_rung",
+    "max_acceptable_imaginary_distance",
+    "source_url",
+    "checked_at",
+    "review_by",
+    "survey_method",
+    "schema_version"
+  ],
+  "properties": {
+    "tool_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tool_name": {
+      "type": "string"
+    },
+    "tool_vendor": {
+      "type": "string"
+    },
+    "tool_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "minimum_capability_rung": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6
+    },
+    "max_acceptable_imaginary_distance": {
+      "type": "number",
+      "minimum": 0
+    },
+    "acceptable_direction_labels": {
+      "type": "string"
+    },
+    "requires_seed42_ground_truth": {
+      "type": "boolean"
+    },
+    "consequential_operations": {
+      "type": "string"
+    },
+    "fundamental_failures": {
+      "type": "string"
+    },
+    "is_idempotent": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "supports_dry_run": {
+      "type": "boolean"
+    },
+    "state_mutability": {
+      "type": "string"
+    },
+    "mutability_class": {
+      "type": "string",
+      "enum": [
+        "none",
+        "low",
+        "moderate",
+        "high",
+        "critical",
+        "variable"
+      ]
+    },
+    "blast_radius": {
+      "type": "string"
+    },
+    "blast_class": {
+      "type": "string",
+      "enum": [
+        "none",
+        "local",
+        "project",
+        "org",
+        "production",
+        "physical",
+        "data"
+      ]
+    },
+    "primary_interface_type": {
+      "type": "string"
+    },
+    "interface_families": {
+      "type": "string",
+      "x-list-enum": [
+        "mcp",
+        "rest",
+        "graphql",
+        "grpc",
+        "json-rpc",
+        "sdk",
+        "cli",
+        "sql",
+        "events",
+        "custom"
+      ]
+    },
+    "schema_standard": {
+      "type": "string"
+    },
+    "schema_families": {
+      "type": "string",
+      "x-list-enum": [
+        "openapi",
+        "graphql",
+        "json-schema",
+        "typescript",
+        "xml",
+        "sql",
+        "custom",
+        "other"
+      ]
+    },
+    "parameter_complexity": {
+      "type": "string"
+    },
+    "complexity_class": {
+      "type": "string",
+      "enum": [
+        "low",
+        "moderate",
+        "high",
+        "extreme"
+      ]
+    },
+    "payload_size_sensitivity": {
+      "type": "string"
+    },
+    "payload_class": {
+      "type": "string",
+      "enum": [
+        "low",
+        "moderate",
+        "high"
+      ]
+    },
+    "auth_mechanism": {
+      "type": "string"
+    },
+    "auth_families": {
+      "type": "string",
+      "x-list-enum": [
+        "none",
+        "api-key",
+        "pat",
+        "oauth2",
+        "jwt",
+        "iam",
+        "account",
+        "custom"
+      ]
+    },
+    "requires_independent_alarm_verification": {
+      "type": "boolean"
+    },
+    "human_in_the_loop_required": {
+      "type": "boolean"
+    },
+    "primary_use_cases": {
+      "type": "string"
+    },
+    "common_agent_failure_modes": {
+      "type": "string"
+    },
+    "recovery_mechanisms": {
+      "type": "string"
+    },
+    "supports_mcp": {
+      "type": "boolean"
+    },
+    "requires_strict_typing": {
+      "type": "boolean"
+    },
+    "supported_model_families": {
+      "type": "string"
+    },
+    "model_families": {
+      "type": "string",
+      "x-list-enum": [
+        "all",
+        "claude",
+        "gpt",
+        "gemini",
+        "codex",
+        "other"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "checked_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "review_by": {
+      "type": "string",
+      "format": "date"
+    },
+    "survey_method": {
+      "type": "string",
+      "enum": [
+        "self-report",
+        "documentation",
+        "observed"
+      ]
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1
+    },
+    "mcp_ready": {
+      "type": "boolean"
+    },
+    "dry_run_ready": {
+      "type": "boolean"
+    },
+    "autonomous_ready": {
+      "type": "boolean"
+    },
+    "risk_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 13
+    }
+  }
+}

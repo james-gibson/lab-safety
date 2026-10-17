@@ -1,0 +1,78 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315175145",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "VS Code Extension API",
+    "toolVendorOrProject": "Microsoft",
+    "toolVersion": "1.109 (Stable)",
+    "description": "Exposes core editor functionality, filesystem access, and terminal control to extensions and background agents.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 12.5,
+      "acceptableDirectionLabels": [
+        "Local-Deterministic",
+        "Filesystem-Aligned"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "fs.writeFile",
+        "terminal.sendText",
+        "commands.executeCommand"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Arbitrary shell execution without user consent",
+        "Silent workspace data corruption",
+        "Credential leakage via extension host"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": false,
+      "stateMutability": "High (Direct local filesystem and process mutation)",
+      "blastRadius": "User Workspace / Local Machine"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "VS Code Extension API (TS/JS)",
+      "schemaStandard": "TypeScript Definition Files (.d.ts)",
+      "parameterComplexity": "High (Deeply nested objects and event-driven callbacks)",
+      "payloadSizeSensitivity": "Moderate (In-process IPC)"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth2 / Extension Identity",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Automated refactoring",
+        "Dependency management",
+        "Agentic debugging"
+      ],
+      "commonAgentFailureModes": [
+        "Over-correction of linter rules",
+        "Incomplete file writes causing build breakage",
+        "Infinite loop in file-watcher triggers"
+      ],
+      "recoveryMechanisms": [
+        "Git-based rollback",
+        "Extension Host restart",
+        "Undo/Redo buffer inspection"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4",
+        "Claude"
+      ]
+    },
+    "notes": "Version 1.109 introduces advanced background agent hooks and slash command support for autonomous skill invocation."
+  }
+}

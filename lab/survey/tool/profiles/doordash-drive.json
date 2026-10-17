@@ -1,0 +1,77 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315192126",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "DoorDash Drive/Marketplace API",
+    "toolVendorOrProject": "DoorDash",
+    "toolVersion": "v2",
+    "description": "Fulfillment and logistics API for restaurant order management and white-label delivery dispatch.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 5,
+      "maxAcceptableImaginaryDistance": 5.0,
+      "acceptableDirectionLabels": [
+        "Physical-World-Impact",
+        "Financial-Consequence"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "delivery.create",
+        "order.cancel",
+        "callback.configure"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Ordering physical goods/services to incorrect addresses",
+        "Unauthorized financial transactions via order creation",
+        "Incorrect delivery instructions leading to physical loss"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": true,
+      "stateMutability": "Critical (Financial and physical state mutation)",
+      "blastRadius": "Physical Logistics / Commercial Liability"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST",
+      "schemaStandard": "Custom JSON (Strict Validation)",
+      "parameterComplexity": "High (Requires precise geographical and payload data)",
+      "payloadSizeSensitivity": "Low"
+    },
+    "authAndVerification": {
+      "authMechanism": "JWT / OAuth2",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Autonomous order fulfillment",
+        "Real-time logistics coordination",
+        "Automated customer support dispatch"
+      ],
+      "commonAgentFailureModes": [
+        "Payload validation rejection",
+        "Miscalculating delivery window constraints",
+        "Callback URL misconfiguration"
+      ],
+      "recoveryMechanisms": [
+        "Human support handoff",
+        "Order cancellation window",
+        "Webhook status polling"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": false,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4"
+      ]
+    },
+    "notes": "DoorDash provides 'Dev Chat AI' as an enablement guide to reduce agentic integration errors by providing instant, sourced guidance on payloads."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "derived: vs-code-extension-api mcp_ready is",
+  "ops": [
+    {
+      "kind": "csvSetCell",
+      "file": "tools.csv",
+      "row": "vs-code-extension-api",
+      "column": "mcp_ready",
+      "text": "false"
+    }
+  ]
+}

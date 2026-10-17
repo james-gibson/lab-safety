@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "duplicate tool_id:",
+  "ops": [
+    {
+      "kind": "csvDuplicateRow",
+      "file": "tools.csv",
+      "row": "netlify-api",
+      "set": {}
+    }
+  ]
+}

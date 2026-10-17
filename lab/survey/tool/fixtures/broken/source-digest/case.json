@@ -1,0 +1,13 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "does not match sources/issue-3.sha256",
+  "ops": [
+    {
+      "kind": "append",
+      "file": "sources/issue-3.json",
+      "text": " "
+    }
+  ]
+}

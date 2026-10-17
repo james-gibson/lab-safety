@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "is not in sources/issue-3.json",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/netlify-api.json",
+      "path": "provenance.source_url",
+      "value": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-9999999999"
+    }
+  ]
+}

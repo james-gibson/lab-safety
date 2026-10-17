@@ -1,0 +1,21 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "the schema and the projector disagree",
+  "ops": [
+    {
+      "kind": "jsonDelete",
+      "file": "schemas/flat.json",
+      "path": "properties.tool_name"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "schemas/flat.json",
+      "path": "properties.tool_name",
+      "value": {
+        "type": "string"
+      }
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315205696",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "Nx Build System / Monorepo Tooling",
+    "toolVendorOrProject": "Nrwl / Nx",
+    "toolVersion": "20.x (Agent-Optimized)",
+    "description": "Smart, fast, and extensible build system with a first-class Project Graph and MCP server integration for agentic context.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 4,
+      "maxAcceptableImaginaryDistance": 15.0,
+      "acceptableDirectionLabels": [
+        "Workspace-Aware",
+        "Graph-Deterministic"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "nx affected",
+        "nx generate",
+        "nx release"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Circular dependency injection into the Project Graph",
+        "Bypassing module boundary lint rules",
+        "Silent workspace-wide code corruption during refactoring"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": false,
+      "supportsDryRunMode": true,
+      "stateMutability": "High (Workspace configuration and code mutation)",
+      "blastRadius": "Monorepo / CI-CD Pipeline"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "CLI / MCP Server",
+      "schemaStandard": "JSON Schema (project.json / nx.json)",
+      "parameterComplexity": "High (Complex task pipelines and generator options)",
+      "payloadSizeSensitivity": "Moderate (In-memory Project Graph access)"
+    },
+    "authAndVerification": {
+      "authMechanism": "Nx Cloud Token / Local FS Auth",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Autonomous cross-project refactoring",
+        "Self-healing CI via automated PR fixes",
+        "Architectural constraint enforcement"
+      ],
+      "commonAgentFailureModes": [
+        "Incorrect task ordering in polyglot projects",
+        "Hallucinating generator parameters",
+        "Cache poisoning via non-deterministic build inputs"
+      ],
+      "recoveryMechanisms": [
+        "Git-based workspace rollback",
+        "Nx Cloud Remote Cache invalidation",
+        "Local History inspection"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "Claude 3.5 Sonnet",
+        "GPT-4o"
+      ]
+    },
+    "notes": "Nx provides a dedicated command to provision MCP servers and skills for agents automatically."
+  }
+}

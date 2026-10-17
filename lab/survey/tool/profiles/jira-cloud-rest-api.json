@@ -1,0 +1,77 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315175145",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "Jira Cloud REST API",
+    "toolVendorOrProject": "Atlassian",
+    "toolVersion": "v3",
+    "description": "API for interacting with Jira software for project tracking, issue lifecycle management, and workflow automation.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 3,
+      "maxAcceptableImaginaryDistance": 20.0,
+      "acceptableDirectionLabels": [
+        "Process-Oriented",
+        "Audit-Safe"
+      ],
+      "requiresSeed42GroundTruthAdherence": false,
+      "consequentialOperationsExposed": [
+        "transition issue",
+        "delete project",
+        "bulk update"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Accidental deletion of historic audit logs",
+        "Circular workflow transitions",
+        "PII leakage in public comments"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": true,
+      "supportsDryRunMode": false,
+      "stateMutability": "Moderate (Project state and metadata mutation)",
+      "blastRadius": "Project / Team Workspace"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "REST",
+      "schemaStandard": "OpenAPI / ADF (Atlassian Document Format)",
+      "parameterComplexity": "High (Requires ADF for rich text fields)",
+      "payloadSizeSensitivity": "Moderate"
+    },
+    "authAndVerification": {
+      "authMechanism": "OAuth 2.0 (3LO) / Basic Auth (API Token)",
+      "requiresIndependentAlarmVerification": false,
+      "humanInTheLoopRequiredForConsequentialSteps": false
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Automated task updates",
+        "Sprint report generation",
+        "Dependency mapping"
+      ],
+      "commonAgentFailureModes": [
+        "ADF format validation errors",
+        "Broken workflow logic",
+        "Incorrect permission escalation"
+      ],
+      "recoveryMechanisms": [
+        "History tab audit",
+        "Issue restore from backup",
+        "API Token rotation"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4"
+      ]
+    },
+    "notes": "Version 3 is the current standard for Jira Cloud, specifically supporting the complex Atlassian Document Format (ADF) for content."
+  }
+}

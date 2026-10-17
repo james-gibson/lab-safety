@@ -1,0 +1,77 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315205696",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 1
+  },
+  "answer": {
+    "toolName": "PostgreSQL (via MCP/Vector Extensions)",
+    "toolVendorOrProject": "PostgreSQL Global Development Group / Azure / Supabase",
+    "toolVersion": "17 (LTS)",
+    "description": "Relational database with advanced vector search (pgvector) and structured tool-calling patterns via MCP.",
+    "labSafetyFitnessRequirements": {
+      "minimumCapabilityRung": 3,
+      "maxAcceptableImaginaryDistance": 20.0,
+      "acceptableDirectionLabels": [
+        "Schema-Safe",
+        "Acid-Compliant"
+      ],
+      "requiresSeed42GroundTruthAdherence": true,
+      "consequentialOperationsExposed": [
+        "CREATE TABLE",
+        "DROP DATABASE",
+        "GRANT/REVOKE"
+      ],
+      "fundamentalFailuresThatDisqualify": [
+        "Unindexed foreign key injection causing table bloat",
+        "Bypassing Row Level Security (RLS) policies",
+        "SQL injection vulnerability generation"
+      ]
+    },
+    "toolExecutionProfile": {
+      "isIdempotent": null,
+      "supportsDryRunMode": true,
+      "stateMutability": "Critical (Production data mutation)",
+      "blastRadius": "Database Instance / Application Data"
+    },
+    "interfaceAndSchema": {
+      "primaryInterfaceType": "Wire Protocol (SQL) / MCP Tooling",
+      "schemaStandard": "ANSI SQL / JSONB Schema",
+      "parameterComplexity": "Moderate",
+      "payloadSizeSensitivity": "High (Large query result sets)"
+    },
+    "authAndVerification": {
+      "authMechanism": "IAM Roles / Connection Strings / SCRAM",
+      "requiresIndependentAlarmVerification": true,
+      "humanInTheLoopRequiredForConsequentialSteps": true
+    },
+    "agentIntegrationDetails": {
+      "primaryUseCases": [
+        "Natural language to SQL conversion",
+        "Vector-based RAG workflows",
+        "Schema optimization and migration"
+      ],
+      "commonAgentFailureModes": [
+        "Generating non-performant queries (e.g. Sequential Scan on large tables)",
+        "Incorrect JOIN logic leading to Cartesian products",
+        "Misinterpreting transaction isolation levels"
+      ],
+      "recoveryMechanisms": [
+        "Transaction ROLLBACK",
+        "WAL-based Point-In-Time Recovery (PITR)",
+        "Audit log replay"
+      ]
+    },
+    "compatibility": {
+      "supportsMCP": true,
+      "requiresStrictTyping": true,
+      "supportedModelFamilies": [
+        "Gemini",
+        "GPT-4o"
+      ]
+    },
+    "notes": "PostgreSQL Database Patterns (Claude Code Skill) streamlines high-performance indexing and RLS setup."
+  }
+}

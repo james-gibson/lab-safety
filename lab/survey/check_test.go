@@ -28,9 +28,24 @@ import (
 const root = "."
 
 type brokenCase struct {
-	Args []string `json:"args"`
-	Want string   `json:"want"`
-	Ops  []op     `json:"ops"`
+	Args     []string `json:"args"`
+	Want     string   `json:"want"`
+	IDColumn string   `json:"id_column"`
+	Ops      []op     `json:"ops"`
+}
+
+type surveyCase struct {
+	name     string
+	root     string
+	ds       *survey.Dataset
+	fixtures string
+}
+
+func datasets() []surveyCase {
+	return []surveyCase{
+		{"model", ".", survey.Model(), filepath.Join("fixtures", "broken")},
+		{"tool", "tool", survey.Tool(), filepath.Join("tool", "fixtures", "broken")},
+	}
 }
 
 type op struct {
@@ -48,75 +63,89 @@ type op struct {
 }
 
 func TestTheRealSurveyPasses(t *testing.T) {
-	fails, err := survey.Check(root)
-	if err != nil {
-		t.Fatalf("check: %v", err)
-	}
-	if len(fails) > 0 {
-		t.Fatalf("the committed survey fails its own check:\n%s", strings.Join(fails, "\n"))
+	for _, d := range datasets() {
+		d := d
+		t.Run(d.name, func(t *testing.T) {
+			fails, err := survey.CheckDataset(d.ds, d.root)
+			if err != nil {
+				t.Fatalf("check: %v", err)
+			}
+			if len(fails) > 0 {
+				t.Fatalf("the committed %s survey fails its own check:\n%s", d.name, strings.Join(fails, "\n"))
+			}
+		})
 	}
 }
 
 func TestBrokenFixtures(t *testing.T) {
-	dirs, err := filepath.Glob(filepath.Join("fixtures", "broken", "*"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(dirs) == 0 {
-		t.Fatal("no fixtures/broken/* fixtures found")
-	}
-	sort.Strings(dirs)
-
-	for _, dir := range dirs {
-		dir := dir
-		t.Run(filepath.Base(dir), func(t *testing.T) {
-			raw, err := os.ReadFile(filepath.Join(dir, "case.json"))
+	for _, d := range datasets() {
+		d := d
+		t.Run(d.name, func(t *testing.T) {
+			dirs, err := filepath.Glob(filepath.Join(d.fixtures, "*"))
 			if err != nil {
 				t.Fatal(err)
 			}
-			var c brokenCase
-			if err := json.Unmarshal(raw, &c); err != nil {
-				t.Fatal(err)
+			if len(dirs) == 0 {
+				t.Fatalf("no %s fixtures found", d.fixtures)
 			}
-			if c.Want == "" {
-				t.Fatal("fixture has no \"want\" — a fixture that cannot say why it fails is not a test")
-			}
+			sort.Strings(dirs)
 
-			tmp := materialize(t)
-			for _, o := range c.Ops {
-				if err := apply(tmp, o); err != nil {
-					t.Fatalf("applying %s: %v", o.Kind, err)
-				}
-			}
-
-			args := c.Args
-			if len(args) == 0 {
-				args = []string{"--check"}
-			}
-			var fails []string
-			switch args[0] {
-			case "--check":
-				fails, err = survey.Check(tmp)
-			case "--stale":
-				as := time.Now()
-				if len(args) > 2 {
-					as, err = time.Parse("2006-01-02", args[2])
+			for _, dir := range dirs {
+				dir := dir
+				t.Run(filepath.Base(dir), func(t *testing.T) {
+					raw, err := os.ReadFile(filepath.Join(dir, "case.json"))
 					if err != nil {
-						t.Fatalf("bad --as-of in fixture: %v", err)
+						t.Fatal(err)
 					}
-				}
-				fails, err = survey.Stale(tmp, as)
-			default:
-				t.Fatalf("unknown fixture args %v", args)
-			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if len(fails) == 0 {
-				t.Fatalf("%v reported no failure; the fixture was supposed to break %q", args, c.Want)
-			}
-			if !anyContains(fails, c.Want) {
-				t.Fatalf("no failure mentions %q; failures were:\n%s", c.Want, strings.Join(fails, "\n"))
+					var c brokenCase
+					if err := json.Unmarshal(raw, &c); err != nil {
+						t.Fatal(err)
+					}
+					if c.Want == "" {
+						t.Fatal("fixture has no \"want\" — a fixture that cannot say why it fails is not a test")
+					}
+
+					tmp := materialize(t, d.ds, d.root)
+					idCol := c.IDColumn
+					if idCol == "" {
+						idCol = d.ds.IDField
+					}
+					for _, o := range c.Ops {
+						if err := apply(tmp, o, idCol); err != nil {
+							t.Fatalf("applying %s: %v", o.Kind, err)
+						}
+					}
+
+					args := c.Args
+					if len(args) == 0 {
+						args = []string{"--check"}
+					}
+					var fails []string
+					switch args[0] {
+					case "--check":
+						fails, err = survey.CheckDataset(d.ds, tmp)
+					case "--stale":
+						as := time.Now()
+						if len(args) > 2 {
+							as, err = time.Parse("2006-01-02", args[2])
+							if err != nil {
+								t.Fatalf("bad --as-of in fixture: %v", err)
+							}
+						}
+						fails, err = survey.StaleDataset(d.ds, tmp, as)
+					default:
+						t.Fatalf("unknown fixture args %v", args)
+					}
+					if err != nil {
+						t.Fatalf("unexpected error: %v", err)
+					}
+					if len(fails) == 0 {
+						t.Fatalf("%v reported no failure; the fixture was supposed to break %q", args, c.Want)
+					}
+					if !anyContains(fails, c.Want) {
+						t.Fatalf("no failure mentions %q; failures were:\n%s", c.Want, strings.Join(fails, "\n"))
+					}
+				})
 			}
 		})
 	}
@@ -133,14 +162,14 @@ func anyContains(fails []string, want string) bool {
 
 // materialize copies the real survey into a temp dir so a fixture can break a
 // copy without touching the working tree.
-func materialize(t *testing.T) string {
+func materialize(t *testing.T, ds *survey.Dataset, root string) string {
 	t.Helper()
 	tmp := t.TempDir()
-	for _, f := range []string{"models.csv", "survey.feature", "README.md"} {
-		copyFile(t, f, filepath.Join(tmp, f))
+	for _, f := range []string{ds.CSVPath, ds.FeaturePath, ds.ReadmePath} {
+		copyFile(t, filepath.Join(root, f), filepath.Join(tmp, f))
 	}
 	for _, d := range []string{"profiles", "schemas", "sources"} {
-		copyDir(t, d, filepath.Join(tmp, d))
+		copyDir(t, filepath.Join(root, d), filepath.Join(tmp, d))
 	}
 	return tmp
 }
@@ -171,7 +200,7 @@ func copyDir(t *testing.T, src, dst string) {
 }
 
 // apply performs one mutation on the materialised root.
-func apply(tmp string, o op) error {
+func apply(tmp string, o op, idColumn string) error {
 	switch o.Kind {
 	case "copy":
 		body, err := os.ReadFile(filepath.Join(tmp, o.From))
@@ -260,7 +289,7 @@ func apply(tmp string, o op) error {
 			}
 			return 0, fmt.Errorf("%s: no column %q", o.File, name)
 		}
-		idIdx, err := colIndex("agent_id")
+		idIdx, err := colIndex(idColumn)
 		if err != nil {
 			return err
 		}

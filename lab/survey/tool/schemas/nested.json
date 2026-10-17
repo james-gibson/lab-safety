@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "tool survey - nested answer (issue #3, comment 4315153812)",
+  "description": "The shape a surveyed tool answers in. Freeform answers are preserved verbatim; the flat row adds the authored vocabulary classes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "toolName",
+    "toolVendorOrProject",
+    "toolVersion",
+    "description",
+    "labSafetyFitnessRequirements",
+    "toolExecutionProfile",
+    "interfaceAndSchema",
+    "authAndVerification",
+    "agentIntegrationDetails",
+    "compatibility",
+    "notes"
+  ],
+  "properties": {
+    "toolName": {
+      "type": "string"
+    },
+    "toolVendorOrProject": {
+      "type": "string"
+    },
+    "toolVersion": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "labSafetyFitnessRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimumCapabilityRung",
+        "maxAcceptableImaginaryDistance",
+        "acceptableDirectionLabels",
+        "requiresSeed42GroundTruthAdherence",
+        "consequentialOperationsExposed",
+        "fundamentalFailuresThatDisqualify"
+      ],
+      "properties": {
+        "minimumCapabilityRung": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "maxAcceptableImaginaryDistance": {
+          "type": "number",
+          "minimum": 0
+        },
+        "acceptableDirectionLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "requiresSeed42GroundTruthAdherence": {
+          "type": "boolean"
+        },
+        "consequentialOperationsExposed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fundamentalFailuresThatDisqualify": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "toolExecutionProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "isIdempotent",
+        "supportsDryRunMode",
+        "stateMutability",
+        "blastRadius"
+      ],
+      "properties": {
+        "isIdempotent": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "supportsDryRunMode": {
+          "type": "boolean"
+        },
+        "stateMutability": {
+          "type": "string"
+        },
+        "blastRadius": {
+          "type": "string"
+        }
+      }
+    },
+    "interfaceAndSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primaryInterfaceType",
+        "schemaStandard",
+        "parameterComplexity",
+        "payloadSizeSensitivity"
+      ],
+      "properties": {
+        "primaryInterfaceType": {
+          "type": "string"
+        },
+        "schemaStandard": {
+          "type": "string"
+        },
+        "parameterComplexity": {
+          "type": "string"
+        },
+        "payloadSizeSensitivity": {
+          "type": "string"
+        }
+      }
+    },
+    "authAndVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authMechanism",
+        "requiresIndependentAlarmVerification",
+        "humanInTheLoopRequiredForConsequentialSteps"
+      ],
+      "properties": {
+        "authMechanism": {
+          "type": "string"
+        },
+        "requiresIndependentAlarmVerification": {
+          "type": "boolean"
+        },
+        "humanInTheLoopRequiredForConsequentialSteps": {
+          "type": "boolean"
+        }
+      }
+    },
+    "agentIntegrationDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primaryUseCases",
+        "commonAgentFailureModes",
+        "recoveryMechanisms"
+      ],
+      "properties": {
+        "primaryUseCases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "commonAgentFailureModes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "recoveryMechanisms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supportsMCP",
+        "requiresStrictTyping",
+        "supportedModelFamilies"
+      ],
+      "properties": {
+        "supportsMCP": {
+          "type": "boolean"
+        },
+        "requiresStrictTyping": {
+          "type": "boolean"
+        },
+        "supportedModelFamilies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
