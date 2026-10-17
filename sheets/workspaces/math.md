@@ -132,10 +132,13 @@ P(≥2 delivered) = 1 - (1-q)^k - k·q·(1-q)^(k-1)     // the duplicates you bu
 ```
 
 which is at-least-once semantics in one line — and in a file-backed model a duplicate is
-a **second identical write**. Whether that is harmless is not a protocol question: it is
-the **idempotence** of the operation, which the VFS has to answer per tool (`/tools/*@`
-is a file; writing the same file twice is naturally idempotent; appending to a queue is
-not).
+a **second identical write**. The lab does **not** leave that to per-tool idempotence:
+the **consumption filter** (`SPLASH.md` → *The consumption filter*; [`../../lab/SPLASH-MCP.md`](../../lab/SPLASH-MCP.md) §3)
+makes the isotope single-use, so a repeat is filtered *before* it becomes an effect and
+the retry is safe by construction. What that costs is a Bloom **false positive** — a
+legitimate first use suppressed — which is deliberately the liveness direction rather
+than the silent-corruption one. The residual is that the filter's rate is unmeasured
+(§7), not that the mechanism is missing.
 
 **Fan-out.** If the graph offers `κ` disjoint paths of `h` hops, redundancy is parallel
 and the result is the complement:
@@ -223,8 +226,10 @@ copy.
 1. **A7 — the pull term.** `P(caught in time)` is unmeasured because there is no
    subscription. Until it exists, §4's third factor is the largest unquantified term in
    the model.
-2. **Idempotence per tool.** §4's duplicate writes are only safe if the operation is
-   idempotent, which is a property of each `/tools/*@` file and is currently unstated.
+2. **The dedupe filter's false-positive cost.** The duplicate problem has a mechanism by
+   construction (the consumption filter, §4) — what is unmeasured is its price: a Bloom
+   false positive **suppresses a legitimate first use**. That rate is a property of the
+   filter's sizing and is not measured here.
 3. **The common-mode term `c`.** Asserted dominant, not measured. Measuring it would
    mean counting how the spike's own failures actually occurred — which the traffic log
    already records.
