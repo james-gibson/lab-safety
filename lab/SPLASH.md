@@ -35,7 +35,10 @@ Consequences, stated plainly:
 2. **Trust is graded, not binary.** It is a quantity, not a flag.
 3. **A declared state is information, not authority.** A caller announcing a
    problem is offering input; the response is a decision by the authority, not a
-   claim by the caller.
+   claim by the caller. The asymmetry is deliberate and load-bearing: a self-report
+   can only move standing **down**, never up, so the honest strategy is weakly
+   dominant and no claim ever has to be believed
+   ([`SPLASH-SLA.md`](SPLASH-SLA.md) §9).
 
 ## Enrollment and one-time credentials
 

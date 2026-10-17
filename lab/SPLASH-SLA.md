@@ -479,7 +479,67 @@ incented.** Put the two the other way round and both failure modes arrive at onc
 instrument that can be licensed away from reporting, and a member whose word is taken
 because it holds a subscription.
 
-## 9. What the client sees
+## 9. Can your MCP do that?
+
+§8 argued that the **instrument** must be unconditional. The **members** are the other half,
+and the pitch falls out of one design decision.
+
+**Every node promises to demote itself.** A node's self-report is accepted as input, and it
+can only ever move its standing **down**. That asymmetry is what makes self-reporting safe:
+if a claim could *raise* authority, every participant would claim upward and the protocol
+would have to adjudicate. Because a claim can only lower, **the honest strategy is weakly
+dominant and nobody has to be believed**. This is *"a declared state is information, not
+authority"* ([`SPLASH.md`](SPLASH.md) → *Relation, not transport*) followed to its
+conclusion — and it is the same rule that keeps reappearing from other sides: the session
+never holds authority over its own reading, the rung is the registry's judgement rather than
+the node's, and a node finding itself departing **removes itself**: *"A shuts down and
+disqualifies itself from traffic. It requires no instruction; it removes itself."*
+
+**And that is why there are three layers.** A, B and C hold *different quantities* —
+presence, exposure, authority — so compromising one does not confer the others: an
+enumerable surface (B) is not a session (A), and neither of them is a credential (C). The
+layers are not belt-and-braces; they are what keeps a single compromise from becoming a
+**promotion**. Which is the shape the red-team work attacks, from two directions:
+
+| attack class | what it wants | how the model attempts to close it | what remains |
+| --- | --- | --- | --- |
+| **auth replay** | to present a captured credential as though it were current | credentials are **single-use**, consumed by the tick (`SPLASH.md` → *The consumption filter*); a repeat is filtered, so a replay is not a request the cluster can honour — the discipline is HOTP/TOTP's (RFC 4226/6238) | the theft is **detected** by the second attempt rather than prevented: one use can be stolen |
+| **memory attack** | to read what a node holds — keys, session state, credentials | C is separate from A and B, so a compromise at the surface does not reach the authority; credentials are read where they reside and **bound to a key the holder proves rather than transmits** (RFC 9449 DPoP; RFC 8705 mTLS-bound), so a lifted token is insufficient; the tap deliberately does **not** log credentials; and what *is* held is a one-time pad, whose value the first use spends | *"read where they reside"* is a **requirement on the implementation**, not something a wire format can enforce — a node that parks a live key in memory is not saved by the protocol |
+
+**And the default response to the unexpected is a rotation, not a repetition.** §3
+established that a **lost** call is safe to retry, because identity is consumed. That is a
+different thing from an **unexpected interaction**, and conflating the two is how a
+departure gets retried forever instead of investigated. Here they are separated deliberately:
+
+- a **lost** call is a *delivery* event → retry, safely, because the isotope is single-use (§3);
+- an **unexpected** interaction is a *departure* → investigate, measure, and if it repeats,
+  **rotate** the role.
+
+`SPLASH.md` already treats the two failovers the same way — *"Failover is a rotation"*, and
+*"a planned crash is a rehearsed failover, not an incident"* — because the rotation is
+pre-negotiated and the stand-in already holds the mirrored traffic. The rule is therefore
+short: **nothing unexpected is answered by doing it again.** Repetition is for loss;
+rotation is for surprise.
+
+**The pitch, then, is a list of questions rather than a claim** — every one of them
+answerable for your own deployment, in public, without taking anyone's word for it (§5,
+*the basis is verifiable, not asserted*):
+
+1. Can a **member demote itself** — and can its own report ever *raise* its standing?
+2. Can a **credential be replayed**, and does the second attempt fail *visibly*?
+3. Can a compromised **surface reach the authority** — or does authority live somewhere the
+   surface cannot speak to?
+4. Does an **unexpected interaction rotate** a role, or does it retry until something breaks?
+5. Is the **verdict** obtainable without a licence, a subscription, or the cluster's
+   permission (§8)?
+6. Is the **measure** derived from a record you can re-derive, or asserted by the node it
+   describes?
+
+**Can your MCP do that?** That is the pitch in full — and it is deliberately the sort of
+question a stock deployment answers *yes* to in part and *no* to in part, because §2's table
+already conceded that a few rows stay open here too.
+
+## 10. What the client sees
 
 | client | what it gets |
 | --- | --- |
