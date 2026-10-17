@@ -620,7 +620,60 @@ honeypot contact in a routing trace ([`MATH.md`](MATH.md) → *Measured magnitud
 is the **reply**; the record is the **measurement**. Nothing about it requires the caller to
 be refused — only to be answered, and counted.
 
-## 11. What the client sees
+## 11. Doors are physical
+
+**The presumption is the anomaly.** Logically a door has no upper limit: an endpoint will
+accept arrivals until something else breaks. Physically, every door is bounded — its width,
+its corridor, the number of people who can be in it at once. The wire promises the first and
+the host delivers the second, and the gap between them is where the failure lands: a queue
+that collapses as utilisation approaches one (Kingman, §6), a process that dies, or an outage
+that takes the neighbours with it.
+
+So the cluster **mimics the physical**, in three ways.
+
+**1. Scope is physical — your house, not your neighbour's.** A real smoke detector protects
+the dwelling it is in. It does not alarm the street, and it does not depend on the street
+being up. Scoped the same way, a node's responsibility and its alarm domain are **its own
+extent**, which buys three things at once:
+
+- **no shared alarm path** — one dwelling's fire is not another's detection failure, so the
+  alarm itself is not a correlated failure;
+- **no leakage** — a neighbour learns nothing about your house by watching your detector,
+  which is the privacy position (RFC 6973, RFC 7258) rather than a courtesy;
+- **and a beep on your ceiling** — local and unavoidable (§8), not a street siren you had to
+  subscribe to.
+
+**2. Legitimate concurrency is bounded, so the filter is *derived* rather than tuned.** There
+are only likely so many legitimate inputs at once. That single fact is what makes admission
+filterable: if legitimate simultaneous work at a door is a handful, then an arrival count
+above it is not a **rate** problem but a **legitimacy** problem — and it can be classified
+rather than merely slowed. Which is why the budget is the **pad supply** and not a threshold:
+*"there is no knob to set and no threshold to tune; the budget is the pads"*
+([`SPLASH.md`](SPLASH.md) → *Metering*). You cannot arrive more often than you can be
+admitted, and you can only be admitted as often as you hold credentials. A rate limit says
+*too fast*; this says *too many to be real*.
+
+**3. You do not widen a door — you add doors.** [`SPLASH.md`](SPLASH.md) already states the
+capacity rule — *"more bandwidth means more ingress nodes, not a larger one"* — and this is
+*why*: a doorway has a width, and the physical answer to more traffic is another doorway, not
+a wider one. The bound **per door** is therefore a design parameter (the legitimate
+concurrency), and growth is more doors. Nothing is promised about a single point — which is
+precisely the promise the wire makes and the host cannot keep.
+
+**And the bound makes the excess legible.** With a reference — the legitimate concurrency at a
+door — the tick's synchronised burst becomes *measurable* rather than merely slow: everything
+above the bound is **arrival**, not work. The herd stops being an unclassifiable load spike and
+becomes a population the filter can be aimed at (§6, §7).
+
+**Named cost, recorded.** A physical bound means shedding work that *is* legitimate, when
+legitimate concurrency is genuinely exceeded. So the bound is set on legitimate concurrency
+**with headroom**, and the headroom is where SLA pressure comes back. The choice, stated
+plainly: **shed rather than queue** — 429 with `Retry-After` is the standard form
+([`SPLASH.md`](SPLASH.md) → *Network behaviour*) — because an unbounded queue converts an
+**admission** failure into a **latency** failure, and latency is the promise this model never
+made (§6). Bounding the door is what lets it keep not making it.
+
+## 12. What the client sees
 
 | client | what it gets |
 | --- | --- |

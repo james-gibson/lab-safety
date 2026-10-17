@@ -244,7 +244,10 @@ determined.
   tick makes it predictable, not smaller.
   - The tick synchronises the burst but does not reduce it. The herd still arrives
     at the ingress node (A). Capacity is therefore added **horizontally**: more
-    bandwidth means more ingress nodes, not a larger one. The tick has a second
+    bandwidth means more ingress nodes, not a larger one. A doorway has a width, so
+    the answer to more traffic is another doorway — the bound is *per door*, and
+    nothing is promised about a single point
+    ([`SPLASH-SLA.md`](SPLASH-SLA.md) §11). The tick has a second
     function: it **consumes the one-time credentials** (see *Entry*), without which
     they would be replayable and the burst would return.
   - **The alignment is a deliberate queueing cost.** Synchronised arrivals are a
