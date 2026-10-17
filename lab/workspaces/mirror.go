@@ -101,20 +101,24 @@ func (c *Client) Run(ctx context.Context, session string, prog func(*Store) erro
 	return run, nil
 }
 
-// Report is the two-invariant cross-check.
+// Report is the cross-check: the writer's own claim (the traffic log against the
+// isotope records) plus the independent observation (the mirror read back
+// through the protocol against the spec).
 type Report struct {
 	Runs               int
 	LogsMissingIsotope []string
 	IsotopesMissingLog []string
 	DigestMismatch     []string
+	SpecMismatch       []string // surfaces where the observation disagrees with the spec
 }
 
 // Agrees reports whether every log has an isotope and every isotope a log, with
-// matching digests.
+// matching digests, and the independent observation matches the spec.
 func (r Report) Agrees() bool {
 	return len(r.LogsMissingIsotope) == 0 &&
 		len(r.IsotopesMissingLog) == 0 &&
-		len(r.DigestMismatch) == 0
+		len(r.DigestMismatch) == 0 &&
+		len(r.SpecMismatch) == 0
 }
 
 // Torn reports a discrepancy: the two invariants do not corroborate.

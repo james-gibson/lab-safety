@@ -268,3 +268,19 @@ func (s *Store) PromptGet(ctx context.Context, name string, data map[string]stri
 	}
 	return out, nil
 }
+
+// PromptList is prompts/list: the names of context/prompts/*.tmpl files (Rule §2).
+func (s *Store) PromptList(ctx context.Context) ([]string, error) {
+	ps, err := s.drv.List(ctx, DirPrompts)
+	if err != nil {
+		return nil, err
+	}
+	out := []string{}
+	for _, p := range ps {
+		if strings.HasSuffix(p, ".tmpl") {
+			out = append(out, path.Base(strings.TrimSuffix(p, ".tmpl")))
+		}
+	}
+	sort.Strings(out)
+	return out, nil
+}

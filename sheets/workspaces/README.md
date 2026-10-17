@@ -169,6 +169,11 @@ disappears without a restart. In the VFS this is already the file form —
 removing it takes one away. The lab's precedent is adhd's dynamic tools
 (`adhd.project.<name>.call`, a renamed upstream tool) and its honeypot decoys.
 
+**The architecture is one writer, two drivers, and an MCP protocol — not two
+writers.** The client is the *sole* writer; the two hosts are the *drivers*; the
+surface over the store is *MCP*. Independence therefore cannot come from a second
+writer; it comes from **where the second measurement is taken** (§5, Phase 2).
+
 **The in-task example — a tmp dir mirrored by a sqlite store for isotope
 tracking.** This is the concrete instance the prototype must build:
 
@@ -200,11 +205,13 @@ But one writer producing both stores is **not** two independent measurements:
 a bug in the writer corrupts both identically (SPLASH → *Two invariants*). That is a
 fact, not a blocker. Independence cannot be *imported* from the theory either — it is
 **manufactured** by the system, in custom code, once the system exists, and it cannot
-exist before the system does. So the dual-write starts with the *shape* and grows the
-independence (Phase 2); the sqlite side is a transcript until the stores are actually
-separate, and only then a cross-check. The prototype being its own virtual space is
-the point: the comparison lives there, not in the diagram. Do not gate Phase 1 on the
-ideal — the ideal is what Phase 1 makes reachable.
+exist before the system does. So the dual-write starts with the *shape*, and Phase 2
+supplies the independence **positionally**: the expectation is declared by the spec
+(independent of the run) and the observation is read back through the MCP protocol
+from the mirror — a different position than the write path. The writer is never
+duplicated. The prototype being its own virtual space is the point: the comparison
+lives there, not in the diagram. Do not gate Phase 1 on the ideal — the ideal is what
+Phase 1 makes reachable.
 
 ## §3 Standards register
 
@@ -239,7 +246,7 @@ adopted, verified}.
 | A9 | standard tooling suffices — no bespoke standard | the §3 table compiles | — (design claim; audited by review) |
 | A10 | a command can be **replicated across hosts** and compared | same command on tmpdir + sqlite | consensus / `ResultLedger` |
 | A11 | a command can be **dynamic** (registered at runtime) | drop `context/tools/x@`, re-list | smoke-alarm re-probe |
-| A12 | the sqlite **mirror** holds isotope records | dual-write spike (one writer, both stores) | two-invariant cross-check — **independence is Phase 2, not the spike** |
+| A12 | the sqlite **mirror** holds isotope records | dual-write spike (one writer, both stores) | two-invariant cross-check; independence is **positional** (spec + protocol read), not a second writer |
 | A13 | the prototype runs a **single session** (`42`) | the run opens `42.wsdb` once | a second session's isolation (rung 3) — **deferred; multi-session is out of scope** |
 
 ## §5 The plan (condensed, so it does not get lost)
@@ -253,21 +260,29 @@ adopted, verified}.
    sqlite together**, and records **its own isotope tracking** — the two-invariant
    *shape* in one artifact, on a real filesystem. The experiment itself. One
    session (`42`); the mirror is `42.wsdb` (A13).
-3. **Phase 2 — split the stores; the mirror becomes independent.** Introduce the
-   driver interface so tmp and sqlite are swappable hosts, and the sqlite store is
-   written/verified from a **different position** — the *independence* the
-   cross-check needs. The Phase-0 suite passes **unchanged**; an edit to make it
-   pass is a leak, and a leak is evidence.
+3. **Phase 2 — the mirror is verified from a different position.** The driver
+   interface (swappable hosts) is **done**; the second measurement is then taken
+   from a *different position*: the expectation is declared by the **spec**
+   (independent of the run) and the observation is read back **through the MCP
+   protocol** from the mirror. The writer is **not** duplicated. The Phase-0 suite
+   passes **unchanged**; an edit to make it pass is a leak, and a leak is evidence.
 
 **Phase 1 landed** — [`lab/workspaces/`](../../lab/workspaces/) (a Go module, the
 spike). Gate met: Rules §1–§3 (and §5) pass on the tmpdir host **and unchanged** on
 the sqlite host (`42.wsdb`, pure-Go `modernc.org/sqlite`); the mirror holds an
 isotope record per run; the two invariants cross-check, and a seeded dissent reads
-**torn** (red). Still conjugate — one writer, so the residual is empty by
-construction; independence is Phase 2. The dissent is asserted at rung 0 and cannot
-yet be *rendered* (the §2 finding). One host-equivalence finding: a real directory
-has its parents *implicitly*, sqlite does not — the sqlite host now records parents
-so the two trees are identical.
+**torn** (red). One host-equivalence finding: a real directory has its parents
+*implicitly*, sqlite does not — the sqlite host now records parents so the two trees
+are identical.
+
+**Phase 2 landed (positional independence)** — `protocol.go` (the MCP surface as
+JSON-RPC 2.0) + `verify.go` (the expectation from `Spec()`, the observation via
+`Observe` through the protocol, `Verify`). `Report` runs both the writer's own claim
+and the independent observation; a divergent mirror is caught
+(`TestVerificationCatchesADivergentMirror`) and the pair then reads **green**. This
+is *positional* independence — the check no longer trusts the writer's bookkeeping —
+**not** measurable independence: one writer still corrupts both stores identically.
+The dissent is asserted at rung 0 and still cannot be *rendered* (the §2 finding).
 
 ## §6 Finding rule
 

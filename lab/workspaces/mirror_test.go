@@ -32,6 +32,9 @@ func prog(ctx context.Context, s *Store) error {
 	if err := s.AddResource(ctx, "workspace/config.json", []byte("{}\n")); err != nil {
 		return err
 	}
+	if err := s.AddPrompt(ctx, "summarize", []byte("Summarize: {{text}}")); err != nil {
+		return err
+	}
 	if _, err := s.CallTool(ctx, "echo", []byte("hi"), func(in []byte) []byte { return in }); err != nil {
 		return err
 	}
