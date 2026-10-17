@@ -25,6 +25,7 @@ go test ./...
 | `store.go` | the VFS conventions — the tree, the state machine — and the MCP mapping as *file* operations |
 | `protocol.go` | the MCP surface (JSON-RPC 2.0) over a store: `initialize`, `tools/*`, `resources/*`, `prompts/*` |
 | `mirror.go` | the two invariants, the dual-write client, the cross-check, the plane/light mapping, `Residual` |
+| `gherkin.go` | a small Gherkin reader, and the expectation read from the gate |
 | `verify.go` | the independent measurement: the expectation from the spec, the observation through the protocol |
 | `*_test.go` | the gate: Rules §1–§3 (and §5) on **both** hosts, unchanged |
 
@@ -97,6 +98,6 @@ step above supplies the independence the cross-check needs.
 ## Not in this spike
 
 `isotope.CanonicalizeGherkinToIsotope` is **rung 3**: the isotope record is a content
-address of the *run* (RFC 6920), and `Spec()` is a hand-written declaration standing
-in for the Gherkin parser. Consensus (`N ≥ 3F+1`) and the `ResultLedger` (rung 4) are
-later too.
+address of the *run* (RFC 6920). The expectation is no longer hand-written — `gherkin.go`
+reads `minimal.feature` — so the only rung-3 gap left is canonicalizing the *Gherkin
+itself*. Consensus (`N ≥ 3F+1`) and the `ResultLedger` (rung 4) are later too.

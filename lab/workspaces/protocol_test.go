@@ -13,6 +13,16 @@ func mustInto(t *testing.T, b []byte, v any) {
 	}
 }
 
+// gateSpec is the expectation, read from the Gherkin (the spec is the origin).
+func gateSpec(t *testing.T) Expectation {
+	t.Helper()
+	want, err := GateSpec()
+	if err != nil {
+		t.Fatalf("read the gate %s: %v", GatePath, err)
+	}
+	return want
+}
+
 func TestProtocolSpeaksMCP(t *testing.T) {
 	forEachHost(t, func(t *testing.T, d Driver) {
 		ctx := context.Background()
@@ -85,11 +95,11 @@ func TestVerificationIsIndependent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if mis := Verify(Spec(), got); len(mis) != 0 {
+	if mis := Verify(gateSpec(t), got); len(mis) != 0 {
 		t.Fatalf("spec mismatch = %v (observed %+v)", mis, got)
 	}
 
-	rep, err := c.Report(ctx, "42", Spec())
+	rep, err := c.Report(ctx, "42", gateSpec(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +132,7 @@ func TestVerificationCatchesADivergentMirror(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rep, err := c.Report(ctx, "42", Spec())
+	rep, err := c.Report(ctx, "42", gateSpec(t))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -285,7 +285,7 @@ isotope record per run; the two invariants cross-check, and a seeded dissent rea
 are identical.
 
 **Phase 2 landed (positional independence)** — `protocol.go` (the MCP surface as
-JSON-RPC 2.0) + `verify.go` (the expectation from `Spec()`, the observation via
+JSON-RPC 2.0) + `verify.go` (the expectation read from the Gherkin, the observation via
 `Observe` through the protocol, `Verify`). `Report` runs both the writer's own claim
 and the independent observation; a divergent mirror is caught
 (`TestVerificationCatchesADivergentMirror`) and the pair then reads **green**. This

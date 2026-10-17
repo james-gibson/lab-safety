@@ -259,9 +259,7 @@ func (s *Store) ResourcesList(ctx context.Context) ([]string, error) {
 		if strings.HasSuffix(p, "/") {
 			continue
 		}
-		rel := strings.TrimPrefix(p, DirResources+"/")
-		rel = strings.TrimSuffix(rel, path.Ext(rel))
-		out = append(out, "resource://"+rel)
+		out = append(out, resourceURI(p))
 	}
 	sort.Strings(out)
 	return out, nil
@@ -269,7 +267,6 @@ func (s *Store) ResourcesList(ctx context.Context) ([]string, error) {
 
 // ResourcesRead is resources/read: the bytes of the file behind a URI.
 func (s *Store) ResourcesRead(ctx context.Context, uri string) ([]byte, error) {
-	name := strings.TrimPrefix(uri, "resource://")
 	ps, err := s.drv.List(ctx, DirResources)
 	if err != nil {
 		return nil, err
@@ -278,9 +275,7 @@ func (s *Store) ResourcesRead(ctx context.Context, uri string) ([]byte, error) {
 		if strings.HasSuffix(p, "/") {
 			continue
 		}
-		rel := strings.TrimPrefix(p, DirResources+"/")
-		rel = strings.TrimSuffix(rel, path.Ext(rel))
-		if rel == name {
+		if resourceURI(p) == uri {
 			return s.Read(ctx, p)
 		}
 	}
@@ -296,7 +291,7 @@ func (s *Store) ToolsList(ctx context.Context) ([]string, error) {
 	out := []string{}
 	for _, p := range ps {
 		if strings.HasSuffix(p, "@") {
-			out = append(out, path.Base(strings.TrimSuffix(p, "@")))
+			out = append(out, toolName(p))
 		}
 	}
 	sort.Strings(out)
@@ -343,7 +338,7 @@ func (s *Store) PromptList(ctx context.Context) ([]string, error) {
 	out := []string{}
 	for _, p := range ps {
 		if strings.HasSuffix(p, ".tmpl") {
-			out = append(out, path.Base(strings.TrimSuffix(p, ".tmpl")))
+			out = append(out, promptName(p))
 		}
 	}
 	sort.Strings(out)

@@ -15,17 +15,10 @@ type Expectation struct {
 	Prompts   []string
 }
 
-// Spec is the expectation for the specimen run — the step definitions for
-// minimal.feature §2's scenarios. It is deliberately a fixed declaration rather
-// than something derived from the run: that is where the independence comes
-// from. (A Gherkin parser replaces this declaration later.)
-func Spec() Expectation {
-	return Expectation{
-		Tools:     []string{"echo"},
-		Resources: []string{"resource://workspace/config"},
-		Prompts:   []string{"summarize"},
-	}
-}
+// The expectation is read from the Gherkin by Spec / GateSpec (gherkin.go): the
+// spec is the origin, so the expectation is what the gate *declares* — not a
+// hand-written list. It is still independent of the *run*, which is where the
+// independence comes from.
 
 // Observe takes the second measurement from a *different position*: it reads a
 // host back through the MCP protocol — the reader path, not the writer's driver
