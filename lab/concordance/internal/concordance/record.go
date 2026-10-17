@@ -13,20 +13,31 @@ import (
 )
 
 // Source is a third party whose claims we compare against. It records where the
-// claims live and the terms they live under — recorded, not adjudicated.
+// claims live, the terms they live under, and — when the terms require it — the
+// attribution that must travel with every view of the data.
 type Source struct {
-	ID          string `json:"id"`
-	URL         string `json:"url"`
-	TermsURL    string `json:"terms_url"`
-	Licence     string `json:"licence"`
-	Policy      string `json:"policy"`
-	RetrievedAt string `json:"retrieved_at"`
-	Notes       string `json:"notes"`
+	ID          string  `json:"id"`
+	URL         string  `json:"url"`
+	TermsURL    string  `json:"terms_url"`
+	Licence     string  `json:"licence"`
+	Policy      string  `json:"policy"`
+	RetrievedAt string  `json:"retrieved_at"`
+	Credit      *Credit `json:"credit"`
+	LinkPerRow  bool    `json:"listing_link_required"`
+	Waiver      string  `json:"waiver"`
+	Notes       string  `json:"notes"`
+}
+
+// Credit is the attribution a source's licence requires. If a source declares
+// one, Check requires it in every artifact that shows the source's data.
+type Credit struct {
+	Text string `json:"text"`
+	URL  string `json:"url"`
 }
 
 // licences are the terms we are willing to name. "unknown" is honest; a licence
 // we cannot name is not a licence we may lean on.
-var licences = []string{"public-domain", "permissive", "all-rights-reserved", "unknown"}
+var licences = []string{"public-domain", "permissive", "attribution-required", "all-rights-reserved", "unknown"}
 
 // Record is one comparison: a subject both sides name, a predicate, and the two
 // claims. Agreement is NOT a field — it is computed by Project.
@@ -49,8 +60,9 @@ type SourceRef struct {
 }
 
 type SubjectRef struct {
-	ID   string `json:"id"`
-	Kind string `json:"kind"`
+	ID         string `json:"id"`
+	Kind       string `json:"kind"`
+	ListingURL string `json:"listing_url"`
 }
 
 type Claim struct {

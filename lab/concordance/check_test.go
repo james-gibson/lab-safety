@@ -6,7 +6,7 @@ package concordance_test
 // test asserts (a) the run fails and (b) the failure says why.
 //
 // The real dataset ships with NO records — a record may only exist where we hold
-// our own claim, and no claim of mcpmarket's has been read (see README.md). So a
+// our own claim, and no claim of a third party's has been read (see README.md). So a
 // fixture supplies its own record: it copies fixtures/base/... into records/ and
 // mutates it. fixtures/base is not under fixtures/broken/, so the glob below
 // does not pick it up as a case, and a synthetic record never sits in records/
@@ -31,7 +31,7 @@ import (
 // moduleRoot is the concordance root: the directory holding this test.
 const moduleRoot = "."
 
-const baseRecord = "fixtures/base/records/mcpmarket/acme-weather/exposes-tool.json"
+const baseRecord = "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json"
 
 type brokenCase struct {
 	Args []string `json:"args"`
@@ -77,10 +77,10 @@ func TestTheRealConcordancePasses(t *testing.T) {
 func TestADisagreementIsRepresentable(t *testing.T) {
 	tmp, root := materialize(t)
 	_ = tmp
-	if err := apply(root, op{Kind: "copy", From: baseRecord, To: "records/mcpmarket/acme-weather/exposes-tool.json"}); err != nil {
+	if err := apply(root, op{Kind: "copy", From: baseRecord, To: "records/mcpregistry/acme-weather/exposes-tool.json"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := apply(root, op{Kind: "jsonSet", File: "records/mcpmarket/acme-weather/exposes-tool.json",
+	if err := apply(root, op{Kind: "jsonSet", File: "records/mcpregistry/acme-weather/exposes-tool.json",
 		Path: "our_claim.value", Value: json.RawMessage(`"weather.put"`)}); err != nil {
 		t.Fatal(err)
 	}
@@ -313,6 +313,16 @@ func apply(root string, o op) error {
 			return fmt.Errorf("%s: %q not found", o.File, o.Find)
 		}
 		return os.WriteFile(path, bytes.ReplaceAll(raw, []byte(o.Find), []byte(o.Text)), 0o644)
+
+	case "append":
+		path := filepath.Join(root, o.File)
+		f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o644)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = f.WriteString(o.Text)
+		return err
 
 	case "csvSetCell":
 		path := filepath.Join(root, o.File)

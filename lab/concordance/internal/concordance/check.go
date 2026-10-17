@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -21,18 +23,23 @@ func (d *Dataset) Check() ([]string, error) {
 	var fails []string
 	add := func(format string, a ...any) { fails = append(fails, fmt.Sprintf(format, a...)) }
 
-	// (1) The flat schema is the projection: mapping + the computed `agrees`.
+	// (1) The flat schema is the projection: mapping + the computed columns.
 	want := []string{}
 	for _, f := range mapping {
 		want = append(want, f.Col)
 	}
-	want = append(want, "agrees")
+	want = append(want, computed...)
 	if !equalStrings(d.Flat.Order, want) {
-		add("schema: %s properties are not the projection + [agrees]; the schema and the projector disagree", d.Flat.Name)
+		add("schema: %s properties are not the projection + %v; the schema and the projector disagree", d.Flat.Name, computed)
 	}
 
 	// (2) Problems found while loading (bad paths, strict decode, schema).
 	fails = append(fails, d.problems...)
+
+	// (2b) No credential in the repo. A key belongs in the environment: this
+	// dataset reads a licensed directory, and a key committed here would be a
+	// leak, not a convenience.
+	fails = append(fails, d.checkNoSecrets()...)
 
 	// (3) Every record.
 	var rows []Row
@@ -48,6 +55,11 @@ func (d *Dataset) Check() ([]string, error) {
 		}
 		rows = append(rows, row)
 	}
+
+	// (3b) Attribution: a source that declares a credit must have it, and a
+	// source that requires a per-listing link must have one per record. These
+	// are licence obligations, so they are checks and not notes.
+	fails = append(fails, d.checkAttribution(rows)...)
 
 	// (4) The artifact on disk: header, recomputed agreement, duplicate keys.
 	disk, header, err := readCSV(filepath.Join(d.Root, CSVPath))
@@ -119,6 +131,142 @@ func dedupe(in []string) []string {
 			continue
 		}
 		out = append(out, s)
+	}
+	return out
+}
+
+// checkAttribution enforces the licence obligations that attach to a source.
+//
+// A source that declares a credit has it carried by every row (so the CSV
+// cannot be shown without it), by the README region, and by the feature. A
+// source that requires a per-listing link must have one on every record, and it
+// must point at the source's own host — "the url the API returns for it, not a
+// copy of the listing you host".
+func (d *Dataset) checkAttribution(rows []Row) []string {
+	var out []string
+
+	// declarations must be usable
+	for _, id := range sortedSourceIDs(d.Sources) {
+		src := d.Sources[id]
+		if src.Licence == "attribution-required" && src.Credit == nil {
+			out = append(out, fmt.Sprintf("attribution: sources/%s.json is attribution-required but declares no credit", id))
+		}
+		if src.Credit != nil {
+			if src.Credit.Text == "" || src.Credit.URL == "" {
+				out = append(out, fmt.Sprintf("attribution: sources/%s.json credit needs both text and url", id))
+			}
+			if src.Waiver == "" && src.Licence == "attribution-required" {
+				out = append(out, fmt.Sprintf("attribution: sources/%s.json requires attribution but records no waiver route — a research dataset or CLI surface may not be able to display it", id))
+			}
+		}
+	}
+
+	// per-record obligations
+	for _, r := range d.Records {
+		src, ok := d.Sources[r.SourceID]
+		if !ok {
+			continue // already reported as an orphan record
+		}
+		if src.LinkPerRow {
+			if r.Subject.ListingURL == "" {
+				out = append(out, fmt.Sprintf("attribution: %s has no subject.listing_url, and sources/%s.json requires a link to every listing", r.Key(), src.ID))
+			} else if host := hostOf(r.Subject.ListingURL); host != hostOf(src.URL) {
+				out = append(out, fmt.Sprintf("attribution: %s listing_url %q is on %q, not the source's %q",
+					r.Key(), r.Subject.ListingURL, host, hostOf(src.URL)))
+			}
+		}
+	}
+
+	// the views we generate must carry the credits
+	credits := creditsOf(d, rows)
+	if len(credits) == 0 {
+		return out
+	}
+	readme, err := os.ReadFile(filepath.Join(d.Root, ReadmePath))
+	if err == nil {
+		for _, c := range credits {
+			if !bytes.Contains(readme, []byte(c)) {
+				out = append(out, fmt.Sprintf("attribution: %s does not carry the required credit %q", ReadmePath, c))
+			}
+		}
+	}
+	feat, err := os.ReadFile(filepath.Join(d.Root, FeaturePath))
+	if err == nil {
+		for _, c := range credits {
+			if !bytes.Contains(feat, []byte(c)) {
+				out = append(out, fmt.Sprintf("attribution: %s does not carry the required credit %q", FeaturePath, c))
+			}
+		}
+	}
+	return out
+}
+
+func sortedSourceIDs(m map[string]Source) []string {
+	out := make([]string, 0, len(m))
+	for id := range m {
+		out = append(out, id)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func hostOf(rawurl string) string {
+	u, err := url.Parse(rawurl)
+	if err != nil {
+		return ""
+	}
+	return u.Host
+}
+
+// secretPatterns are the credential shapes we refuse to see in the repo. A key
+// belongs in the environment; a key in a file is a leak with a long tail.
+var secretPatterns = []struct {
+	Name string
+	Re   *regexp.Regexp
+}{
+	{"glama api key", regexp.MustCompile(`glm_[A-Za-z0-9_]{20,}`)},
+	{"openai-style key", regexp.MustCompile(`sk-[A-Za-z0-9]{20,}`)},
+	{"github token", regexp.MustCompile(`(ghp_|gho_|ghs_|ghu_|github_pat_)[A-Za-z0-9_]{20,}`)},
+	{"aws access key", regexp.MustCompile(`AKIA[0-9A-Z]{16}`)},
+	{"private key", regexp.MustCompile(`-----BEGIN [A-Z ]*PRIVATE KEY-----`)},
+	{"assigned secret", regexp.MustCompile(`(?i)(api[_-]?key|client[_-]?secret|access[_-]?token|bearer)["']?\s*[:=]\s*["'][A-Za-z0-9_\-]{24,}["']`)},
+}
+
+// checkNoSecrets walks the whole module — records, sources, fixtures, docs — and
+// refuses to let a credential sit in it. The fixture that breaks this check
+// appends its fake key at test time, so the repository itself stays clean.
+func (d *Dataset) checkNoSecrets() []string {
+	var out []string
+	err := filepath.Walk(d.Root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			if info.Name() == ".git" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !info.Mode().IsRegular() || info.Size() > 4<<20 {
+			return nil
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(d.Root, path)
+		if err != nil {
+			return err
+		}
+		for _, p := range secretPatterns {
+			if loc := p.Re.Find(raw); loc != nil {
+				out = append(out, fmt.Sprintf("secret: %s looks like it contains a %s — keys belong in the environment, never in the repo", rel, p.Name))
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		out = append(out, fmt.Sprintf("secret: could not scan the module: %v", err))
 	}
 	return out
 }

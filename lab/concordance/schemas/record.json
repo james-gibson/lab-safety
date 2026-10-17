@@ -22,7 +22,12 @@
       "required": ["id", "kind"],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9]+([-.][a-z0-9]+)*$" },
-        "kind": { "type": "string", "enum": ["mcp-server", "mcp-surface", "tool", "agent"] }
+        "kind": { "type": "string", "enum": ["mcp-server", "mcp-surface", "tool", "agent"] },
+        "listing_url": {
+          "type": "string",
+          "description": "the URL of this subject's listing at the source, exactly as the source returned it. Optional here and enforced per source: whether a link is required depends on the source's licence, which a schema cannot express.",
+          "format": "uri"
+        }
       }
     },
     "predicate": {

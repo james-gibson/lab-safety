@@ -1,12 +1,13 @@
 {
   "source": {
-    "id": "mcpmarket",
-    "url": "https://mcpmarket.com/server",
+    "id": "mcpregistry",
+    "url": "https://registry.modelcontextprotocol.io",
     "retrieved_at": "2026-10-16"
   },
   "subject": {
     "id": "acme-weather",
-    "kind": "mcp-server"
+    "kind": "mcp-server",
+    "listing_url": "https://registry.modelcontextprotocol.io/v0/servers?search=acme-weather"
   },
   "predicate": "exposes-tool",
   "their_claim": {

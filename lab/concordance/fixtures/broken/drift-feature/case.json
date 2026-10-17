@@ -6,16 +6,16 @@
   "ops": [
     {
       "kind": "copy",
-      "from": "fixtures/base/records/mcpmarket/acme-weather/exposes-tool.json",
-      "to": "records/mcpmarket/acme-weather/exposes-tool.json"
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
     }
   ],
   "post": [
     {
       "kind": "rawReplace",
       "file": "concordance.feature",
-      "find": "Scenario: mcpmarket/acme-weather/exposes-tool",
-      "text": "Scenario: mcpmarket/acme-weather/exposes_tool"
+      "find": "Scenario: mcpregistry/acme-weather/exposes-tool",
+      "text": "Scenario: mcpregistry/acme-weather/exposes_tool"
     }
   ]
 }

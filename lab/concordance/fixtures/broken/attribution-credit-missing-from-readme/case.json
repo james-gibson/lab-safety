@@ -1,0 +1,21 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "README.md does not carry the required credit",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
+    }
+  ],
+  "post": [
+    {
+      "kind": "rawReplace",
+      "file": "README.md",
+      "find": "_Data credit required by the source's licence:_ MCP server data from the Official MCP Registry (CC-BY-4.0) \u2014 https://registry.modelcontextprotocol.io",
+      "text": "_Data credit required by the source's licence:_ removed"
+    }
+  ]
+}

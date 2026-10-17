@@ -1,0 +1,30 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "has no subject.listing_url, and sources/glama.json requires a link to every listing",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/glama/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/glama/acme-weather/exposes-tool.json",
+      "path": "source.id",
+      "value": "glama"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/glama/acme-weather/exposes-tool.json",
+      "path": "source.url",
+      "value": "https://glama.ai/mcp/reference"
+    },
+    {
+      "kind": "jsonDelete",
+      "file": "records/glama/acme-weather/exposes-tool.json",
+      "path": "subject.listing_url"
+    }
+  ]
+}

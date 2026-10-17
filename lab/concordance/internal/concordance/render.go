@@ -41,6 +41,7 @@ var mapping = []field{
 	{"retrieved_at", "source.retrieved_at"},
 	{"subject_id", "subject.id"},
 	{"subject_kind", "subject.kind"},
+	{"listing_url", "subject.listing_url"},
 	{"predicate", "predicate"},
 	{"their_claim", "their_claim.value"},
 	{"our_claim", "our_claim.value"},
@@ -49,6 +50,10 @@ var mapping = []field{
 	{"review_by", "provenance.review_by"},
 	{"method", "provenance.method"},
 }
+
+// computed are the columns the tool fills in and a record cannot author:
+// `agrees` from the two claims, `credit` from the source's licence.
+var computed = []string{"agrees", "credit"}
 
 // Row is one projected flat row.
 type Row struct {
@@ -60,7 +65,9 @@ type Row struct {
 // agreement is equality of the two normalised tokens.
 func Agrees(their, our string) bool { return their == our }
 
-// Project turns a record into a flat row and computes `agrees`.
+// Project turns a record into a flat row and fills the computed columns:
+// `agrees`, and `credit` — the attribution the source's licence requires, so
+// that the credit travels with the data instead of living on a credits page.
 func Project(d *Dataset, r Record) (Row, error) {
 	vals := map[string]any{}
 	for _, f := range mapping {
@@ -71,7 +78,18 @@ func Project(d *Dataset, r Record) (Row, error) {
 		vals[f.Col] = v
 	}
 	vals["agrees"] = Agrees(r.TheirClaim.Value, r.OurClaim.Value)
+	vals["credit"] = d.CreditFor(r.SourceID)
 	return Row{Key: r.Key(), Values: vals}, nil
+}
+
+// CreditFor renders a source's required credit as one string, or "" when the
+// source requires none.
+func (d *Dataset) CreditFor(sourceID string) string {
+	src, ok := d.Sources[sourceID]
+	if !ok || src.Credit == nil {
+		return ""
+	}
+	return src.Credit.Text + " — " + src.Credit.URL
 }
 
 func lookup(r Record, path string) (any, bool) {
@@ -86,6 +104,8 @@ func lookup(r Record, path string) (any, bool) {
 		return r.Subject.ID, true
 	case "subject.kind":
 		return r.Subject.Kind, true
+	case "subject.listing_url":
+		return r.Subject.ListingURL, true
 	case "predicate":
 		return r.Predicate, true
 	case "their_claim.value":
@@ -169,8 +189,32 @@ func RenderSummary(d *Dataset, rows []Row) ([]byte, error) {
 		}
 		b.WriteString("| " + strings.Join(cells, " | ") + " |\n")
 	}
+	if credits := creditsOf(d, rows); len(credits) > 0 {
+		b.WriteString("\n")
+		for _, c := range credits {
+			b.WriteString("_Data credit required by the source's licence:_ " + c + "\n")
+		}
+	}
 	b.WriteString(readmeEnd + "\n")
 	return []byte(b.String()), nil
+}
+
+// creditsOf returns the distinct credits the rows carry, sorted. A view that
+// shows the data must show these; rendering them into the region is how the
+// obligation is kept structural rather than remembered.
+func creditsOf(d *Dataset, rows []Row) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, r := range sortRows(rows) {
+		c, _ := r.Values["credit"].(string)
+		if c == "" || seen[c] {
+			continue
+		}
+		seen[c] = true
+		out = append(out, c)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func repeat(s string, n int) []string {

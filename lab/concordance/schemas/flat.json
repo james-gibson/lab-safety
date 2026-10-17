@@ -1,16 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "concordance — flat row (the projection)",
-  "description": "One row per record: the two claims, where ours comes from, and the computed agreement. `agrees` is here and ONLY here — a record cannot author it.",
+  "description": "One row per record: the two claims, where ours comes from, the computed agreement, and the attribution the source's licence requires. `agrees` and `credit` are here and ONLY here — a record cannot author them.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["source_id", "source_url", "retrieved_at", "subject_id", "subject_kind", "predicate", "their_claim", "our_claim", "our_basis", "checked_at", "review_by", "method", "agrees"],
+  "required": ["source_id", "source_url", "retrieved_at", "subject_id", "subject_kind", "listing_url", "predicate", "their_claim", "our_claim", "our_basis", "checked_at", "review_by", "method", "agrees", "credit"],
   "properties": {
     "source_id": { "type": "string" },
     "source_url": { "type": "string" },
     "retrieved_at": { "type": "string" },
     "subject_id": { "type": "string" },
     "subject_kind": { "type": "string" },
+    "listing_url": { "type": "string" },
     "predicate": { "type": "string" },
     "their_claim": { "type": "string" },
     "our_claim": { "type": "string" },
@@ -18,6 +19,10 @@
     "checked_at": { "type": "string" },
     "review_by": { "type": "string" },
     "method": { "type": "string" },
-    "agrees": { "type": "boolean" }
+    "agrees": { "type": "boolean" },
+    "credit": {
+      "type": "string",
+      "description": "the credit the source's licence requires, carried with the data so no view can show the row without it"
+    }
   }
 }

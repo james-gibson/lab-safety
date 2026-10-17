@@ -6,7 +6,7 @@
   "ops": [
     {
       "kind": "jsonSet",
-      "file": "sources/mcpmarket.json",
+      "file": "sources/mcpregistry.json",
       "path": "licence",
       "value": "dunno"
     }

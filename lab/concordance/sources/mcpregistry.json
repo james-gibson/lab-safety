@@ -1,0 +1,14 @@
+{
+  "id": "mcpregistry",
+  "url": "https://registry.modelcontextprotocol.io",
+  "terms_url": "https://github.com/modelcontextprotocol/registry/blob/main/LICENSE",
+  "licence": "permissive",
+  "policy": "pointer",
+  "retrieved_at": "2026-10-17",
+  "credit": {
+    "text": "MCP server data from the Official MCP Registry (CC-BY-4.0)",
+    "url": "https://registry.modelcontextprotocol.io"
+  },
+  "listing_link_required": false,
+  "notes": "Unauthenticated: /v0/servers answers without a key. The project is Apache-2.0, documentation CC-BY-4.0, and publishers contribute server.json themselves — so an entry is the publisher's own declaration, not a curator's. The credit is declared even though the licence is permissive, because CC-BY-4.0 asks for attribution and a source that declares a credit has it enforced here. Expect noise: the directory is full of third-party re-packagings (ai.smithery/*, com.mcparmory/*), so an entry's name prefix is not the platform's vendor."
+}

@@ -1,0 +1,18 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "looks like it contains a glama api key",
+  "ops": [
+    {
+      "kind": "append",
+      "file": "sources/glama.json",
+      "text": "\n# test-only placeholder: GLAMA_API_KEY='glm_"
+    },
+    {
+      "kind": "append",
+      "file": "sources/glama.json",
+      "text": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'\n"
+    }
+  ]
+}

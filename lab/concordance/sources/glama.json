@@ -1,0 +1,15 @@
+{
+  "id": "glama",
+  "url": "https://glama.ai/mcp/reference",
+  "terms_url": "https://glama.ai/policies/terms-of-service",
+  "licence": "attribution-required",
+  "policy": "pointer",
+  "retrieved_at": "2026-10-17",
+  "credit": {
+    "text": "MCP data from Glama",
+    "url": "https://glama.ai"
+  },
+  "listing_link_required": true,
+  "waiver": "Glama's own terms name the case we are in — \"an internal tool, a research dataset, or a voice or CLI surface\" — and say attribution can be waived under a commercial licence. Until such a licence exists, the credit and the per-listing links are carried on every view.",
+  "notes": "Licensed, not public domain. /api/mcp/v1 requires Authorization: Bearer with a glm_ key (100 req/s, cursor pagination). Two obligations attach to any view that shows this data: a visible credit naming Glama, linked to https://glama.ai with no rel=nofollow/sponsored/ugc; and, for every record presented, a link to THAT record's listing URL as the API returned it. The credit and the link travel in the projection, so a view cannot be built without them. Glama's directory is itself built from community submissions, automated discovery, the Official MCP Registry and the awesome-mcp-servers list — so a registry-vs-glama concordance would mostly measure ingestion, not independent curation."
+}

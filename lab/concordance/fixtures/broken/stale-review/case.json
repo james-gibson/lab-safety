@@ -4,12 +4,12 @@
     "--as-of",
     "2026-12-01"
   ],
-  "want": "stale: mcpmarket/acme-weather/exposes-tool review_by 2026-11-17 is before 2026-12-01",
+  "want": "stale: mcpregistry/acme-weather/exposes-tool review_by 2026-11-17 is before 2026-12-01",
   "ops": [
     {
       "kind": "copy",
-      "from": "fixtures/base/records/mcpmarket/acme-weather/exposes-tool.json",
-      "to": "records/mcpmarket/acme-weather/exposes-tool.json"
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
     }
   ]
 }

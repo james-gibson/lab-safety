@@ -1,0 +1,13 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "is attribution-required but declares no credit",
+  "ops": [
+    {
+      "kind": "jsonDelete",
+      "file": "sources/glama.json",
+      "path": "credit"
+    }
+  ]
+}
