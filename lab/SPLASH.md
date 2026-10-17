@@ -244,6 +244,15 @@ determined.
     bandwidth means more ingress nodes, not a larger one. The tick has a second
     function: it **consumes the one-time credentials** (see *Entry*), without which
     they would be replayable and the burst would return.
+  - **The alignment is a deliberate queueing cost.** Synchronised arrivals are a
+    **bulk-arrival** process (`M[X]/M/1`), and by Kingman's approximation the mean wait
+    is linear in the squared coefficient of variation of arrivals (`C²_a`) — so the tick
+    trades queueing for predictability, and the horizontal-capacity rule above is what
+    pays for it. It is also why **an SLA and the tick pull in opposite directions**: a
+    latency promise fights the alignment it synchronises
+    ([`SPLASH-MCP.md`](SPLASH-MCP.md) §6). And a herd is a **correlation generator** —
+    callers who share their moment share their failures, which is the one term redundancy
+    cannot reduce ([math.md](../sheets/workspaces/math.md) §5).
   - It has a **third** function: it is the **window the consumption filter slides on**.
     The filter holds the isotopes consumed in *one* tick, so the tick's length *is* the
     dedupe window — and must therefore exceed a caller's retry interval, or a retry
@@ -677,6 +686,14 @@ An alarm may be a real event, not a probe. Two properties follow.
 This is why the alarm holder is treated carefully: a real alarm is not a request to
 be argued with, and the answer is not a stream of updates. It is one
 acknowledgement, one ticket, and the event belongs to the cluster from then on.
+
+**And the permissiveness is the mechanism, not a laxity.** The model does not refuse an
+alarm; it *measures* it. Raise one and the cluster takes custody — and what disciplines the
+caller is that the alarm is consumed, metered and priced, and that standing is derived from
+the record rather than held as somebody's grudge. The village that came the first two times
+was never the boy's punishment; **his standing was spent**, and the third call found nobody
+coming. Here that is the incentive in full: the cluster *is* the motivation not to cry wolf
+([`SPLASH-MCP.md`](SPLASH-MCP.md) §6).
 
 ### Metering
 

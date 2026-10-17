@@ -32,7 +32,7 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 | --- | --- | --- |
 | `README.md` | map | this page — the index and the one-paragraph spine |
 | `SPLASH.md` | reusable | the post-connection trust summary, to place in a library README |
-| `SPLASH-MCP.md` | reusable | **stock MCP vs Lab-safety(MCP)** — which default failure modes each leaves exposed, the idempotence mechanism behind the retry, and why the wire is untouched |
+| `SPLASH-MCP.md` | reusable | **stock MCP vs Lab-safety(MCP)** — which default failure modes each leaves exposed, the idempotence mechanism behind the retry, why the wire is untouched, and how the model answers the thundering herd an SLA invites |
 | `TRUST-FLOWS.md` | diagrams | the trust flows as pictures — admission, the triangle, the plane, failover, partitions |
 | `MATH.md` | findings | the grounded figures, and which of the others are not grounded |
 | `PLANE.md` | findings | the measure as a plane in local-time: delivered vs promised vs linear time |

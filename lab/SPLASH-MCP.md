@@ -180,7 +180,100 @@ a stock client can ignore it and still work.
 - **It does not close rows 12 and 13.** A registry that never forgets a name, and a
   declaration a human wrote by hand, are both still open — and both are filed.
 
-## 6. What the client sees
+## 6. The thundering herd, and what an SLA is for
+
+A note on the **demand** side, because it is where a stock deployment's answer differs most
+sharply from this one — and where the difference is most often mistaken for laxity.
+
+**An SLA is a subsidy on synchronised demand.** A service-level agreement promises a level
+*unconditionally*: arrive at any moment and you are entitled to it. If the promise holds,
+arriving is rational for every caller at once — so the herd is not a traffic anomaly that
+afflicts an SLA; it is the **equilibrium the promise induces**. The canonical instance is
+the cache stampede: an expired entry makes every waiter miss at the same instant, and the
+standard mitigations are all ways of *breaking the synchrony* (stale-while-revalidate,
+RFC 5861) or of shedding it (429 with `Retry-After`, RFC 9110 §15.5.4). The same reasoning
+is why TCP's retransmission timer is **randomised** (RFC 6298) — synchronised arrivals are
+a hazard to be designed away, and a standard exists because of it.
+
+**And synchronised arrivals are a queueing cost, measurably.** By Kingman's approximation
+for a general queue (Kingman, 1961):
+
+```
+E[W_q] ≈ (ρ/(1-ρ)) · ((C²_a + C²_s)/2) · E[S]        ρ = λ·E[S]
+```
+
+the mean wait is **linear in the squared coefficient of variation of arrivals**, `C²_a`.
+Variability *is* wait. A herd is by construction a large `C²_a`: the textbook model for
+tick-aligned arrivals is a **bulk-arrival** queue (`M[X]/M/1`), not `M/M/1`. At an
+*unchanged* offered load, moving `C²_a` from 1 (Poisson) to 10 (a herd) multiplies the mean
+wait by 5.5 — and the factor is independent of ρ, because the load term cancels (formula
+evaluation, illustrative). This is what
+[`SPLASH.md`](SPLASH.md) means by the tick making the burst *"predictable, not smaller"* —
+aligning arrivals raises `C²_a` deliberately, and the design accounts for it by adding
+capacity **horizontally** rather than assuming it away.
+
+**So an SLA and the tick pull in opposite directions.** An SLA promises a latency; the tick
+raises the term that *sets* latency. A deployment holding both must either **jitter inside
+the tick** — keeping the credential consumption while giving up the alignment — or **not
+sell a latency promise at all**. This model takes the second route, and not as a
+concession, because its promise is **conditional and reciprocal**
+([`SPLASH.md`](SPLASH.md) → *The exchange terms*):
+
+> If you behave as specified, you receive treatment as specified, and the measurement
+> underlying the treatment is available for verification.
+
+That is *treatment*, not *service*. Nothing is gained by arriving at the boundary, because
+the promise was never "you will be served" — and `SPLASH.md` states the consequence plainly:
+**discovery yields nothing better.** A herd is demand for a guarantee; where there is no
+guarantee, the herd has nothing to converge on.
+
+**Two consequences that are easy to miss.**
+
+- **The herd is a correlation generator — and correlation is the failure parity cannot
+  fix.** Synchronised callers share their moment and their dependency, so their failures
+  are *correlated*: precisely the `c` term in
+  [`../sheets/workspaces/math.md`](../sheets/workspaces/math.md) §5 that no number of
+  replicas reduces. An SLA-induced herd therefore destroys the independence that redundancy
+  needs in order to be worth its cost. Said the other way round: **the herd is what makes a
+  latency promise unkeepable at the moment it matters most.**
+- **Treatment by measure needs no adjudicator; an SLA does.** An SLA is enforced from
+  *outside* — a contract, a penalty, a service credit — so it needs a body to decide, and
+  it is only as good as that body's willingness to adjudicate. A measure derived from the
+  record needs only that the record be **observable** (row 14 of §2), which is why
+  observability is a *rule* here rather than a feature.
+
+### The boy who cried wolf
+
+The model *looks* permissive, and it is worth saying why that is not the same as being lax.
+Raise an alarm and the cluster takes custody: the holder is handed a ticket and discharged
+([`SPLASH.md`](SPLASH.md) → *The alarm contract*), and the baseline terms are deliberately
+generous — *"the authority will probably drop most everything to accept your alarm"*.
+Nothing refuses you. Nothing punishes you at the door.
+
+Which is exactly how the village looked at the boy who cried wolf. The village *did* come —
+the first time, and the second. Its permissiveness was never what punished him, and it was
+never the mechanism that made him stop. What punished him was that **his standing was
+spent**, and so the third call found nobody coming.
+
+Here the same mechanism is explicit, and it is why **the cluster is the motivation not to
+cry wolf**:
+
+- **the alarm is consumed** — the one-time pad is spent, so "once" is structural rather than
+  a rule somebody has to enforce;
+- **alarms are metered and priced**, so crying wolf costs the crier, and an alarm that never
+  resolves is **deprioritised** rather than re-signalled ([`SPLASH.md`](SPLASH.md) → *Metering*);
+- **standing is a measured quantity, not a grudge** — the distance and the rung are derived
+  from the record, so nobody in particular has to remember anything;
+- **and the supply is earned** — a cluster that behaves may mint more pads and a misbehaving
+  one cannot, so the incentive and the limit point the same way.
+
+So the permissiveness is not a looseness to be tightened later; it is how the cost lands on
+the caller instead of on a gatekeeper. A model that refused the third alarm *at the door*
+would need someone to decide at the door — the adjudicator again — and would still be
+defeated by the one caller it was built to catch: the one that behaves perfectly until it
+matters.
+
+## 7. What the client sees
 
 | client | what it gets |
 | --- | --- |
