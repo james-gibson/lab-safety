@@ -1,0 +1,9 @@
+{
+  "args": [
+    "--stale",
+    "--as-of",
+    "2027-01-01"
+  ],
+  "want": "stale: gemini-1.5-pro review_by 2026-10-24 is before 2027-01-01",
+  "ops": []
+}

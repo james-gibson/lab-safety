@@ -1,0 +1,661 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "model survey - flat row (schema v2)",
+  "description": "One row per surveyed agent. The first 91 properties are the issue's flat schema verbatim, in order; then five authored provenance fields; then four fields the survey tool computes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_id",
+    "source_url",
+    "checked_at",
+    "review_by",
+    "survey_method",
+    "schema_version",
+    "mcp_ready",
+    "autonomous_ready",
+    "production_grade",
+    "strictness_score"
+  ],
+  "properties": {
+    "agent_id": {
+      "type": "string"
+    },
+    "agent_vendor": {
+      "type": "string"
+    },
+    "agent_version": {
+      "type": "string"
+    },
+    "runtime": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "chat",
+        "tool-using",
+        "reasoning",
+        "multi-agent",
+        "embedded",
+        null
+      ]
+    },
+    "model_family": {
+      "type": "string"
+    },
+    "deployment_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "hosted-saas",
+        "cloud",
+        "self-hosted",
+        "local",
+        "hybrid",
+        null
+      ]
+    },
+    "can_inspect_private_endpoints": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "preferred_interface": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "mcp",
+        "rest-openapi",
+        "json-rpc",
+        "graphql",
+        "grpc",
+        "custom",
+        null
+      ]
+    },
+    "supported_interfaces": {
+      "type": "string",
+      "x-list-enum": [
+        "mcp",
+        "rest-openapi",
+        "json-rpc",
+        "graphql",
+        "grpc",
+        "custom"
+      ]
+    },
+    "preferred_transport": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "https",
+        "http",
+        "sse",
+        "websocket",
+        "grpc",
+        null
+      ]
+    },
+    "supports_streaming": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "versioning_style": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "url-path-major",
+        "header",
+        "query-param",
+        "semver",
+        "none",
+        null
+      ]
+    },
+    "auth_preferred": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "bearer-token",
+        "api-key-header",
+        "oauth2-client-credentials",
+        "oauth2-auth-code",
+        "mtls",
+        "signed-request",
+        "none",
+        null
+      ]
+    },
+    "auth_acceptable": {
+      "type": "string",
+      "x-list-enum": [
+        "bearer-token",
+        "api-key-header",
+        "oauth2-client-credentials",
+        "oauth2-auth-code",
+        "mtls",
+        "signed-request",
+        "none"
+      ]
+    },
+    "auth_requires_human": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "request_format": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "application/json",
+        "text",
+        "ndjson",
+        "stream",
+        "multipart",
+        "form",
+        null
+      ]
+    },
+    "response_format": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "application/json",
+        "text",
+        "ndjson",
+        "stream",
+        "multipart",
+        "form",
+        null
+      ]
+    },
+    "strict_typing": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "machine_readable_spec": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "preferred_specs": {
+      "type": "string"
+    },
+    "needs_examples": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "stable_field_names": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "stable_enums": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "read_only_pref": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "write_capable_pref": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_discovery": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_pagination": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_filtering": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_search": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_sorting": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_batch": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_idempotent_writes": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_file_upload": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_file_download": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_async_jobs": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "error_format": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "rfc7807-problem+json",
+        "json-custom",
+        "text",
+        "html",
+        "none",
+        null
+      ]
+    },
+    "standard_http_codes": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "structured_errors": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "validation_error_details": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "retryable_signals": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "retryable_codes": {
+      "type": "string"
+    },
+    "needs_retries": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_retry_after": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_rate_limit_handling": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "backoff_strategy": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "none",
+        "linear",
+        "exponential",
+        "exponential-with-jitter",
+        "custom",
+        null
+      ]
+    },
+    "needs_timeout_guidance": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_circuit_breaker": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "latency_pref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        null
+      ]
+    },
+    "throughput_pref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        null
+      ]
+    },
+    "payload_sensitivity": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        null
+      ]
+    },
+    "concurrency_sensitivity": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        null
+      ]
+    },
+    "rate_limit_pref": {
+      "type": "string"
+    },
+    "needs_conversation_history": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_persistent_memory": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_stateful_sessions": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_external_context": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "context_window_behavior": {
+      "type": "string"
+    },
+    "context_loss_failure_mode": {
+      "type": "string"
+    },
+    "needs_request_ids": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_trace_ids": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_logs": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_audit_trail": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_webhooks": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_openapi": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_mcp": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_a2a": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_acp": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_human_docs": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_sdk": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_postman": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "backward_compatible": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "deprecation_policy": {
+      "type": "string"
+    },
+    "breaking_change_tolerance": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        null
+      ]
+    },
+    "version_pinning": {
+      "type": "string"
+    },
+    "sensitive_data_handling": {
+      "type": "string"
+    },
+    "pii_concerns": {
+      "type": "string"
+    },
+    "secret_handling": {
+      "type": "string"
+    },
+    "sandboxing_needs": {
+      "type": "string"
+    },
+    "data_retention_concerns": {
+      "type": "string"
+    },
+    "changes_by_model": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "changes_by_deployment": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "changes_by_org_size": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "changes_by_use_case": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "must_have": {
+      "type": "string"
+    },
+    "nice_to_have": {
+      "type": "string"
+    },
+    "deal_breakers": {
+      "type": "string"
+    },
+    "access_can_inspect": {
+      "type": "string"
+    },
+    "access_cannot_inspect": {
+      "type": "string"
+    },
+    "assumptions": {
+      "type": "string"
+    },
+    "free_form_notes": {
+      "type": "string"
+    },
+    "caveats": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "checked_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "review_by": {
+      "type": "string",
+      "format": "date"
+    },
+    "survey_method": {
+      "type": "string",
+      "enum": [
+        "self-report",
+        "documentation",
+        "observed"
+      ]
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 2
+    },
+    "mcp_ready": {
+      "type": "boolean"
+    },
+    "autonomous_ready": {
+      "type": "boolean"
+    },
+    "production_grade": {
+      "type": "boolean"
+    },
+    "strictness_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5
+    }
+  }
+}

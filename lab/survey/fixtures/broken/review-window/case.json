@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "is not after checked_at",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/kagi-the-assistant.json",
+      "path": "provenance.review_by",
+      "value": "2026-04-24"
+    }
+  ]
+}

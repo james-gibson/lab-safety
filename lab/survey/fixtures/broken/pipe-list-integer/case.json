@@ -1,0 +1,15 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "encoding: kagi-the-assistant retryable_codes has",
+  "ops": [
+    {
+      "kind": "csvSetCell",
+      "file": "models.csv",
+      "row": "kagi-the-assistant",
+      "column": "retryable_codes",
+      "text": "408|abc"
+    }
+  ]
+}

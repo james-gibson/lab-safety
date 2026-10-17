@@ -1,0 +1,16 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "has 101 properties, want 100",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "schemas/flat.json",
+      "path": "properties.zzz_extra",
+      "value": {
+        "type": "string"
+      }
+    }
+  ]
+}

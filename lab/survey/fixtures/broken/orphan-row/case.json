@@ -1,0 +1,16 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "orphan row: models.csv has \"ghost\" with no profile",
+  "ops": [
+    {
+      "kind": "csvDuplicateRow",
+      "file": "models.csv",
+      "row": "gemini-1.5-pro",
+      "set": {
+        "agent_id": "ghost"
+      }
+    }
+  ]
+}

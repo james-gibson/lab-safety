@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "does not match sources/issue-3.sha256",
+  "ops": [
+    {
+      "kind": "rawReplace",
+      "file": "sources/issue-3.json",
+      "find": "\"exported_at\": \"2026-10-17\"",
+      "text": "\"exported_at\": \"2026-10-18\""
+    }
+  ]
+}

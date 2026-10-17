@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "canonicalises to zero tokens",
+  "ops": [
+    {
+      "kind": "rawReplace",
+      "file": "survey.feature",
+      "find": "Feature: Model survey",
+      "text": "Note: Model survey"
+    }
+  ]
+}

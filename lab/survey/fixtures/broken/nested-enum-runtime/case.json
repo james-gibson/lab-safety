@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "schema: kagi-the-assistant answer fails nested.json",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/kagi-the-assistant.json",
+      "path": "answer.runtime",
+      "value": "Kagi multi-agent framework"
+    }
+  ]
+}

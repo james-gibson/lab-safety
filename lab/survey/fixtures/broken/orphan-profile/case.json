@@ -1,0 +1,13 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "orphan profile: extra-agent has no row",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "profiles/kagi-the-assistant.json",
+      "to": "profiles/extra-agent.json"
+    }
+  ]
+}
