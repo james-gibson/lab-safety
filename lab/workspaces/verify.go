@@ -97,8 +97,12 @@ func equalStrings(a, b []string) bool {
 }
 
 // Verification is the independent measurement: the mirror, read back through the
-// MCP protocol, against the spec.
-func (c *Client) Verification(ctx context.Context, session string, want Expectation) ([]string, error) {
+// MCP protocol, against what the spec declares.
+func (c *Client) Verification(ctx context.Context, session string, spec SpecRef) ([]string, error) {
+	want, err := spec.Expectation()
+	if err != nil {
+		return nil, err
+	}
 	got, err := Observe(ctx, c.mirror, session)
 	if err != nil {
 		return nil, err
@@ -108,12 +112,12 @@ func (c *Client) Verification(ctx context.Context, session string, want Expectat
 
 // Report runs both cross-checks: the writer's own claim (Check) and the
 // independent observation (Verification).
-func (c *Client) Report(ctx context.Context, session string, want Expectation) (Report, error) {
-	rep, err := c.Check(ctx)
+func (c *Client) Report(ctx context.Context, session string, spec SpecRef) (Report, error) {
+	rep, err := c.Check(ctx, spec)
 	if err != nil {
 		return rep, err
 	}
-	if rep.SpecMismatch, err = c.Verification(ctx, session, want); err != nil {
+	if rep.SpecMismatch, err = c.Verification(ctx, session, spec); err != nil {
 		return rep, err
 	}
 	return rep, nil

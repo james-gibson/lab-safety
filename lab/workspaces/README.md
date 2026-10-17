@@ -25,7 +25,7 @@ go test ./...
 | `store.go` | the VFS conventions — the tree, the state machine — and the MCP mapping as *file* operations |
 | `protocol.go` | the MCP surface (JSON-RPC 2.0) over a store: `initialize`, `tools/*`, `resources/*`, `prompts/*` |
 | `mirror.go` | the two invariants, the dual-write client, the cross-check, the plane/light mapping, `Residual` |
-| `gherkin.go` | the step definitions over `isotope.ParseGherkin` — the expectation read from the gate |
+| `gherkin.go` | the spec reference: `SpecRef`, what the spec *declares* (isotope's step definitions), and the spec's signed isotope |
 | `verify.go` | the independent measurement: the expectation from the spec, the observation through the protocol |
 | `*_test.go` | the gate: Rules §1–§3 (and §5) on **both** hosts, unchanged |
 
@@ -97,7 +97,9 @@ step above supplies the independence the cross-check needs.
 
 ## Not in this spike
 
-`isotope.CanonicalizeGherkinToIsotope` is **rung 3**. The *parse* already comes from
-isotope (`isotope.ParseGherkin`); what is still ours is the isotope **record** — a
-content address of the run (RFC 6920), rather than the spec's signed isotope. Consensus
-(`N ≥ 3F+1`) and the `ResultLedger` (rung 4) are later too.
+**Rung 3 is closed for canonicalization.** The isotope **record** is the *spec's* signed
+isotope (`isotope.CanonicalizeGherkinToIsotope`), **re-derived** by `Check` rather than
+trusted; the run's traffic log is named by a content address of its own operations. The
+whole reading of the spec is isotope's — parse, meaning (step definitions), identity.
+Still open: **consensus** (`isotope.ConsensusReporter`, N ≥ 3F+1) — separate instances
+agreeing — and the `ResultLedger` (rung 4).

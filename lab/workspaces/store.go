@@ -6,6 +6,8 @@ import (
 	"path"
 	"sort"
 	"strings"
+
+	"github.com/james-gibson/isotope"
 )
 
 // The session IS the root filesystem (filesystem.feature). Paths are absolute in
@@ -259,7 +261,7 @@ func (s *Store) ResourcesList(ctx context.Context) ([]string, error) {
 		if strings.HasSuffix(p, "/") {
 			continue
 		}
-		out = append(out, resourceURI(p))
+		out = append(out, isotope.ResourceURI(p))
 	}
 	sort.Strings(out)
 	return out, nil
@@ -275,7 +277,7 @@ func (s *Store) ResourcesRead(ctx context.Context, uri string) ([]byte, error) {
 		if strings.HasSuffix(p, "/") {
 			continue
 		}
-		if resourceURI(p) == uri {
+		if isotope.ResourceURI(p) == uri {
 			return s.Read(ctx, p)
 		}
 	}
@@ -291,7 +293,7 @@ func (s *Store) ToolsList(ctx context.Context) ([]string, error) {
 	out := []string{}
 	for _, p := range ps {
 		if strings.HasSuffix(p, "@") {
-			out = append(out, toolName(p))
+			out = append(out, isotope.ToolName(p))
 		}
 	}
 	sort.Strings(out)
@@ -338,7 +340,7 @@ func (s *Store) PromptList(ctx context.Context) ([]string, error) {
 	out := []string{}
 	for _, p := range ps {
 		if strings.HasSuffix(p, ".tmpl") {
-			out = append(out, promptName(p))
+			out = append(out, isotope.PromptName(p))
 		}
 	}
 	sort.Strings(out)

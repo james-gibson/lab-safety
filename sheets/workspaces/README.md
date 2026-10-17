@@ -293,6 +293,16 @@ is *positional* independence — the check no longer trusts the writer's bookkee
 **not** measurable independence: one writer still corrupts both stores identically.
 The dissent is asserted at rung 0 and still cannot be *rendered* (the §2 finding).
 
+**Rung 3 closed — canonicalization.** The isotope **record** is now the *spec's* signed
+isotope: `Client.Run` signs the gate with `isotope.CanonicalizeGherkinToIsotope` (family
+`workspace-vfs`, v1, key = the session seed), and the mirror stores
+`{run, spec, family, version, signature, raw}`. `Check` **re-derives** it, so the record
+is *verified*, not trusted (`TestRecordIsBoundToTheSpecsIsotope`). The reading of the spec
+is isotope's throughout — parse (`ParseGherkin`), meaning (step definitions), identity
+(`CanonicalizeGherkinToIsotope`) — so the register's §3 row is now literally used, and
+`lab/workspaces` hand-writes none of it. What remains open at rung 3 is its other half:
+**consensus** (`ConsensusReporter`, N ≥ 3F+1) — separate instances agreeing.
+
 ## §6 Finding rule
 
 If any layer needs a **new standard**, or a hand-written protocol where a standard

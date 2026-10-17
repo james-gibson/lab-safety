@@ -2,8 +2,8 @@ package workspaces
 
 import (
 	"context"
+	"encoding/json"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -44,11 +44,21 @@ func prog(ctx context.Context, s *Store) error {
 	return s.FinalizeArtifact(ctx, "a1")
 }
 
+func decodeRecord(t *testing.T, raw []byte) Record {
+	t.Helper()
+	var rec Record
+	if err := json.Unmarshal(raw, &rec); err != nil {
+		t.Fatalf("isotope record is not a record: %v", err)
+	}
+	return rec
+}
+
 func TestDualWriteRecordsAnIsotopePerRun(t *testing.T) {
 	ctx := context.Background()
 	c, td, sq := newClient(t)
+	spec := gateRef(t)
 
-	run, err := c.Run(ctx, "42", func(s *Store) error { return prog(ctx, s) })
+	run, err := c.Run(ctx, "42", spec, func(s *Store) error { return prog(ctx, s) })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,15 +67,31 @@ func TestDualWriteRecordsAnIsotopePerRun(t *testing.T) {
 	}
 
 	// the sqlite mirror holds the isotope record for the run
-	iso, err := sq.Get(ctx, isoPath(run.ID))
+	raw, err := sq.Get(ctx, isoPath(run.ID))
 	if err != nil {
 		t.Fatalf("mirror holds no isotope record: %v", err)
 	}
-	if strings.TrimSpace(string(iso)) != run.Canonical() {
-		t.Errorf("isotope = %q, want %q", strings.TrimSpace(string(iso)), run.Canonical())
+	rec := decodeRecord(t, raw)
+	if rec.Run != run.ID {
+		t.Errorf("record.run = %q, want %q", rec.Run, run.ID)
+	}
+	if rec.Spec != GatePath {
+		t.Errorf("record.spec = %q, want %q", rec.Spec, GatePath)
 	}
 
-	// the fast host holds the traffic log for the same run
+	// rung 3: the record is the *spec's* signed isotope, and it re-canonicalizes
+	wantIso, err := spec.Isotope()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec.Signature != wantIso.Signature {
+		t.Errorf("record signature = %q, want the spec's %q", rec.Signature, wantIso.Signature)
+	}
+	if rec.Raw != wantIso.Raw {
+		t.Error("record raw does not equal the spec's canonical form")
+	}
+
+	// the traffic log hashes to its own name
 	lb, err := td.Get(ctx, logPath(run.ID))
 	if err != nil {
 		t.Fatalf("fast host holds no traffic log: %v", err)
@@ -74,12 +100,12 @@ func TestDualWriteRecordsAnIsotopePerRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(ops) != len(run.Ops) {
-		t.Errorf("log has %d ops, run has %d", len(ops), len(run.Ops))
+	if canonical(ops) != run.ID {
+		t.Error("the traffic log does not hash to its own name")
 	}
 
-	// the two invariants corroborate
-	rep, err := c.Check(ctx)
+	// the writer's own two invariants corroborate
+	rep, err := c.Check(ctx, spec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,28 +136,28 @@ func TestDualWriteRecordsAnIsotopePerRun(t *testing.T) {
 func TestDissentIsTorn(t *testing.T) {
 	ctx := context.Background()
 	c, td, _ := newClient(t)
+	spec := gateRef(t)
 
-	run, err := c.Run(ctx, "42", func(s *Store) error { return prog(ctx, s) })
+	run, err := c.Run(ctx, "42", spec, func(s *Store) error { return prog(ctx, s) })
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// seed a discrepancy: the traffic log claims an operation the isotope
-	// record does not corroborate
-	tampered := `{"kind":"message","path":"messages/99999999.user.json"}` + "\n"
+	// seed a discrepancy: the traffic log no longer hashes to its own name
+	tampered := `{"kind":"message","path":"/data/messages/99999999.user.json"}` + "\n"
 	if err := td.Put(ctx, logPath(run.ID), []byte(tampered)); err != nil {
 		t.Fatal(err)
 	}
 
-	rep, err := c.Check(ctx)
+	rep, err := c.Check(ctx, spec)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !rep.Torn() {
 		t.Fatalf("expected a torn report, got %+v", rep)
 	}
-	if len(rep.DigestMismatch) != 1 || rep.DigestMismatch[0] != run.ID {
-		t.Errorf("digest mismatch = %v, want [%s]", rep.DigestMismatch, run.ID)
+	if len(rep.LogNotContentAddressed) != 1 || rep.LogNotContentAddressed[0] != run.ID {
+		t.Errorf("log mismatch = %v, want [%s]", rep.LogNotContentAddressed, run.ID)
 	}
 
 	// a discrepancy is torn -> red, whatever the conjugate/independent split
@@ -144,30 +170,59 @@ func TestDissentIsTorn(t *testing.T) {
 	}
 }
 
+// The record is bound to the *spec's* isotope: checking against a differently
+// signed spec catches it. This is the whole point of rung 3 — the record is
+// re-derived, not trusted.
+func TestRecordIsBoundToTheSpecsIsotope(t *testing.T) {
+	ctx := context.Background()
+	c, _, _ := newClient(t)
+	spec := gateRef(t)
+
+	if _, err := c.Run(ctx, "42", spec, func(s *Store) error { return prog(ctx, s) }); err != nil {
+		t.Fatal(err)
+	}
+
+	other, err := LoadSpec(GatePath, []byte("a-different-seed"), "workspace-vfs", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep, err := c.Check(ctx, other)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rep.RecordMismatch) != 1 {
+		t.Fatalf("record mismatch = %v, want one", rep.RecordMismatch)
+	}
+	if !rep.Torn() {
+		t.Error("a record that does not re-canonicalize must be a discrepancy")
+	}
+}
+
 func TestIsotopeWithoutLogIsADiscrepancy(t *testing.T) {
 	ctx := context.Background()
 	c, _, sq := newClient(t)
+	spec := gateRef(t)
 
-	if _, err := c.Run(ctx, "42", func(s *Store) error { return prog(ctx, s) }); err != nil {
+	if _, err := c.Run(ctx, "42", spec, func(s *Store) error { return prog(ctx, s) }); err != nil {
 		t.Fatal(err)
 	}
-	// an isotope record with no traffic log
-	if err := sq.Put(ctx, isoPath("orphan"), []byte("sha256:orphan\n")); err != nil {
+	// a record with no traffic log
+	if err := sq.Put(ctx, isoPath("orphan"), []byte("{}\n")); err != nil {
 		t.Fatal(err)
 	}
 
-	rep, err := c.Check(ctx)
+	rep, err := c.Check(ctx, spec)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !contains(rep.IsotopesMissingLog, "orphan") {
-		t.Errorf("expected an orphan isotope to be a discrepancy, got %+v", rep)
+		t.Errorf("expected an orphan record to be a discrepancy, got %+v", rep)
 	}
 }
 
 func TestPlaneAndLightMapping(t *testing.T) {
 	clean := Report{}
-	torn := Report{DigestMismatch: []string{"x"}}
+	torn := Report{RecordMismatch: []string{"x"}}
 
 	cases := []struct {
 		rep         Report

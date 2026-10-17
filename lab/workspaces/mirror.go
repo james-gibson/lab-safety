@@ -66,10 +66,23 @@ type Client struct {
 // NewClient returns a dual-write client over the two hosts.
 func NewClient(tmp, mirror Driver) *Client { return &Client{tmp: tmp, mirror: mirror} }
 
+// Record is the isotope record: which run claims which spec, and that spec's
+// signed isotope. The isotope is the *spec's*, not the run's — "what should have
+// happened" is the spec, and canonicalizing the spec to sign it is rung 3
+// (register §1: isotope canonicalization).
+type Record struct {
+	Run       string `json:"run"`
+	Spec      string `json:"spec"`
+	Family    string `json:"family"`
+	Version   int    `json:"version"`
+	Signature string `json:"signature"`
+	Raw       string `json:"raw"`
+}
+
 // Run applies prog to a store on both hosts, then records the run in both
 // invariants. One writer produced both stores, so the pair is conjugate: it
 // exists, but it is not yet independent.
-func (c *Client) Run(ctx context.Context, session string, prog func(*Store) error) (*Run, error) {
+func (c *Client) Run(ctx context.Context, session string, spec SpecRef, prog func(*Store) error) (*Run, error) {
 	rec := &recorder{}
 	if err := prog(New(c.tmp, session).withRecorder(rec)); err != nil {
 		return nil, err
@@ -95,8 +108,25 @@ func (c *Client) Run(ctx context.Context, session string, prog func(*Store) erro
 		return nil, err
 	}
 
-	// The isotope record (what should have happened) -> the mirror.
-	if err := c.mirror.Put(ctx, isoPath(run.ID), []byte(run.Canonical()+"\n")); err != nil {
+	// The isotope record (what should have happened) -> the mirror. Rung 3: the
+	// record is the spec's signed isotope, so it can be *re-derived*, not merely
+	// trusted.
+	iso, err := spec.Isotope()
+	if err != nil {
+		return nil, err
+	}
+	recJSON, err := json.MarshalIndent(Record{
+		Run:       run.ID,
+		Spec:      spec.Path,
+		Family:    iso.Family,
+		Version:   iso.Version,
+		Signature: iso.Signature,
+		Raw:       iso.Raw,
+	}, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	if err := c.mirror.Put(ctx, isoPath(run.ID), append(recJSON, '\n')); err != nil {
 		return nil, err
 	}
 	return run, nil
@@ -106,28 +136,38 @@ func (c *Client) Run(ctx context.Context, session string, prog func(*Store) erro
 // isotope records) plus the independent observation (the mirror read back
 // through the protocol against the spec).
 type Report struct {
-	Runs               int
-	LogsMissingIsotope []string
-	IsotopesMissingLog []string
-	DigestMismatch     []string
-	SpecMismatch       []string // surfaces where the observation disagrees with the spec
+	Runs                   int
+	LogsMissingIsotope     []string
+	IsotopesMissingLog     []string
+	LogNotContentAddressed []string // a log that does not hash to its own name
+	RecordMismatch         []string // a record that does not re-canonicalize to the spec
+	SpecMismatch           []string // the observation disagrees with the spec
 }
 
-// Agrees reports whether every log has an isotope and every isotope a log, with
-// matching digests, and the independent observation matches the spec.
+// Agrees reports that every log has a record, every record a log, the logs are
+// content-addressed, the records re-canonicalize to the spec, and the
+// independent observation matches the spec.
 func (r Report) Agrees() bool {
 	return len(r.LogsMissingIsotope) == 0 &&
 		len(r.IsotopesMissingLog) == 0 &&
-		len(r.DigestMismatch) == 0 &&
+		len(r.LogNotContentAddressed) == 0 &&
+		len(r.RecordMismatch) == 0 &&
 		len(r.SpecMismatch) == 0
 }
 
-// Torn reports a discrepancy: the two invariants do not corroborate.
+// Torn reports a discrepancy: the invariants do not corroborate.
 func (r Report) Torn() bool { return !r.Agrees() }
 
-// Check cross-checks the traffic log against the isotope records.
-func (c *Client) Check(ctx context.Context) (Report, error) {
+// Check cross-checks the traffic log against the isotope records: every run has a
+// record, the record re-canonicalizes to the spec's isotope (rung 3), every log
+// hashes to its own name, and no record is orphaned.
+func (c *Client) Check(ctx context.Context, spec SpecRef) (Report, error) {
 	var rep Report
+
+	want, err := spec.Isotope()
+	if err != nil {
+		return rep, err
+	}
 
 	logs, err := c.tmp.List(ctx, DirLogs)
 	if err != nil {
@@ -161,15 +201,23 @@ func (c *Client) Check(ctx context.Context) (Report, error) {
 		if err != nil {
 			return rep, fmt.Errorf("traffic log %s: %w", id, err)
 		}
+		if canonical(ops) != id {
+			rep.LogNotContentAddressed = append(rep.LogNotContentAddressed, id)
+		}
 
-		iso, err := c.mirror.Get(ctx, isoPath(id))
+		raw, err := c.mirror.Get(ctx, isoPath(id))
 		if err != nil {
 			rep.LogsMissingIsotope = append(rep.LogsMissingIsotope, id)
 			continue
 		}
 		delete(isoByID, id)
-		if want := strings.TrimSpace(string(iso)); want != canonical(ops) {
-			rep.DigestMismatch = append(rep.DigestMismatch, id)
+
+		var rec Record
+		if err := json.Unmarshal(raw, &rec); err != nil {
+			return rep, fmt.Errorf("isotope record %s: %w", id, err)
+		}
+		if rec.Signature != want.Signature || rec.Raw != want.Raw {
+			rep.RecordMismatch = append(rep.RecordMismatch, id)
 		}
 	}
 
@@ -178,7 +226,9 @@ func (c *Client) Check(ctx context.Context) (Report, error) {
 	}
 	sort.Strings(rep.LogsMissingIsotope)
 	sort.Strings(rep.IsotopesMissingLog)
-	sort.Strings(rep.DigestMismatch)
+	sort.Strings(rep.LogNotContentAddressed)
+	sort.Strings(rep.RecordMismatch)
+	sort.Strings(rep.SpecMismatch)
 	return rep, nil
 }
 

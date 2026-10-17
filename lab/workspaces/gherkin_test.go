@@ -5,13 +5,26 @@ import (
 	"testing"
 )
 
-// TestSpecComesFromTheGherkin is the guard on the whole idea: if the parse
+// testKey is the session's seed — the material the spec's isotope is signed with.
+var testKey = []byte("seed-42")
+
+// gateRef is the Phase-0 gate as a spec reference.
+func gateRef(t *testing.T) SpecRef {
+	t.Helper()
+	spec, err := GateRef(testKey)
+	if err != nil {
+		t.Fatalf("read the gate %s: %v", GatePath, err)
+	}
+	return spec
+}
+
+// TestSpecComesFromTheGherkin is the guard on the whole idea: if the reading
 // silently yields nothing, this fails rather than the expectation quietly
 // becoming empty and the check passing for the wrong reason.
 func TestSpecComesFromTheGherkin(t *testing.T) {
-	want, err := GateSpec()
+	want, err := gateRef(t).Expectation()
 	if err != nil {
-		t.Fatalf("read the gate %s: %v", GatePath, err)
+		t.Fatal(err)
 	}
 	if !equalStrings(want.Tools, []string{"echo"}) {
 		t.Errorf("tools = %v, want [echo]", want.Tools)
@@ -21,6 +34,40 @@ func TestSpecComesFromTheGherkin(t *testing.T) {
 	}
 	if !equalStrings(want.Prompts, []string{"summarize"}) {
 		t.Errorf("prompts = %v, want [summarize]", want.Prompts)
+	}
+}
+
+// The spec's isotope is deterministic: the same source signs to the same thing.
+func TestSpecIsotopeIsDeterministic(t *testing.T) {
+	spec := gateRef(t)
+	one, err := spec.Isotope()
+	if err != nil {
+		t.Fatal(err)
+	}
+	two, err := spec.Isotope()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if one.Signature == "" {
+		t.Fatal("empty signature")
+	}
+	if one.Signature != two.Signature {
+		t.Errorf("signature is not deterministic: %s vs %s", one.Signature, two.Signature)
+	}
+	if one.Family != "workspace-vfs" || one.Version != 1 {
+		t.Errorf("isotope identity = %s v%d", one.Family, one.Version)
+	}
+	// a different seed is a different isotope
+	other, err := LoadSpec(GatePath, []byte("another-seed"), "workspace-vfs", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherIso, err := other.Isotope()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if otherIso.Signature == one.Signature {
+		t.Error("a different key produced the same signature")
 	}
 }
 
@@ -37,7 +84,11 @@ func TestSpecStepDefinitions(t *testing.T) {
 	if err := os.WriteFile(p, []byte(src), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	got, err := Spec(p)
+	spec, err := LoadSpec(p, testKey, "x", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := spec.Expectation()
 	if err != nil {
 		t.Fatal(err)
 	}
