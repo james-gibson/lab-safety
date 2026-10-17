@@ -521,6 +521,41 @@ pre-negotiated and the stand-in already holds the mirrored traffic. The rule is 
 short: **nothing unexpected is answered by doing it again.** Repetition is for loss;
 rotation is for surprise.
 
+### A worked example: `rm -rf /`
+
+Take the command that is almost never useful. `rm -rf /` scores badly on the measure — it is
+nearly always a departure from nominal — and a score that bad is a **routing** decision, not
+a verdict:
+
+- **a ban would be wrong**, because it is genuinely the right call in a handful of cases
+  (tearing down a disposable root; a fixture that lost its guard);
+- **silence would be wrong**, because the one case that was *not* intended is catastrophic
+  and unrecoverable;
+- so it is **routed through the proxy**, where the action is observed and the check is real.
+
+Which is the model's rule applied literally ([`SPLASH.md`](SPLASH.md) → *Network behaviour*):
+*"an action that appears incorrect is sent along a different path where it is observed,
+rather than dropped. Routing and observation are the same mechanism."* The proxy is also the
+tap, so the detour **is** the record — and because the cluster can insert a **zero-cost
+validation path** ([`SPLASH.md`](SPLASH.md) → *The proxy*), the check costs the caller
+nothing: confirm that a human is not required, that the target is the disposable root and not
+the host.
+
+**Three things the example pins down that prose does not.**
+
+- **The score belongs to the interaction, not to the agent.** `rm -rf /` is bad *here*; the
+  member driving it may be in excellent standing and stays there. A departure is *measured*,
+  not a conviction — which is the difference between this and a blocklist.
+- **It is empirical, and it is a distribution.** "Nearly never useful" is a statement about
+  the population of uses, not about this use: the individual instance may be perfectly
+  legitimate while the aggregate is what is measurable — the same reading as *the isotope is
+  the aggregate* ([`SPLASH.md`](SPLASH.md) → *Cultural prior art*). *How* badly it scores is
+  the embedder's number; *that* it scores badly is the model's.
+- **And it separates surprise from loss (§9, above).** Nothing unexpected is answered by
+  doing it again: the proxy path does not replay the command, it **investigates** it, and a
+  repeat escalates toward a rotation. `rm -rf /` is the canonical *unexpected*, and it is
+  handled by asking — not by repeating it, and not by refusing it.
+
 **The pitch, then, is a list of questions rather than a claim** — every one of them
 answerable for your own deployment, in public, without taking anyone's word for it (§5,
 *the basis is verifiable, not asserted*):

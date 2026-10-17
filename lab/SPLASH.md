@@ -272,7 +272,10 @@ determined.
 - **Suspicious actions are routed, not merely refused.** An action that appears
   incorrect is sent along a different path where it is observed, rather than
   dropped. Routing and observation are the same mechanism. Rate limiting on that
-  path is standard (HTTP 429 and Retry-After, RFC 9110 §15.5.4/§10.2.3).
+  path is standard (HTTP 429 and Retry-After, RFC 9110 §15.5.4/§10.2.3). The
+  worked example is `rm -rf /` — nearly never useful, genuinely right in a handful
+  of cases, and therefore *routed* rather than banned or silently permitted
+  ([`SPLASH-SLA.md`](SPLASH-SLA.md) §9).
 - **Contributed resources.** A participant may contribute capacity rather than
   consume it, so the marginal cost of an additional participant is carried by that
   participant. This is the horizontal-scaling rule applied to compute.
