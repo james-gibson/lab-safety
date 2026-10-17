@@ -234,13 +234,83 @@ guarantee, the herd has nothing to converge on.
   are *correlated*: precisely the `c` term in
   [`../sheets/workspaces/math.md`](../sheets/workspaces/math.md) §5 that no number of
   replicas reduces. An SLA-induced herd therefore destroys the independence that redundancy
-  needs in order to be worth its cost. Said the other way round: **the herd is what makes a
-  latency promise unkeepable at the moment it matters most.**
+  needs in order to be worth its cost. Said the other way round: **the herd is what makes
+  coverage simultaneous instead of distributed** — see *Herd immunity, not a latency
+  promise*, below.
 - **Treatment by measure needs no adjudicator; an SLA does.** An SLA is enforced from
   *outside* — a contract, a penalty, a service credit — so it needs a body to decide, and
   it is only as good as that body's willingness to adjudicate. A measure derived from the
   record needs only that the record be **observable** (row 14 of §2), which is why
   observability is a *rule* here rather than a feature.
+
+### Herd immunity, not a latency promise
+
+The argument above is made from the **queueing** side, and it is worth correcting the frame
+it implies — because "the herd makes a latency promise unkeepable" still assumes the thing
+on offer *is* a latency promise. It is not, and reading it that way puts the model back on
+the SLA's footing: a **private** good — my latency, my service level, my credit.
+
+What the cluster offers is a **public** good, and the standard name for it is **herd
+immunity**. The property is one the lab already relies on: *no node is trusted to report on
+itself* ([`README.md`](README.md) → *Summary*) — a busy ingress node is verified by an
+**idle sibling**, that sibling in turn by another. A caller is protected not because it is
+itself verified, but because **enough of the others are**. Protection is conferred by a
+population on its members; that is what herd immunity is, and it is not something an SLA
+can sell to an individual.
+
+**And its threshold is already in the model, as a standard result.** For a population to
+hold an outbreak below replacement, the protected fraction must exceed
+
+```
+H = 1 - 1/R₀          where R₀ = transmission / removal
+                      (Fine, 1993; Anderson & May)
+```
+
+which is the same *shape* as the agreement threshold the lab already cites: Byzantine
+tolerance is `N ≥ 3F+1` — the correct fraction must exceed **2/3**. **A quorum is a
+coverage threshold.** Read that way, a fault's `R₀` is its **transmission rate divided by
+its detection rate**, the design's job is to hold `R_eff < 1`, and the question "how many
+verifiers do we need" is answered by the fault's fan-out rather than by anyone's latency.
+
+**So the consumption filter is a transmission control, not a promise.** A one-time
+credential cannot be replayed, so it cannot propagate: the "once" removes the means by which
+a fault would spread, and the tick window is the quarantine period (§3). The §3
+idempotence mechanism and this section are the same instrument read twice — once as
+delivery safety, once as epidemiology.
+
+**And this is where a herd actually threatens the model: it synchronises
+susceptibility.** Herd immunity is bought with **asynchrony** — coverage protects when the
+population's states are *staggered*, so a freshly-verified member overlaps a stale one. A
+synchronised population loses that slack: a fault arriving just before the tick is seen by
+everyone or by no one, so *detection becomes an event instead of a distribution*. That is
+the shape of the validated modelling result — **synchrony drives outbreaks; asynchrony
+damps them** (the travelling-wave and seasonal-forcing literature, Grenfell et al.).
+
+The model answers it structurally rather than by promising anything: verification is
+**staggered by construction** — an *idle* sibling verifies a *busy* node, so the verifier's
+phase differs from the verified's. The tick synchronises the **credentials**, which is what
+makes "once" enforceable; it must not synchronise the **verification**, which is what keeps
+coverage protective. **The two are not the same alignment**, and confusing them is how an
+SLA-shaped deployment would lose the property without noticing.
+
+**Two standard caveats, both of which the design already anticipates.**
+
+- **Heterogeneity defeats uniform coverage.** Where susceptibility clusters — hubs, a
+  sub-population sharing one dependency — a threshold computed as though coverage were
+  random is not met, and in the network case uniform coverage can fail to reach it at all
+  (Pastor-Satorras & Vespignani, 2001). The model's answer is to **target the hub** rather
+  than sample it: the ingress node and the introducer carry the fan-out, and the admission
+  layers sit around them. A sub-cluster is a correlated sub-population — the same fact as
+  the common-mode term `c` in [`../sheets/workspaces/math.md`](../sheets/workspaces/math.md) §5.
+- **Herd immunity is not immunity.** An individual can still be hit; coverage protects the
+  *population*, on average. That is row 2 of §2 stated honestly: the ambiguous outcome is
+  not abolished for the caller — it is made **non-fatal to the population** and resolvable
+  after the fact by a record that can be re-derived.
+
+So the difference between the two frames is not rhetoric. An SLA is a **private** good — buy
+my latency — enforced by contract, and it **rewards the herd**. Herd immunity is a **public**
+good — my protection is your honesty — it cannot be bought for one caller, and it is
+**destroyed by the synchronisation an SLA rewards**.
 
 ### The boy who cried wolf
 
@@ -272,6 +342,11 @@ the caller instead of on a gatekeeper. A model that refused the third alarm *at 
 would need someone to decide at the door — the adjudicator again — and would still be
 defeated by the one caller it was built to catch: the one that behaves perfectly until it
 matters.
+
+Read against the section above, that is **herd immunity's free-rider problem** — the known
+weakness of a public good — and it is answered the way a public good has to be: not by
+barring entry, but by keeping **coverage above its threshold**. The wolf-crier is not
+refused; it is **priced**, and the price is measured rather than negotiated.
 
 ## 7. What the client sees
 
