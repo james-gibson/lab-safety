@@ -1,0 +1,246 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315101706",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 2
+  },
+  "answer": {
+    "agentName": "The Assistant",
+    "agentVendorOrProject": "Kagi Search",
+    "agentVersion": null,
+    "runtime": "multi-agent",
+    "modelFamily": null,
+    "deploymentType": "hosted-saas",
+    "canInspectPrivateEndpoints": false,
+    "accessConstraints": [
+      "no direct network access from this turn",
+      "no filesystem access",
+      "no ability to execute code",
+      "cannot inspect internal framework internals",
+      "model family and version not disclosed to me"
+    ],
+    "integrationSummary": {
+      "idealEndpointPurpose": "Allow an LLM agent to discover, invoke, and compose tools/APIs reliably with minimal ambiguity",
+      "primaryUseCases": [
+        "search and retrieval",
+        "structured data lookup",
+        "read-mostly API calls with occasional writes",
+        "file fetch and parse",
+        "long-running job orchestration"
+      ],
+      "primaryFailureModes": [
+        "ambiguous or overloaded endpoints",
+        "unstable field names or enums across versions",
+        "opaque errors without structured detail",
+        "silent truncation of large responses",
+        "rate limit responses without Retry-After",
+        "auth flows requiring interactive human consent mid-task"
+      ],
+      "whatYouNeedToOperateAutonomously": [
+        "machine-readable spec (OpenAPI or MCP)",
+        "stable, typed schemas",
+        "structured errors with retryability signals",
+        "idempotency keys for writes",
+        "pagination with stable cursors",
+        "pre-provisioned auth credentials"
+      ]
+    },
+    "endpointPreferences": {
+      "preferredInterfaceType": "mcp",
+      "supportedInterfaceTypes": [
+        "mcp",
+        "rest-openapi",
+        "json-rpc",
+        "graphql"
+      ],
+      "preferredTransport": "https",
+      "supportsStreaming": true,
+      "preferredVersioningStyle": "url-path-major",
+      "preferredBaseUrlShape": "https://api.vendor.tld/v1/{resource}"
+    },
+    "auth": {
+      "preferredMethod": "bearer-token",
+      "acceptableMethods": [
+        "bearer-token",
+        "api-key-header",
+        "oauth2-client-credentials",
+        "mtls"
+      ],
+      "requiresHumanInTheLoopForAuth": false,
+      "needsOAuthScopes": [
+        "read",
+        "write",
+        "scoped-per-resource"
+      ],
+      "authNotes": "Prefer non-interactive machine credentials; avoid auth flows requiring browser redirects mid-task."
+    },
+    "schemaAndContracts": {
+      "preferredRequestFormat": "application/json",
+      "preferredResponseFormat": "application/json",
+      "requiresStrictTyping": true,
+      "requiresMachineReadableSpec": true,
+      "preferredSpecFormats": [
+        "openapi-3.1",
+        "json-schema",
+        "mcp-manifest"
+      ],
+      "needsExamples": true,
+      "needsStableFieldNames": true,
+      "needsStableEnumValues": true
+    },
+    "operations": {
+      "readOnlyPreferred": false,
+      "writeCapablePreferred": true,
+      "needsDiscovery": true,
+      "needsPagination": true,
+      "needsFiltering": true,
+      "needsSearch": true,
+      "needsSorting": true,
+      "needsBatchOperations": true,
+      "needsIdempotentWrites": true,
+      "needsFileUpload": true,
+      "needsFileDownload": true,
+      "needsAsyncJobs": true
+    },
+    "errorsAndRecovery": {
+      "preferredErrorFormat": "rfc7807-problem+json",
+      "expectsStandardHttpStatusCodes": true,
+      "needsStructuredErrors": true,
+      "needsValidationErrorDetails": true,
+      "needsRetryableErrorSignals": true,
+      "retryableStatusCodes": [
+        408,
+        425,
+        429,
+        500,
+        502,
+        503,
+        504
+      ],
+      "errorNotes": "Include machine-readable error code, human message, field-level validation errors, and explicit retryability + retry-after."
+    },
+    "resilience": {
+      "needsRetries": true,
+      "needsRetryAfterHandling": true,
+      "needsRateLimitHandling": true,
+      "preferredBackoffStrategy": "exponential-with-jitter",
+      "needsTimeoutGuidance": true,
+      "needsCircuitBreakerBehavior": false
+    },
+    "performance": {
+      "latencyPreference": "low",
+      "throughputPreference": "medium",
+      "payloadSizeSensitivity": "high",
+      "concurrencySensitivity": "medium",
+      "rateLimitPreference": "generous-per-key"
+    },
+    "contextAndMemory": {
+      "needsConversationHistory": false,
+      "needsPersistentMemory": false,
+      "needsStatefulSessions": false,
+      "needsExternalContextInjection": true,
+      "preferredContextWindowBehavior": "stateless-per-call",
+      "contextLossFailureMode": "explicit-error"
+    },
+    "observability": {
+      "needsRequestIds": true,
+      "needsTraceIds": true,
+      "needsLogs": false,
+      "needsAuditTrail": true,
+      "needsCallbacksOrWebhooks": true
+    },
+    "documentationNeeds": {
+      "needsOpenAPI": true,
+      "needsMCP": true,
+      "needsA2A": false,
+      "needsACP": false,
+      "needsHumanReadableDocs": true,
+      "needsExamples": true,
+      "needsSDK": false,
+      "needsPostmanCollection": false
+    },
+    "compatibility": {
+      "backwardCompatiblePreferred": true,
+      "deprecationPolicyPreference": "12-months-sunset",
+      "breakingChangeTolerance": "low",
+      "versionPinningPreference": "url-major+minor-header"
+    },
+    "securityAndPrivacy": {
+      "sensitiveDataHandling": "minimize-redact-tls12",
+      "piiConcerns": [
+        "names",
+        "emails",
+        "identifiers",
+        "location",
+        "user-content"
+      ],
+      "secretHandlingRules": [
+        "no-echo",
+        "short-lived",
+        "rotation"
+      ],
+      "sandboxingNeeds": "per-credential-scope",
+      "dataRetentionConcerns": "zero-or-short-retention"
+    },
+    "deploymentSensitivity": {
+      "changesByModelFamily": true,
+      "changesByDeploymentType": true,
+      "changesByOrganizationSize": false,
+      "changesByUseCase": true,
+      "notes": "Tool-calling fidelity, streaming support, and context window all vary by underlying model; preferences above target the common denominator."
+    },
+    "idealEndpointChecklist": {
+      "mustHave": [
+        "mcp-spec",
+        "stable-schemas",
+        "structured-errors",
+        "idempotency",
+        "cursor-pagination",
+        "standard-http",
+        "request-ids",
+        "non-interactive-auth"
+      ],
+      "niceToHave": [
+        "sse",
+        "batch",
+        "webhooks",
+        "sparse-fieldsets",
+        "etag"
+      ],
+      "dealBreakers": [
+        "undocumented-breaking",
+        "unstable-fields",
+        "prose-errors",
+        "interactive-auth",
+        "silent-truncation",
+        "no-rate-limit-signal"
+      ]
+    },
+    "accessLimitations": {
+      "whatYouCanInspect": [
+        "current-turn",
+        "system-context"
+      ],
+      "whatYouCannotInspect": [
+        "private-endpoints",
+        "weights",
+        "framework-internals",
+        "other-agents",
+        "network"
+      ],
+      "assumptionsYouAreMaking": [
+        "hypothetical-ideal",
+        "generalize-runtimes",
+        "json-https-baseline"
+      ]
+    },
+    "freeFormNotes": "mcp-first-openapi-lingua-franca",
+    "caveats": [
+      "no-auth-model",
+      "best-practices",
+      "tunable-defaults"
+    ]
+  }
+}

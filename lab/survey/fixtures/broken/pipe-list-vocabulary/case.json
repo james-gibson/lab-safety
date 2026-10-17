@@ -1,0 +1,15 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "encoding: kagi-the-assistant supported_interfaces has",
+  "ops": [
+    {
+      "kind": "csvSetCell",
+      "file": "models.csv",
+      "row": "kagi-the-assistant",
+      "column": "supported_interfaces",
+      "text": "mcp|soap"
+    }
+  ]
+}

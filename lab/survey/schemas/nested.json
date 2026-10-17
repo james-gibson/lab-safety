@@ -1,0 +1,926 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "model survey - nested answer (unchanged from issue #3)",
+  "description": "The shape a surveyed agent answers in (issue #3, comment 4315097470). Unchanged; the flat row is its projection.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agentName",
+    "agentVendorOrProject",
+    "agentVersion",
+    "runtime",
+    "modelFamily",
+    "deploymentType",
+    "canInspectPrivateEndpoints",
+    "accessConstraints",
+    "integrationSummary",
+    "endpointPreferences",
+    "auth",
+    "schemaAndContracts",
+    "operations",
+    "errorsAndRecovery",
+    "resilience",
+    "performance",
+    "contextAndMemory",
+    "observability",
+    "documentationNeeds"
+  ],
+  "properties": {
+    "agentName": {
+      "type": "string"
+    },
+    "agentVendorOrProject": {
+      "type": "string"
+    },
+    "agentVersion": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "runtime": {
+      "type": "string",
+      "enum": [
+        "chat",
+        "tool-using",
+        "reasoning",
+        "multi-agent",
+        "embedded"
+      ]
+    },
+    "modelFamily": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "deploymentType": {
+      "type": "string",
+      "enum": [
+        "hosted-saas",
+        "cloud",
+        "self-hosted",
+        "local",
+        "hybrid"
+      ]
+    },
+    "canInspectPrivateEndpoints": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "accessConstraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "integrationSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "idealEndpointPurpose",
+        "primaryUseCases",
+        "primaryFailureModes",
+        "whatYouNeedToOperateAutonomously"
+      ],
+      "properties": {
+        "idealEndpointPurpose": {
+          "type": "string"
+        },
+        "primaryUseCases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "primaryFailureModes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "whatYouNeedToOperateAutonomously": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "endpointPreferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preferredInterfaceType",
+        "supportedInterfaceTypes",
+        "preferredTransport",
+        "supportsStreaming",
+        "preferredVersioningStyle",
+        "preferredBaseUrlShape"
+      ],
+      "properties": {
+        "preferredInterfaceType": {
+          "type": "string",
+          "enum": [
+            "mcp",
+            "rest-openapi",
+            "json-rpc",
+            "graphql",
+            "grpc",
+            "custom"
+          ]
+        },
+        "supportedInterfaceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "mcp",
+              "rest-openapi",
+              "json-rpc",
+              "graphql",
+              "grpc",
+              "custom"
+            ]
+          }
+        },
+        "preferredTransport": {
+          "type": "string",
+          "enum": [
+            "https",
+            "http",
+            "sse",
+            "websocket",
+            "grpc"
+          ]
+        },
+        "supportsStreaming": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "preferredVersioningStyle": {
+          "type": "string",
+          "enum": [
+            "url-path-major",
+            "header",
+            "query-param",
+            "semver",
+            "none"
+          ]
+        },
+        "preferredBaseUrlShape": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preferredMethod",
+        "acceptableMethods",
+        "requiresHumanInTheLoopForAuth",
+        "needsOAuthScopes",
+        "authNotes"
+      ],
+      "properties": {
+        "preferredMethod": {
+          "type": "string",
+          "enum": [
+            "bearer-token",
+            "api-key-header",
+            "oauth2-client-credentials",
+            "oauth2-auth-code",
+            "mtls",
+            "signed-request",
+            "none"
+          ]
+        },
+        "acceptableMethods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "bearer-token",
+              "api-key-header",
+              "oauth2-client-credentials",
+              "oauth2-auth-code",
+              "mtls",
+              "signed-request",
+              "none"
+            ]
+          }
+        },
+        "requiresHumanInTheLoopForAuth": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsOAuthScopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "authNotes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "schemaAndContracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preferredRequestFormat",
+        "preferredResponseFormat",
+        "requiresStrictTyping",
+        "requiresMachineReadableSpec",
+        "preferredSpecFormats",
+        "needsExamples",
+        "needsStableFieldNames",
+        "needsStableEnumValues"
+      ],
+      "properties": {
+        "preferredRequestFormat": {
+          "type": "string",
+          "enum": [
+            "application/json",
+            "text",
+            "ndjson",
+            "stream",
+            "multipart",
+            "form"
+          ]
+        },
+        "preferredResponseFormat": {
+          "type": "string",
+          "enum": [
+            "application/json",
+            "text",
+            "ndjson",
+            "stream",
+            "multipart",
+            "form"
+          ]
+        },
+        "requiresStrictTyping": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "requiresMachineReadableSpec": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "preferredSpecFormats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "needsExamples": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsStableFieldNames": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsStableEnumValues": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "readOnlyPreferred",
+        "writeCapablePreferred",
+        "needsDiscovery",
+        "needsPagination",
+        "needsFiltering",
+        "needsSearch",
+        "needsSorting",
+        "needsBatchOperations",
+        "needsIdempotentWrites",
+        "needsFileUpload",
+        "needsFileDownload",
+        "needsAsyncJobs"
+      ],
+      "properties": {
+        "readOnlyPreferred": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "writeCapablePreferred": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsDiscovery": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsPagination": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsFiltering": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsSearch": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsSorting": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsBatchOperations": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsIdempotentWrites": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsFileUpload": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsFileDownload": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsAsyncJobs": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "errorsAndRecovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preferredErrorFormat",
+        "expectsStandardHttpStatusCodes",
+        "needsStructuredErrors",
+        "needsValidationErrorDetails",
+        "needsRetryableErrorSignals",
+        "retryableStatusCodes",
+        "errorNotes"
+      ],
+      "properties": {
+        "preferredErrorFormat": {
+          "type": "string",
+          "enum": [
+            "rfc7807-problem+json",
+            "json-custom",
+            "text",
+            "html",
+            "none"
+          ]
+        },
+        "expectsStandardHttpStatusCodes": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsStructuredErrors": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsValidationErrorDetails": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsRetryableErrorSignals": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "retryableStatusCodes": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "errorNotes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "resilience": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "needsRetries",
+        "needsRetryAfterHandling",
+        "needsRateLimitHandling",
+        "preferredBackoffStrategy",
+        "needsTimeoutGuidance",
+        "needsCircuitBreakerBehavior"
+      ],
+      "properties": {
+        "needsRetries": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsRetryAfterHandling": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsRateLimitHandling": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "preferredBackoffStrategy": {
+          "type": "string",
+          "enum": [
+            "none",
+            "linear",
+            "exponential",
+            "exponential-with-jitter",
+            "custom"
+          ]
+        },
+        "needsTimeoutGuidance": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsCircuitBreakerBehavior": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "performance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "latencyPreference",
+        "throughputPreference",
+        "payloadSizeSensitivity",
+        "concurrencySensitivity",
+        "rateLimitPreference"
+      ],
+      "properties": {
+        "latencyPreference": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "throughputPreference": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "payloadSizeSensitivity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "concurrencySensitivity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "rateLimitPreference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "contextAndMemory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "needsConversationHistory",
+        "needsPersistentMemory",
+        "needsStatefulSessions",
+        "needsExternalContextInjection",
+        "preferredContextWindowBehavior",
+        "contextLossFailureMode"
+      ],
+      "properties": {
+        "needsConversationHistory": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsPersistentMemory": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsStatefulSessions": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsExternalContextInjection": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "preferredContextWindowBehavior": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contextLossFailureMode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "observability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "needsRequestIds",
+        "needsTraceIds",
+        "needsLogs",
+        "needsAuditTrail",
+        "needsCallbacksOrWebhooks"
+      ],
+      "properties": {
+        "needsRequestIds": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsTraceIds": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsLogs": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsAuditTrail": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsCallbacksOrWebhooks": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "documentationNeeds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "needsOpenAPI",
+        "needsMCP",
+        "needsA2A",
+        "needsACP",
+        "needsHumanReadableDocs",
+        "needsExamples",
+        "needsSDK",
+        "needsPostmanCollection"
+      ],
+      "properties": {
+        "needsOpenAPI": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsMCP": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsA2A": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsACP": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsHumanReadableDocs": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsExamples": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsSDK": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "needsPostmanCollection": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backwardCompatiblePreferred",
+        "deprecationPolicyPreference",
+        "breakingChangeTolerance",
+        "versionPinningPreference"
+      ],
+      "properties": {
+        "backwardCompatiblePreferred": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "deprecationPolicyPreference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "breakingChangeTolerance": {
+          "type": "string",
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "versionPinningPreference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "securityAndPrivacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sensitiveDataHandling",
+        "piiConcerns",
+        "secretHandlingRules",
+        "sandboxingNeeds",
+        "dataRetentionConcerns"
+      ],
+      "properties": {
+        "sensitiveDataHandling": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "piiConcerns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "secretHandlingRules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sandboxingNeeds": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dataRetentionConcerns": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "deploymentSensitivity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "changesByModelFamily",
+        "changesByDeploymentType",
+        "changesByOrganizationSize",
+        "changesByUseCase",
+        "notes"
+      ],
+      "properties": {
+        "changesByModelFamily": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "changesByDeploymentType": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "changesByOrganizationSize": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "changesByUseCase": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "idealEndpointChecklist": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mustHave",
+        "niceToHave",
+        "dealBreakers"
+      ],
+      "properties": {
+        "mustHave": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "niceToHave": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dealBreakers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "accessLimitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "whatYouCanInspect",
+        "whatYouCannotInspect",
+        "assumptionsYouAreMaking"
+      ],
+      "properties": {
+        "whatYouCanInspect": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "whatYouCannotInspect": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assumptionsYouAreMaking": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "freeFormNotes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "caveats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

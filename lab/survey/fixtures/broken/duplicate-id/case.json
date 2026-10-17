@@ -1,0 +1,12 @@
+{
+  "args": ["--check"],
+  "want": "duplicate agent_id:",
+  "ops": [
+    {
+      "kind": "csvDuplicateRow",
+      "file": "models.csv",
+      "row": "kagi-the-assistant",
+      "set": {}
+    }
+  ]
+}

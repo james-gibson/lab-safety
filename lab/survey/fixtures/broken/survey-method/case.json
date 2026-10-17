@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "survey_method \"guess\" is not one of",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/kagi-the-assistant.json",
+      "path": "provenance.survey_method",
+      "value": "guess"
+    }
+  ]
+}

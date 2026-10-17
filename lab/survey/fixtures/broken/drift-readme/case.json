@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "drift: README.md summary region differs",
+  "ops": [
+    {
+      "kind": "rawReplace",
+      "file": "README.md",
+      "find": "| kagi-the-assistant | Kagi Search | multi-agent |",
+      "text": "| kagi-the-assistant | Kagi Search | multiagent |"
+    }
+  ]
+}

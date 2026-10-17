@@ -41,10 +41,16 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 | `FLOW.md` + `exercise.sh` | exercise | tuner ⇄ smoke-alarm ⇄ adhd, end to end |
 | `TRIPWIRE.md` + `tripwire.sh` | exercise | trusted caller vs probing caller; the honeypot |
 | `RECONCILE.md` + `accounts.sh` | exercise | the verification chain and who enacts a disagreement |
+| `survey/README.md` | dataset | the **model survey** — what agents want from an integration endpoint. `survey/profiles/*.json` are the observations; `models.csv`, the summary table and `survey.feature` are checked projections of them |
 
 `MATH.md`, `PLANE.md` and `THREADS.md` are the ones that save time. The exercises
 are reproducible; the three findings documents are the *conclusions*, so an agent
 can start from the answer rather than the search.
+
+`survey/` is the first entry that is neither an exercise nor a finding: it is
+**data**, and its value is that the data cannot drift from what it claims.
+`survey/README.md` says which way its Gherkin arrow points (the opposite way to
+`sheets/`), and `go run ./cmd/survey --check` is the proof.
 
 **Two kinds of document, and the rule that separates them.** A **join artifact** must
 be readable **at once** — if a participant cannot see the pattern in one view, it

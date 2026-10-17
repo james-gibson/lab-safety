@@ -1,0 +1,13 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "provenance: gemini-1.5-pro has no source_url",
+  "ops": [
+    {
+      "kind": "jsonDelete",
+      "file": "profiles/gemini-1.5-pro.json",
+      "path": "provenance.source_url"
+    }
+  ]
+}

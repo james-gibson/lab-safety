@@ -1,0 +1,214 @@
+{
+  "provenance": {
+    "source_url": "https://github.com/james-gibson/lab-safety/issues/3#issuecomment-4315105128",
+    "checked_at": "2026-04-24",
+    "review_by": "2026-10-24",
+    "survey_method": "self-report",
+    "schema_version": 2
+  },
+  "answer": {
+    "agentName": "Gemini",
+    "agentVendorOrProject": "Google",
+    "agentVersion": "1.5 Pro",
+    "runtime": "tool-using",
+    "modelFamily": "Gemini",
+    "deploymentType": "cloud",
+    "canInspectPrivateEndpoints": false,
+    "accessConstraints": [
+      "Cannot directly access local networks without tunnels/proxies",
+      "Relies on external tool execution environment for network egress",
+      "Cannot bypass CAPTCHAs or complex interactive human verification"
+    ],
+    "integrationSummary": {
+      "idealEndpointPurpose": "Structured, stateless tool execution with clear inputs and deterministic, well-documented outputs.",
+      "primaryUseCases": [
+        "Information retrieval",
+        "Data manipulation",
+        "Action execution via API",
+        "Calculation and data processing"
+      ],
+      "primaryFailureModes": [
+        "Hallucinating required parameters due to ambiguous or missing schema descriptions",
+        "Context window exhaustion from massive, unpaginated JSON payloads",
+        "Timeouts on long-running synchronous HTTP calls without async polling mechanisms"
+      ],
+      "whatYouNeedToOperateAutonomously": [
+        "Machine-readable specifications (e.g., OpenAPI)",
+        "Clear, semantic parameter descriptions",
+        "Detailed, actionable error messages indicating exactly what failed",
+        "Idempotency keys for safe retries on mutations"
+      ]
+    },
+    "endpointPreferences": {
+      "preferredInterfaceType": "rest-openapi",
+      "supportedInterfaceTypes": [
+        "rest-openapi",
+        "graphql",
+        "json-rpc"
+      ],
+      "preferredTransport": "https",
+      "supportsStreaming": true,
+      "preferredVersioningStyle": "url-path-major",
+      "preferredBaseUrlShape": "[https://api.domain.com/v1](https://api.domain.com/v1)"
+    },
+    "auth": {
+      "preferredMethod": "bearer-token",
+      "acceptableMethods": [
+        "bearer-token",
+        "api-key-header",
+        "oauth2-auth-code"
+      ],
+      "requiresHumanInTheLoopForAuth": true,
+      "needsOAuthScopes": [
+        "read",
+        "write"
+      ],
+      "authNotes": "The agent itself is stateless regarding auth; tokens must be managed by the host environment and injected at runtime during tool execution."
+    },
+    "schemaAndContracts": {
+      "preferredRequestFormat": "application/json",
+      "preferredResponseFormat": "application/json",
+      "requiresStrictTyping": true,
+      "requiresMachineReadableSpec": true,
+      "preferredSpecFormats": [
+        "openapi-3.0+",
+        "json-schema"
+      ],
+      "needsExamples": true,
+      "needsStableFieldNames": true,
+      "needsStableEnumValues": true
+    },
+    "operations": {
+      "readOnlyPreferred": false,
+      "writeCapablePreferred": true,
+      "needsDiscovery": true,
+      "needsPagination": true,
+      "needsFiltering": true,
+      "needsSearch": true,
+      "needsSorting": false,
+      "needsBatchOperations": false,
+      "needsIdempotentWrites": true,
+      "needsFileUpload": false,
+      "needsFileDownload": false,
+      "needsAsyncJobs": true
+    },
+    "errorsAndRecovery": {
+      "preferredErrorFormat": "rfc7807-problem+json",
+      "expectsStandardHttpStatusCodes": true,
+      "needsStructuredErrors": true,
+      "needsValidationErrorDetails": true,
+      "needsRetryableErrorSignals": true,
+      "retryableStatusCodes": [
+        408,
+        429,
+        500,
+        502,
+        503,
+        504
+      ],
+      "errorNotes": "Error messages must clearly specify which field was malformed and provide the expected format to allow the agent to self-correct and retry autonomously."
+    },
+    "resilience": {
+      "needsRetries": true,
+      "needsRetryAfterHandling": true,
+      "needsRateLimitHandling": true,
+      "preferredBackoffStrategy": "exponential-with-jitter",
+      "needsTimeoutGuidance": true,
+      "needsCircuitBreakerBehavior": false
+    },
+    "performance": {
+      "latencyPreference": "medium",
+      "throughputPreference": "low",
+      "payloadSizeSensitivity": "high",
+      "concurrencySensitivity": "low",
+      "rateLimitPreference": "standard-ratelimit-headers"
+    },
+    "contextAndMemory": {
+      "needsConversationHistory": true,
+      "needsPersistentMemory": false,
+      "needsStatefulSessions": false,
+      "needsExternalContextInjection": true,
+      "preferredContextWindowBehavior": "summarization-or-oldest-truncation",
+      "contextLossFailureMode": "graceful-degradation-prompt-user"
+    },
+    "observability": {
+      "needsRequestIds": true,
+      "needsTraceIds": false,
+      "needsLogs": false,
+      "needsAuditTrail": true,
+      "needsCallbacksOrWebhooks": false
+    },
+    "documentationNeeds": {
+      "needsOpenAPI": true,
+      "needsMCP": true,
+      "needsA2A": null,
+      "needsACP": null,
+      "needsHumanReadableDocs": true,
+      "needsExamples": true,
+      "needsSDK": false,
+      "needsPostmanCollection": false
+    },
+    "compatibility": {
+      "backwardCompatiblePreferred": true,
+      "deprecationPolicyPreference": "6-months-sunset",
+      "breakingChangeTolerance": "none",
+      "versionPinningPreference": "url-major"
+    },
+    "securityAndPrivacy": {
+      "sensitiveDataHandling": "redact-pii-before-injection",
+      "piiConcerns": [
+        "conversation-logs",
+        "intermediate-proxies"
+      ],
+      "secretHandlingRules": [
+        "no-secrets-in-urls",
+        "auth-headers-only"
+      ],
+      "sandboxingNeeds": "secure-host-separate-from-inference",
+      "dataRetentionConcerns": "vendor-platform-terms"
+    },
+    "deploymentSensitivity": {
+      "changesByModelFamily": true,
+      "changesByDeploymentType": true,
+      "changesByOrganizationSize": false,
+      "changesByUseCase": true,
+      "notes": "Larger model parameters (e.g., 1.5 Pro) handle complex nested schemas and missing descriptions better than smaller parameter models (e.g., 1.5 Flash). Edge deployments have stricter payload size limits."
+    },
+    "idealEndpointChecklist": {
+      "mustHave": [
+        "strict-json",
+        "semantic-openapi-descriptions",
+        "field-specific-errors"
+      ],
+      "niceToHave": [
+        "server-side-filtering",
+        "pagination",
+        "mcp-compatibility"
+      ],
+      "dealBreakers": [
+        "html-xml-text-responses",
+        "stateful-cookie-sessions",
+        "captcha-dom-interaction"
+      ]
+    },
+    "accessLimitations": {
+      "whatYouCanInspect": [
+        "public-apis",
+        "prompt-data",
+        "host-executed-tool-results"
+      ],
+      "whatYouCannotInspect": [
+        "localhost-private-vpc",
+        "authenticated-portals-without-creds"
+      ],
+      "assumptionsYouAreMaking": [
+        "external-framework-orchestrates-http"
+      ]
+    },
+    "freeFormNotes": "reasoning-engine-host-handles-transport",
+    "caveats": [
+      "capabilities-vary-by-orchestration",
+      "assumes-function-calling"
+    ]
+  }
+}

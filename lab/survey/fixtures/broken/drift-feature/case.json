@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "drift: survey.feature differs",
+  "ops": [
+    {
+      "kind": "rawReplace",
+      "file": "survey.feature",
+      "find": "Scenario: gemini-1.5-pro",
+      "text": "Scenario: gemini-1-5-pro"
+    }
+  ]
+}

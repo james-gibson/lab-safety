@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "schema: gemini-1.5-pro answer fails nested.json",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "profiles/gemini-1.5-pro.json",
+      "path": "answer.endpointPreferences.preferredInterfaceType",
+      "value": "REST"
+    }
+  ]
+}
