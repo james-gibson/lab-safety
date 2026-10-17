@@ -5,106 +5,19 @@ import (
 	"path"
 	"sort"
 	"strings"
+
+	"github.com/james-gibson/isotope"
 )
 
 // GatePath is the Phase-0 gate, relative to this module.
 const GatePath = "../../sheets/workspaces/minimal.feature"
 
-// ---- a small Gherkin reader ----
-
-// Step is one Gherkin step: its keyword and its text.
-type Step struct {
-	Keyword string // Given, When, Then, And, But, *
-	Text    string
-}
-
-// Scenario is one scenario (or the Background) and its steps.
-type Scenario struct {
-	Name  string
-	Steps []Step
-}
-
-// Rule is one Rule, or the anonymous rule a feature opens with.
-type Rule struct {
-	Name      string
-	Scenarios []Scenario
-}
-
-// Feature is a parsed .feature file.
-type Feature struct {
-	Name  string
-	Rules []Rule
-}
-
-var stepKeywords = []string{"Given", "When", "Then", "And", "But", "*"}
-
-func splitStep(line string) (string, string, bool) {
-	for _, kw := range stepKeywords {
-		if strings.HasPrefix(line, kw+" ") {
-			return kw, strings.TrimSpace(strings.TrimPrefix(line, kw)), true
-		}
-	}
-	return "", "", false
-}
-
-// ParseGherkin reads the structure of a .feature source — rules, scenarios and
-// steps. Just enough of the language to read the spec: tags, comments, doc
-// strings and Examples tables are skipped.
-func ParseGherkin(src string) Feature {
-	var f Feature
-	cur, curSc := -1, -1
-	openRule := func() {
-		if cur < 0 {
-			f.Rules = append(f.Rules, Rule{})
-			cur = len(f.Rules) - 1
-		}
-	}
-	openScenario := func(name string) {
-		openRule()
-		f.Rules[cur].Scenarios = append(f.Rules[cur].Scenarios, Scenario{Name: name})
-		curSc = len(f.Rules[cur].Scenarios) - 1
-	}
-
-	for _, raw := range strings.Split(src, "\n") {
-		line := strings.TrimSpace(raw)
-		switch {
-		case line == "", strings.HasPrefix(line, "#"), strings.HasPrefix(line, "@"):
-			continue
-		case strings.HasPrefix(line, "Feature:"):
-			f.Name = strings.TrimSpace(strings.TrimPrefix(line, "Feature:"))
-		case strings.HasPrefix(line, "Rule:"):
-			f.Rules = append(f.Rules, Rule{Name: strings.TrimSpace(strings.TrimPrefix(line, "Rule:"))})
-			cur, curSc = len(f.Rules)-1, -1
-		case strings.HasPrefix(line, "Scenario Outline:"):
-			openScenario(strings.TrimSpace(strings.TrimPrefix(line, "Scenario Outline:")))
-		case strings.HasPrefix(line, "Scenario:"):
-			openScenario(strings.TrimSpace(strings.TrimPrefix(line, "Scenario:")))
-		case strings.HasPrefix(line, "Background:"):
-			openScenario("Background")
-		default:
-			if kw, text, ok := splitStep(line); ok {
-				openRule()
-				if curSc < 0 {
-					openScenario("")
-				}
-				f.Rules[cur].Scenarios[curSc].Steps = append(f.Rules[cur].Scenarios[curSc].Steps, Step{Keyword: kw, Text: text})
-			}
-			// anything else (Examples header, table rows, …) is skipped
-		}
-	}
-	return f
-}
-
-// ParseFeatureFile reads and parses a .feature file.
-func ParseFeatureFile(p string) (Feature, error) {
-	b, err := os.ReadFile(p)
-	if err != nil {
-		return Feature{}, err
-	}
-	return ParseGherkin(string(b)), nil
-}
-
-// ---- step definitions: the spec -> the expectation ----
+// The parse is NOT ours. `isotope.ParseGherkin` already exists, and the register
+// (§3) already names `isotope.CanonicalizeGherkinToIsotope` as the standard for
+// command identity / content address — so the module depends on it rather than
+// hand-rolling a reader (A9: standard tooling suffices).
+//
+// What we add is only the *step definitions*: what the gate's steps declare.
 
 // The mapping lives here, once, and the store's own listing uses it too — so the
 // spec and the observation cannot drift apart.
@@ -145,17 +58,21 @@ func sortedUnique(in []string) []string {
 }
 
 // Spec reads the expectation from the Gherkin. The spec is the origin (register,
-// the 42i frame): the expectation is not a hand-written declaration, it is what
-// the gate declares — the resource files, the executable endpoints and the
-// templates that its scenarios name.
+// the 42i frame): the expectation is what the gate *declares* — the resource
+// files, the executable endpoints and the templates its scenarios name.
 func Spec(featurePath string) (Expectation, error) {
-	f, err := ParseFeatureFile(featurePath)
+	b, err := os.ReadFile(featurePath)
 	if err != nil {
 		return Expectation{}, err
 	}
+	ast, err := isotope.ParseGherkin(string(b))
+	if err != nil {
+		return Expectation{}, err
+	}
+
 	var e Expectation
-	for _, r := range f.Rules {
-		for _, sc := range r.Scenarios {
+	for _, f := range ast.Features {
+		for _, sc := range f.Scenarios {
 			for _, st := range sc.Steps {
 				p := quoted(st.Text)
 				switch {

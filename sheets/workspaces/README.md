@@ -300,6 +300,16 @@ already exists, record it as **evidence against** the hypothesis — or at minim
 named cost. Do not invent around a gap; report the gap. See `standards.feature`
 → *Rule: a bespoke standard is evidence against the hypothesis*.
 
+**Instance — 2026-10-16: the rule caught one.** A **Gherkin parser was hand-written**
+in `lab/workspaces` while `isotope.ParseGherkin` already existed — and §3 already named
+`isotope.CanonicalizeGherkinToIsotope` as the standard for *command identity / content
+address*. It was caught in review, deleted, and the module now depends on isotope
+(v0.4.1): `gherkin.go` keeps only the **step definitions**, over isotope's AST.
+
+**Named cost:** one bespoke standard, briefly — exactly the code A9 claims we will not
+write. Note where it happened: in *our* layer, not the filesystem's. The hypothesis was
+not damaged; our own discipline was. Which is the point of recording it.
+
 ## §7 Refs
 
 - Plan + falsification criteria: #9 · RFC: #5 · sheet pattern: #8

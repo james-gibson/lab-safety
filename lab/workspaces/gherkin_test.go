@@ -2,13 +2,12 @@ package workspaces
 
 import (
 	"os"
-	"strings"
 	"testing"
 )
 
-// TestSpecComesFromTheGherkin is the guard on the whole idea: if the parser
-// silently reads nothing, this fails rather than the expectation quietly
-// becoming empty.
+// TestSpecComesFromTheGherkin is the guard on the whole idea: if the parse
+// silently yields nothing, this fails rather than the expectation quietly
+// becoming empty and the check passing for the wrong reason.
 func TestSpecComesFromTheGherkin(t *testing.T) {
 	want, err := GateSpec()
 	if err != nil {
@@ -22,60 +21,6 @@ func TestSpecComesFromTheGherkin(t *testing.T) {
 	}
 	if !equalStrings(want.Prompts, []string{"summarize"}) {
 		t.Errorf("prompts = %v, want [summarize]", want.Prompts)
-	}
-}
-
-func TestParseGherkin(t *testing.T) {
-	src := `@lab-safety
-Feature: a session filesystem
-
-  # a comment
-  Rule: §1 the conventions
-
-    Background:
-      Given a session "42"
-
-    Scenario: the layout
-      Given the resource file "/resources/a/b.json"
-      And an executable endpoint "/tools/echo@"
-      Then the tree contains "/data/task.json"
-
-    Scenario Outline: the hosts
-      Given the template "/prompts/summarize.tmpl"
-      Then the session is "/"
-
-      Examples:
-        | host   |
-        | tmpdir |
-`
-	f := ParseGherkin(src)
-	if f.Name != "a session filesystem" {
-		t.Errorf("feature name = %q", f.Name)
-	}
-	if len(f.Rules) != 1 {
-		t.Fatalf("rules = %d, want 1", len(f.Rules))
-	}
-	if f.Rules[0].Name != "§1 the conventions" {
-		t.Errorf("rule name = %q", f.Rules[0].Name)
-	}
-	scs := f.Rules[0].Scenarios
-	if len(scs) != 3 {
-		t.Fatalf("scenarios = %d, want 3 (background + 2)", len(scs))
-	}
-	if scs[0].Name != "Background" {
-		t.Errorf("scenario 0 = %q, want Background", scs[0].Name)
-	}
-	if got := scs[1].Steps[0]; got.Keyword != "Given" || got.Text != `the resource file "/resources/a/b.json"` {
-		t.Errorf("step = %+v", got)
-	}
-	// the Examples table is not steps
-	if len(scs[2].Steps) != 2 {
-		t.Fatalf("outline steps = %+v", scs[2].Steps)
-	}
-	for _, st := range scs[2].Steps {
-		if strings.Contains(st.Text, "|") {
-			t.Errorf("a table row parsed as a step: %+v", st)
-		}
 	}
 }
 
