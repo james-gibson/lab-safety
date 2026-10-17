@@ -32,7 +32,7 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 | --- | --- | --- |
 | `README.md` | map | this page — the index and the one-paragraph spine |
 | `SPLASH.md` | reusable | the post-connection trust summary, to place in a library README |
-| `SPLASH-SLA.md` | reusable | **SLA vs Lab-safety(SLA)** — the same wire, a different thing promised: which default failure modes each leaves exposed, the idempotence mechanism behind the retry, why an SLA **rewards** the thundering herd while a synchronised reward path motivates contribution to the greater cluster's service level |
+| `SPLASH-SLA.md` | reusable | **SLA vs Lab-safety(SLA)** — the same wire, a different thing promised: which default failure modes each leaves exposed, the idempotence mechanism behind the retry, why an SLA **rewards** the thundering herd while a synchronised reward path motivates contribution to the greater cluster's service level, and why the instrument must hold no licence |
 | `TRUST-FLOWS.md` | diagrams | the trust flows as pictures — admission, the triangle, the plane, failover, partitions |
 | `MATH.md` | findings | the grounded figures, and which of the others are not grounded |
 | `PLANE.md` | findings | the measure as a plane in local-time: delivered vs promised vs linear time |

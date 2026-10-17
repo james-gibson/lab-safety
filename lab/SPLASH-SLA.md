@@ -430,7 +430,56 @@ and regression are precisely the signatures of a member optimising for the bound
 of for the work. Rung 4 is not a reporting feature; it is what makes the reward path
 **non-gameable**.
 
-## 8. What the client sees
+## 8. The alarm has no licence
+
+A **licence is an SLA applied to a device**: render the service, and you may continue to
+operate. That is reasonable for a service and wrong for a detector.
+
+**A real smoke detector has no connectivity, no subscription and no permission** — and that
+is not a limitation of the technology, it is *why* it is trusted. When the internet is out
+and the licence has expired, it still beeps, and that is precisely the moment it is needed.
+An alarm whose operation depends on a channel, a service, or a payment is switched off by
+**the same failure it exists to report** — the correlated failure that takes the network is
+frequently the one that starts the fire.
+
+**So the instrument here has no stake.** `smoke-alarm` performs an MCP handshake and nothing
+more: it does not join, holds no rung, needs no session to check a session, and is not a
+member of the thing it inspects. That is what makes its verdict **evidence** rather than a
+**report** — the same rule as *no node is trusted to report on itself*, since the instrument
+is a node that **cannot** report on itself: it has nothing to gain. **A check that depends on
+the thing it checks is not a check.** The defeat-device lesson has an instrument-side form:
+*the detector that must ask the fire for permission is a defeated detector.*
+
+**And the beep is on the ceiling.** Modality is not a detail. Most people will not sleep
+through a beep on the ceiling; everyone sleeps through a notification they had to subscribe
+to. So the verdict must be **local and unavoidable** — a light on the box, the alarm's own
+state — rather than a message that must be delivered through the channel that is currently
+down. Concretely: the **pull term** in
+[`../sheets/workspaces/math.md`](../sheets/workspaces/math.md) §4 — the still-unmeasured A7
+gap — sits on the alarm-delivery path, so a design that puts the verdict behind a
+subscription has made the verdict exactly as reliable as the surface it is judging.
+
+**And credit is not bankable.** The detector gets no credit for having beeped before: an
+alarm that stayed silent through a lapse is not redeemed by its record. Read §7 that way —
+the reward path is cumulative *in pattern* but **not spendable**. Standing is a **state**,
+not a **balance**: the rung is derived from the record *now*, and the isotope is **consumed**
+rather than accumulated, so a hundred good acts cannot be banked to cover one bad one. That
+is the correction to how §7 can be misread, and it is the same reason "once" is structural
+rather than a policy.
+
+**So the two alarms are deliberately not the same thing**, and the asymmetry is the design:
+
+| | raised by | character | what it must not depend on |
+| --- | --- | --- | --- |
+| the **member's** alarm | a participant with something on the line | **incented** — metered, consumed, priced, standing derived from the record | — (this is where the wolf-crier lives, §6) |
+| the **instrument's** verdict | a node with nothing to gain | **unconditional** — no licence, no membership, no permission | the thing it judges |
+
+**The thing that measures must be unconditional; the thing that is measured must be
+incented.** Put the two the other way round and both failure modes arrive at once: an
+instrument that can be licensed away from reporting, and a member whose word is taken
+because it holds a subscription.
+
+## 9. What the client sees
 
 | client | what it gets |
 | --- | --- |
