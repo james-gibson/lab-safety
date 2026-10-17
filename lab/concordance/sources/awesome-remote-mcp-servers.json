@@ -1,0 +1,16 @@
+{
+  "id": "awesome-remote-mcp-servers",
+  "url": "https://github.com/punkpeye/awesome-remote-mcp-servers",
+  "terms_url": "https://github.com/punkpeye/awesome-remote-mcp-servers/blob/main/LICENSE",
+  "licence": "permissive",
+  "policy": "ingest",
+  "notice": "MIT License — Copyright © 2026 Frank Fiegel (frank@glama.ai)",
+  "operators": ["frank-fiegel"],
+  "retrieved_at": "2026-10-17",
+  "credit": {
+    "text": "Remote MCP server list from punkpeye/awesome-remote-mcp-servers (MIT)",
+    "url": "https://github.com/punkpeye/awesome-remote-mcp-servers"
+  },
+  "listing_link_required": false,
+  "notes": "MIT, same operator as glama and as awesome-mcp-servers (Copyright © 2026 Frank Fiegel, frank@glama.ai). Unlike the server list this one is about *running deployments*: each entry is a name, a homepage and the endpoint URL an agent would actually connect to — which makes it the more useful of the two for anything the lab does, because an endpoint is probeable. 1,071 entries, 379 KB. Ingested as a census (ingest/awesome-remote-mcp-servers.json), not mirrored."
+}

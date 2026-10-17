@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "one of them is stale",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "ingest/awesome-mcp-servers.json",
+      "path": "retrieved_at",
+      "value": "2026-01-01"
+    }
+  ]
+}

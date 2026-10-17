@@ -22,8 +22,8 @@ const (
 
 // SummaryColumns are the columns of the README summary table.
 var SummaryColumns = []string{
-	"source_id", "subject_id", "predicate", "their_claim", "our_claim",
-	"agrees", "our_basis", "checked_at", "review_by",
+	"source_id", "source_operators", "subject_id", "predicate", "their_claim",
+	"our_claim", "agrees", "our_basis", "checked_at", "review_by",
 }
 
 // field is one flat column and the record path it projects from.
@@ -52,8 +52,10 @@ var mapping = []field{
 }
 
 // computed are the columns the tool fills in and a record cannot author:
-// `agrees` from the two claims, `credit` from the source's licence.
-var computed = []string{"agrees", "credit"}
+// `agrees` from the two claims, and `credit` / `source_operators` from the
+// source — so a reader of the projection can see who stands behind the data and
+// whether an "agreement" is one operator agreeing with itself.
+var computed = []string{"agrees", "credit", "source_operators"}
 
 // Row is one projected flat row.
 type Row struct {
@@ -79,6 +81,7 @@ func Project(d *Dataset, r Record) (Row, error) {
 	}
 	vals["agrees"] = Agrees(r.TheirClaim.Value, r.OurClaim.Value)
 	vals["credit"] = d.CreditFor(r.SourceID)
+	vals["source_operators"] = strings.Join(d.Sources[r.SourceID].Operators, "|")
 	return Row{Key: r.Key(), Values: vals}, nil
 }
 

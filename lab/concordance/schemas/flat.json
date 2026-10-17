@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "concordance — flat row (the projection)",
-  "description": "One row per record: the two claims, where ours comes from, the computed agreement, and the attribution the source's licence requires. `agrees` and `credit` are here and ONLY here — a record cannot author them.",
+  "description": "One row per record: the two claims, where ours comes from, the computed agreement, and what the source's licence requires or reveals — the credit, and the operators standing behind it. The last three columns are computed and cannot be authored.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["source_id", "source_url", "retrieved_at", "subject_id", "subject_kind", "listing_url", "predicate", "their_claim", "our_claim", "our_basis", "checked_at", "review_by", "method", "agrees", "credit"],
+  "required": ["source_id", "source_url", "retrieved_at", "subject_id", "subject_kind", "listing_url", "predicate", "their_claim", "our_claim", "our_basis", "checked_at", "review_by", "method", "agrees", "credit", "source_operators"],
   "properties": {
     "source_id": { "type": "string" },
     "source_url": { "type": "string" },
@@ -23,6 +23,10 @@
     "credit": {
       "type": "string",
       "description": "the credit the source's licence requires, carried with the data so no view can show the row without it"
+    },
+    "source_operators": {
+      "type": "string",
+      "description": "who operates the source, pipe-joined. Carried so a reader can see when an 'agreement' is one operator agreeing with itself."
     }
   }
 }

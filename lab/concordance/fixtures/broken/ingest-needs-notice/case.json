@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "must declare the notice every copy has to carry",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "sources/awesome-mcp-servers.json",
+      "path": "notice",
+      "value": ""
+    }
+  ]
+}

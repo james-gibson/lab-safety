@@ -14,8 +14,8 @@
     {
       "kind": "rawReplace",
       "file": "concordance.csv",
-      "find": ",credit\n",
-      "text": ",credits\n"
+      "find": ",source_operators\n",
+      "text": ",operators\n"
     }
   ]
 }

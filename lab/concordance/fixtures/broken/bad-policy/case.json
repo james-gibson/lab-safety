@@ -2,7 +2,7 @@
   "args": [
     "--check"
   ],
-  "want": "is not \"pointer\"",
+  "want": "policy \"mirror\" is not one of",
   "ops": [
     {
       "kind": "jsonSet",

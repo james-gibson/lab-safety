@@ -3,6 +3,7 @@ package concordance
 import (
 	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -56,10 +57,19 @@ func (d *Dataset) Check() ([]string, error) {
 		rows = append(rows, row)
 	}
 
-	// (3b) Attribution: a source that declares a credit must have it, and a
+	// (3c) Attribution: a source that declares a credit must have it, and a
 	// source that requires a per-listing link must have one per record. These
 	// are licence obligations, so they are checks and not notes.
 	fails = append(fails, d.checkAttribution(rows)...)
+
+	// (3d) Ingestion: what we hold under a licence that permits copying, with
+	// the notice a copy has to carry.
+	fails = append(fails, d.checkIngest()...)
+
+	// (3e) Independence. Two sources that share an operator are one position,
+	// not two, so their agreement is not evidence — which is this lab's own
+	// thesis applied to its own inputs.
+	fails = append(fails, d.checkIndependence()...)
 
 	// (4) The artifact on disk: header, recomputed agreement, duplicate keys.
 	disk, header, err := readCSV(filepath.Join(d.Root, CSVPath))
@@ -131,6 +141,139 @@ func dedupe(in []string) []string {
 			continue
 		}
 		out = append(out, s)
+	}
+	return out
+}
+
+// Census is what we hold from a source whose licence permits copying. It is
+// deliberately NOT the source's content: it is the denominator, the operator,
+// and the notice. Mirroring a list that is pushed daily would be stale on
+// arrival, and copying a catalogue is the thing this dataset exists to avoid —
+// even where the licence allows it.
+type Census struct {
+	Source      string `json:"source"`
+	Notice      string `json:"notice"`
+	Credit      string `json:"credit"`
+	RetrievedAt string `json:"retrieved_at"`
+	Entries     int    `json:"entries"`
+	EntryShape  string `json:"entry_shape"`
+	Notes       string `json:"notes"`
+}
+
+// checkIngest validates the ingested censuses.
+func (d *Dataset) checkIngest() []string {
+	var out []string
+	dir := filepath.Join(d.Root, "ingest")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return []string{fmt.Sprintf("ingest: %v", err)}
+	}
+	var names []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+			names = append(names, e.Name())
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		raw, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			return append(out, fmt.Sprintf("ingest: %v", err))
+		}
+		var c Census
+		dec := json.NewDecoder(bytes.NewReader(raw))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&c); err != nil {
+			out = append(out, fmt.Sprintf("ingest/%s: %v", name, err))
+			continue
+		}
+		id := strings.TrimSuffix(name, ".json")
+		src, ok := d.Sources[c.Source]
+		if !ok {
+			out = append(out, fmt.Sprintf("ingest/%s: names source %q, which is not declared", name, c.Source))
+			continue
+		}
+		if c.Source != id {
+			out = append(out, fmt.Sprintf("ingest/%s: says source %q — the file name is the source", name, c.Source))
+		}
+		if src.Policy != "ingest" {
+			out = append(out, fmt.Sprintf("ingest/%s exists, but sources/%s.json has policy %q", name, src.ID, src.Policy))
+		}
+		// A copy has to carry the notice, and it has to be the declared one:
+		// if the two drift, one of them is wrong.
+		if c.Notice == "" {
+			out = append(out, fmt.Sprintf("ingest/%s: carries no notice; a copy must carry it", name))
+		} else if c.Notice != src.Notice {
+			out = append(out, fmt.Sprintf("ingest/%s: notice does not match sources/%s.json — the declaration and the copy have drifted", name, src.ID))
+		}
+		if src.Credit != nil && c.Credit != src.Credit.Text {
+			out = append(out, fmt.Sprintf("ingest/%s: credit %q is not the declared credit %q", name, c.Credit, src.Credit.Text))
+		}
+		if c.Entries <= 0 {
+			out = append(out, fmt.Sprintf("ingest/%s: entries is %d; a census with no count is not a census", name, c.Entries))
+		}
+		if c.EntryShape == "" {
+			out = append(out, fmt.Sprintf("ingest/%s: no entry_shape — without it the census cannot be turned into a bounded slice later", name))
+		}
+		if _, err := time.Parse("2006-01-02", c.RetrievedAt); err != nil {
+			out = append(out, fmt.Sprintf("ingest/%s: retrieved_at %q is not an ISO date", name, c.RetrievedAt))
+		} else if c.RetrievedAt != src.RetrievedAt {
+			out = append(out, fmt.Sprintf("ingest/%s: retrieved_at %s differs from sources/%s.json's %s — one of them is stale", name, c.RetrievedAt, src.ID, src.RetrievedAt))
+		}
+	}
+	return out
+}
+
+// checkIndependence refuses to treat two properties of one operator as two
+// positions. If the same subject and predicate are compared across sources that
+// share an operator, the agreement is self-comparison and is not evidence.
+func (d *Dataset) checkIndependence() []string {
+	type group struct {
+		subject string
+		pred    string
+		byS     map[string][]string // source id -> operators
+	}
+	groups := map[string]*group{}
+	for _, r := range d.Records {
+		key := r.SubjectID + "/" + r.Predicate
+		g := groups[key]
+		if g == nil {
+			g = &group{subject: r.SubjectID, pred: r.Predicate, byS: map[string][]string{}}
+			groups[key] = g
+		}
+		if src, ok := d.Sources[r.SourceID]; ok {
+			g.byS[r.SourceID] = src.Operators
+		}
+	}
+	var out []string
+	var keys []string
+	for k := range groups {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		g := groups[k]
+		if len(g.byS) < 2 {
+			continue
+		}
+		var ids []string
+		for id := range g.byS {
+			ids = append(ids, id)
+		}
+		sort.Strings(ids)
+		for i := 0; i < len(ids); i++ {
+			for j := i + 1; j < len(ids); j++ {
+				for _, op := range g.byS[ids[i]] {
+					if contains(g.byS[ids[j]], op) {
+						out = append(out, fmt.Sprintf("independence: %s/%s is compared across %s and %s, which share the operator %q — one operator agreeing with itself is not evidence",
+							g.subject, g.pred, ids[i], ids[j], op))
+					}
+				}
+			}
+		}
 	}
 	return out
 }

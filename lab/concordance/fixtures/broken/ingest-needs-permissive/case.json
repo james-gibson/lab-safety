@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "policy \"ingest\" needs a licence that permits holding content",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "sources/glama.json",
+      "path": "policy",
+      "value": "ingest"
+    }
+  ]
+}

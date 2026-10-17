@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "the declaration and the copy have drifted",
+  "ops": [
+    {
+      "kind": "jsonSet",
+      "file": "sources/awesome-mcp-servers.json",
+      "path": "notice",
+      "value": "MIT License \u2014 Copyright \u00a9 1999 Someone Else"
+    }
+  ]
+}

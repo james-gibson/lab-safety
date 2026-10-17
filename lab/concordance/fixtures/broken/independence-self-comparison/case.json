@@ -1,0 +1,53 @@
+{
+  "args": [
+    "--check"
+  ],
+  "want": "one operator agreeing with itself is not evidence",
+  "ops": [
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/mcpregistry/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/glama/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/glama/acme-weather/exposes-tool.json",
+      "path": "source.id",
+      "value": "glama"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/glama/acme-weather/exposes-tool.json",
+      "path": "source.url",
+      "value": "https://glama.ai/mcp/reference"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/glama/acme-weather/exposes-tool.json",
+      "path": "subject.listing_url",
+      "value": "https://glama.ai/mcp/servers/acme-weather"
+    },
+    {
+      "kind": "copy",
+      "from": "fixtures/base/records/mcpregistry/acme-weather/exposes-tool.json",
+      "to": "records/awesome-mcp-servers/acme-weather/exposes-tool.json"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/awesome-mcp-servers/acme-weather/exposes-tool.json",
+      "path": "source.id",
+      "value": "awesome-mcp-servers"
+    },
+    {
+      "kind": "jsonSet",
+      "file": "records/awesome-mcp-servers/acme-weather/exposes-tool.json",
+      "path": "source.url",
+      "value": "https://github.com/punkpeye/awesome-mcp-servers"
+    }
+  ]
+}

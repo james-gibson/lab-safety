@@ -16,17 +16,27 @@ import (
 // claims live, the terms they live under, and — when the terms require it — the
 // attribution that must travel with every view of the data.
 type Source struct {
-	ID          string  `json:"id"`
-	URL         string  `json:"url"`
-	TermsURL    string  `json:"terms_url"`
-	Licence     string  `json:"licence"`
-	Policy      string  `json:"policy"`
-	RetrievedAt string  `json:"retrieved_at"`
-	Credit      *Credit `json:"credit"`
-	LinkPerRow  bool    `json:"listing_link_required"`
-	Waiver      string  `json:"waiver"`
-	Notes       string  `json:"notes"`
+	ID          string   `json:"id"`
+	URL         string   `json:"url"`
+	TermsURL    string   `json:"terms_url"`
+	Licence     string   `json:"licence"`
+	Policy      string   `json:"policy"`
+	Notice      string   `json:"notice"`
+	Operators   []string `json:"operators"`
+	RetrievedAt string   `json:"retrieved_at"`
+	Credit      *Credit  `json:"credit"`
+	LinkPerRow  bool     `json:"listing_link_required"`
+	Waiver      string   `json:"waiver"`
+	Notes       string   `json:"notes"`
 }
+
+// policies say what we may hold. `pointer` holds one normalised token and a
+// link; `ingest` may hold the source's content, because the licence permits it.
+var policies = []string{"pointer", "ingest"}
+
+// ingestLicences are the licences that permit holding content. An `ingest`
+// policy on anything else is a contradiction, not a preference.
+var ingestLicences = []string{"permissive", "public-domain"}
 
 // Credit is the attribution a source's licence requires. If a source declares
 // one, Check requires it in every artifact that shows the source's data.
@@ -130,8 +140,14 @@ func (d *Dataset) loadSources() error {
 			d.problems = append(d.problems, fmt.Sprintf("sources/%s declares id %q — the file name is the id", name, s.ID))
 		case !contains(licences, s.Licence):
 			d.problems = append(d.problems, fmt.Sprintf("sources/%s: licence %q is not one of %v", name, s.Licence, licences))
-		case s.Policy != "pointer":
-			d.problems = append(d.problems, fmt.Sprintf("sources/%s: policy %q is not \"pointer\" — anything else would let their content in", name, s.Policy))
+		case !contains(policies, s.Policy):
+			d.problems = append(d.problems, fmt.Sprintf("sources/%s: policy %q is not one of %v", name, s.Policy, policies))
+		case s.Policy == "ingest" && !contains(ingestLicences, s.Licence):
+			d.problems = append(d.problems, fmt.Sprintf("sources/%s: policy \"ingest\" needs a licence that permits holding content, and %q does not", name, s.Licence))
+		case s.Policy == "ingest" && s.Notice == "":
+			d.problems = append(d.problems, fmt.Sprintf("sources/%s: policy \"ingest\" must declare the notice every copy has to carry", name))
+		case len(s.Operators) == 0:
+			d.problems = append(d.problems, fmt.Sprintf("sources/%s: declares no operators — without them, a family of properties cannot be told from independent sources", name))
 		}
 		d.Sources[s.ID] = s
 	}
