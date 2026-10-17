@@ -833,6 +833,11 @@ The authority is the server: it looks up the caller's rung in its own registry a
 filters before transmission (RFC 3552's guidance that the server is the enforcement
 point). The caller does not declare its rung and is not told a field was omitted.
 
+Filtering without announcing it is also why the **reply** is closure rather than refusal:
+an answer in the shape of success teaches the caller nothing and does not invite a retry,
+whereas a refusal is information — it confirms a boundary and the thing behind it.
+**Closure terminates the loop; ambiguity feeds it** ([`SPLASH-SLA.md`](SPLASH-SLA.md) §10).
+
 Failure weights quantise the distance. They differ in taxonomy but share one
 coordinate — departure from nominal at a point in linear time:
 

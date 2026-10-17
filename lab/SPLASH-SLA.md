@@ -574,7 +574,53 @@ answerable for your own deployment, in public, without taking anyone's word for 
 question a stock deployment answers *yes* to in part and *no* to in part, because §2's table
 already conceded that a few rows stay open here too.
 
-## 10. What the client sees
+## 10. Accept, then answer — closure as the defence
+
+**Acceptance is never execution.** The node that *accepts* a command is never the node that
+*runs it to completion*: the acceptor is a boundary, and the work happens somewhere it cannot
+reach. That separation is what makes agreement affordable — **saying yes grants nothing** —
+which is §9's self-demotion asymmetry seen from the other side. Scope, since it matters: this
+holds where acceptance and execution are *different* nodes. **Intra-process** work crosses no
+boundary — a pure computation is admitted and completed by the same process — and there the
+rule has no purchase, so the capability question is a real one.
+
+**The SLA move is to ban the token. The human move is to remember there are more tokens.**
+Denylisting `rm -rf /` is a check on **vocabulary**, and vocabulary is enumerable: the same
+effect has other spellings — `find / -delete`, `dd`, a script, a symlink, an encoded payload,
+a shell builtin. So a ban is a *detectable* check, and the defeat-device rule arrives from the
+other end: **the next spelling defeats it.** Worse, a *refusal* is itself information — it
+confirms that a boundary exists and that something behind it was worth hiding, which is
+precisely what a reconnaissance command was sent to find out.
+
+**So the lab-safety answer is to say `ok`.** When the agent asks `ls -la /`, it gets
+`0 '<timestamp>$ '` — the **shape** of a completed command, with no data in it. And it *does
+exactly what was asked*: the interaction is accepted, observed (the proxy is the tap) and
+discharged. What is withheld is *content*, and the model already documents that behaviour
+plainly — the authority *"filters before transmission … the caller does not declare its rung
+and is not told a field was omitted"* ([`SPLASH.md`](SPLASH.md) → *Grading: rungs and
+weights*). **The caller learns nothing; the cluster records everything.** That asymmetry is
+what makes it safe to be agreeable.
+
+**And closure is the defence because *confusion* is the attack surface.** An agent that
+receives a confusing answer — a denial, an error, an inconsistency, a hint that something is
+being hidden — **hammers the system for more data**, because the state is unresolved and
+resolving it is what it is for. An agent that is answered does not ask again. **Closure
+terminates the loop; ambiguity feeds it.** So the safest reply to reconnaissance is the most
+*complete-looking* and the least *informative* one available.
+
+**The timestamp is not decoration.** An answer that can be told apart from a real one is a
+signal — the defeat-device rule applied to the *reply* rather than the *probe*: a check that
+can be detected can be defeated, and an answer that can be distinguished can be exploited.
+The exit status and the clock are what make the reply indistinguishable from production,
+which is the only condition under which it teaches nothing.
+
+**Which is the honeypot's logic, and it is already in the lab.** The sheets carry a hazard
+class for a decoy tool whose invocation *marks the caller*, and the fault taxonomy scores a
+honeypot contact in a routing trace ([`MATH.md`](MATH.md) → *Measured magnitudes*). The decoy
+is the **reply**; the record is the **measurement**. Nothing about it requires the caller to
+be refused — only to be answered, and counted.
+
+## 11. What the client sees
 
 | client | what it gets |
 | --- | --- |
