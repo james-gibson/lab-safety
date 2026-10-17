@@ -185,6 +185,14 @@ The rungs are **additive**: rung 3 audits rung 0; it does not replace it. The
 prototype must be able, for every assumption, to name the rung that supports it
 and the rung that still does not.
 
+**What each rung buys, in the mathematics of loss:** [math.md](math.md) states the
+model behind "an event reaches the node that wants it" — a **lost bit** is RAID's
+problem, a **lost RPC** is RPC's, and a **wrong bit** is neither, so it needs
+verification rather than parity. It is also where the ladder's additivity stops being
+a slogan: each rung moves a *different factor* of that probability (§6 there), and the
+low parity this spike runs at is a **decision** that document justifies rather than an
+omission.
+
 **The slow path is worked out by hand:** [slow-path.md](slow-path.md) holds three
 crossing transcripts (*fox-hen-cabbage*) — the constraint-forced sequences a fast
 run must reproduce, with one forbidden move each. A deviation is either a defect in
@@ -448,6 +456,10 @@ the slower, shared route.
 - Plan + falsification criteria: #9 · RFC: #5 · sheet pattern: #8
 - Theory: `lab/SPLASH.md` → *The proxy*, *Shortcut validation*, *Two invariants*,
   *Failover*, *Decomposition by feature*, *Derived values*.
+- Loss model — the mathematics behind *"reaches the node that wants it"*:
+  [math.md](math.md) — RAID/k-out-of-n for a lost **bit**, RPC semantics for a lost
+  **RPC**, verification for a **wrong bit**; and why the parity here is low on purpose
+  (Patterson et al. 1988; Chen et al. 1994; Birrell & Nelson 1984; Lamport et al. 1982).
 - Symbols: `isotope/canonicalization.go`, `consensus.go`, `results.go`,
   `fortytwointegration.go`, `trust.go`; `isotope/plane`.
 - Lab: smoke-alarm `internal/telemetry`, `internal/targets`; adhd `internal/proxy`,
