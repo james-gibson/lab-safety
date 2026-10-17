@@ -137,10 +137,81 @@ idempotence: the **consumption filter** (`SPLASH.md` → *The consumption filter
 [`../../lab/SPLASH-MCP.md`](../../lab/SPLASH-MCP.md) §3) makes the isotope single-use, so
 a repeat is filtered *before* it becomes an effect and the retry is safe by
 construction. That is the model's answer — designed in `SPLASH.md`, **not yet exercised
-in the spike**, which has the isotope record but no filter. What it costs is a Bloom
-**false positive** — a legitimate first use suppressed — deliberately the liveness
-direction rather than the silent-corruption one. The residual is that the filter's rate
-is unmeasured (§7), not that the mechanism is missing.
+in the spike**, which has the isotope record but no filter. What it costs depends on
+whether the filter is treated as the authority or as an index — a *suppressed call* or a
+*lookup* — and that, with the sizing and the window it slides on, is derived next.
+
+### The consumption filter: sizing it, and the window it slides on
+
+A dedupe filter that is **authoritative** makes its false-positive rate a *correctness*
+parameter rather than a performance one: a false positive suppresses a legitimate first
+use. So the sizing has a standard form, and it has a window — and both have to be right.
+
+**Sizing (standard).** Bloom (1970), with `m` bits, `k` hashes and `n` inserted items:
+
+```
+P(bit still 0) = (1 - 1/m)^(kn) ≈ e^(-kn/m)
+p = (1 - e^(-kn/m))^k                  // false-positive rate
+k* = (m/n)·ln 2                        // optimal k
+m/n = 1.4427·log₂(1/p) = ln(1/p)/ln²2  // bits per item, at k*
+```
+
+which collapses to a memorable pair at the optimum: **`k* = log₂(1/p)` hashes and
+`1.4427·log₂(1/p)` bits per item.** At `p = 0.01` that is 7 hashes and ≈9.6 bits per
+item. These are the filter's own standard results, not measurements of ours.
+
+**`n` is per tick — which is why the filter is small.** The filter travels with the tick
+and holds the isotopes consumed *in that tick*, so `n` is the number of operations in one
+window, not a lifetime total. That is the whole reason a compact artifact can ride every
+update: the tick bounds `n`, and `n` bounds `m`.
+
+**But it must be sized on the burst, not the mean.** The tick exists to *synchronise* the
+burst (`SPLASH.md` → *A shared tick*), so arrivals cluster at the boundary — exactly when
+`n`, and therefore `p`, is largest. Sizing on the average `n` understates the rate
+precisely when the most calls are at risk. And `p` degrades **without warning** — the
+rate is a *cliff*, not a slope: a filter sized for `p = 0.01` over `n` items answers
+"maybe" at ≈0.16 once `2n` have been inserted, and ≈0.68 at `4n` (formula evaluations,
+illustrative — §7). Nothing in the filter reports this; in a dedupe filter it simply
+means dropping more calls.
+
+**The window, and the inequality that matters.** Each tick replaces the previous filter,
+so dedupe covers exactly one window `T`. A retry arriving after `T` is no longer in the
+filter and **lands as a duplicate**:
+
+```
+dedupe(window T) covers retry delays  Δ < T
+required:   T ≥ τ_max      τ_max = the longest retry interval a caller may use
+                           (in this lab: the check timeout — 5s by default)
+```
+
+`τ_max` is not the filter's parameter; it belongs to the **retry schedule**, and it is
+the number the window must be compared against. The lab's own defaults put them **equal**
+(`timeout: 5s`, tick 5s), which makes the boundary case the *normal* case rather than an
+edge: a retry issued on timeout arrives just as the window has slid. Three routes out,
+and they are not equivalent:
+
+| route | effect on `p` | cost |
+| --- | --- | --- |
+| widen the window (`T > τ_max`) | none | slower to forget a consumed isotope |
+| retain `w` windows | `p_eff ≈ w·p` — the union compounds | `w×` the bits to distribute |
+| a **rolling** filter (counting Bloom / cuckoo — Fan et al.) | constant `p` | deletion support; more state than a bitmap |
+
+**And the third row points at the real discipline: the filter is an *index*, not the
+authority.** Bloom's guarantee is the *absence* of false negatives — "definitely not
+present" is exact, "maybe present" is not — so the standard use is to treat "maybe" as a
+question for an **exact** structure rather than as an answer. Then a false positive costs
+a **lookup**, not a call, and `p` is no longer a lost-call rate. What makes that
+affordable here is that the exact structure already exists: the isotope is a **content
+address** (RFC 6920), so the used set *is* the isotope records the mirror already holds
+as the second invariant. The filter is the compact, distributable index over that set —
+the role it was invented for, and the reason the identity had to be a content address
+before the filter could be correct.
+
+**Whichever route, both mistakes stay observable** — which is the property an
+authoritative filter would destroy. A false positive that suppresses a call leaves a
+**log entry with no isotope**; a duplicate that escapes the window leaves **one isotope
+with two log entries**. The two invariants tell them apart, so the filter's error rate is
+*measurable from the record* rather than asserted from its parameters (§7).
 
 **Fan-out.** If the graph offers `κ` disjoint paths of `h` hops, redundancy is parallel
 and the result is the complement:
@@ -228,10 +299,13 @@ copy.
 1. **A7 — the pull term.** `P(caught in time)` is unmeasured because there is no
    subscription. Until it exists, §4's third factor is the largest unquantified term in
    the model.
-2. **The dedupe filter's false-positive cost.** The duplicate problem has a mechanism by
-   construction (the consumption filter, §4) — what is unmeasured is its price: a Bloom
-   false positive **suppresses a legitimate first use**. That rate is a property of the
-   filter's sizing and is not measured here.
+2. **The dedupe filter's parameters, its window, and its role.** The mechanism exists in
+   design (§4); what is unmeasured is: **`n_burst` per tick** (which fixes `m`), whether
+   the window `T` exceeds the retry horizon `τ_max` — the lab's defaults put them
+   **equal**, so the escape case is normal rather than exceptional — and, the one that
+   decides what a false positive *costs*, whether the filter is an **index** over the
+   isotope records or the **authority**. If it is the authority, `p` is a lost-call rate
+   and has to be sized as one.
 3. **The common-mode term `c`.** Asserted dominant, not measured. Measuring it would
    mean counting how the spike's own failures actually occurred — which the traffic log
    already records.

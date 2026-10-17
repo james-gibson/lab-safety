@@ -244,6 +244,14 @@ determined.
     bandwidth means more ingress nodes, not a larger one. The tick has a second
     function: it **consumes the one-time credentials** (see *Entry*), without which
     they would be replayable and the burst would return.
+  - It has a **third** function: it is the **window the consumption filter slides on**.
+    The filter holds the isotopes consumed in *one* tick, so the tick's length *is* the
+    dedupe window — and must therefore exceed a caller's retry interval, or a retry
+    escapes it and lands as a duplicate. The current lab value is **5s** (a configuration
+    value, not a constant), and the check timeout currently defaults to the same 5s,
+    which puts the window and the retry horizon exactly **equal** — the boundary case is
+    the normal one. Sizing and the escape analysis:
+    [`../sheets/workspaces/math.md`](../sheets/workspaces/math.md) §4.
 - **Early enrollment.** Participants are expected to enroll before they need to be
   trusted, so the trust decision is made when it is inexpensive.
 - **Suspicious actions are routed, not merely refused.** An action that appears

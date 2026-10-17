@@ -103,14 +103,31 @@ a repeat is filtered before it becomes an effect. At-least-once delivery therefo
 being a hazard and becomes a *safe default* — the retry cannot double-write, because the
 retry's identity has already been consumed.
 
-**What that costs, stated plainly.** A Bloom filter has **no false negatives and some
-false positives** (Bloom, 1970). In a *membership* filter that is benign. In a *dedupe*
-filter the false positive is a real cost: a legitimate first use can be mistaken for a
-repeat and **suppressed**. The trade is deliberately in the *liveness* direction — a
-suppressed call is visible as a missing completion, whereas a duplicated call is silent
-corruption, and silence is the failure this lab exists to make loud. Where deletion or
-exactness is needed the standard answer applies: a **counting Bloom filter** or a
-**cuckoo filter** (Fan et al., 2000; Fan et al., 2014).
+**What that costs, and how it is kept from costing a call.** A Bloom filter has **no
+false negatives and some false positives** (Bloom, 1970): "definitely not present" is
+exact, "maybe present" is not. In a *membership* filter that is benign. In a *dedupe*
+filter, treating "maybe" as an answer would **suppress a legitimate first use** — so the
+filter is used as an **index over an exact set**, not as the authority: "maybe" asks the
+isotope records, which the mirror already holds as the second invariant, and the content
+address (RFC 6920) is the key that makes that lookup exact. A false positive then costs a
+**lookup**, and the filter's rate stops being a lost-call rate.
+
+Two parameters therefore have to be right rather than approximately right, because they
+are what the guarantee rests on — the **size**, and the **window**. The filter travels
+with the tick, so dedupe covers exactly one tick, and a retry arriving after it **lands as
+a duplicate**: the window must exceed the caller's retry interval, and the lab's own
+defaults currently put them **equal** (5s tick, 5s check timeout), which makes the
+boundary case the normal one. The sizing — `k* = log₂(1/p)` hashes, `1.4427·log₂(1/p)`
+bits per item, sized on the **burst** rather than the mean — and the escape analysis are
+in [`../sheets/workspaces/math.md`](../sheets/workspaces/math.md) §4. Where deletion or a
+rolling window is needed, a **counting Bloom filter** or a **cuckoo filter** applies (Fan
+et al., 2000; Fan et al., 2014).
+
+**And both mistakes stay observable.** A false positive that suppresses a call leaves a
+**log entry with no isotope**; a duplicate that escapes the window leaves **one isotope
+with two log entries**. The two invariants tell them apart, so the filter's error rate is
+read from the record rather than asserted from its parameters — the same discipline as
+everywhere else on this page.
 
 **And the identity is already the right shape.** The isotope is a **content address**
 (RFC 6920) of the announced feature combination — the same announcement derives the same
