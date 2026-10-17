@@ -64,8 +64,8 @@ func TestRule1Layout(t *testing.T) {
 		}
 		for _, want := range []string{
 			PathTask, PathState,
-			DirMessages + "/", DirArtifacts + "/",
-			DirResources + "/", DirTools + "/", DirPrompts + "/",
+			DirData + "/", DirMessages + "/", DirArtifacts + "/", DirState + "/",
+			DirResources + "/", DirTools + "/", DirPrompts + "/", Home + "/",
 		} {
 			if !contains(tree, want) {
 				t.Errorf("tree missing %q\ngot %v", want, tree)
@@ -91,7 +91,7 @@ func TestRule1SequenceNumbersOrderAsFiles(t *testing.T) {
 			t.Fatal(err)
 		}
 		got := filesOnly(msgs)
-		want := []string{"messages/00000001.user.json", "messages/00000002.user.json"}
+		want := []string{"/data/messages/00000001.user.json", "/data/messages/00000002.user.json"}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("messages = %v, want %v", got, want)
 		}
@@ -105,7 +105,7 @@ func TestRule1SequenceNumbersOrderAsFiles(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		wantP := []string{"artifacts/a1/parts/00000001", "artifacts/a1/parts/00000002"}
+		wantP := []string{"/data/artifacts/a1/parts/00000001", "/data/artifacts/a1/parts/00000002"}
 		if !reflect.DeepEqual(parts, wantP) {
 			t.Errorf("parts = %v, want %v", parts, wantP)
 		}
@@ -315,4 +315,120 @@ func TestRule5ToolDropInAndRemoval(t *testing.T) {
 			t.Errorf("removed tool still listed: %v", names)
 		}
 	})
+}
+
+// ---- filesystem.feature — the session IS the root ----
+
+func TestTheSessionIsTheRoot(t *testing.T) {
+	forEachHost(t, func(t *testing.T, d Driver) {
+		ctx := context.Background()
+		s := New(d, "42")
+		if err := s.Init(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		tree, err := s.Tree(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// the root holds the session's definitions, and the home is under it
+		for _, want := range []string{DirData + "/", DirState + "/", DirTools + "/", Home + "/"} {
+			if !contains(tree, want) {
+				t.Errorf("root missing %q: %v", want, tree)
+			}
+		}
+		// the root is the container, not itself a definition
+		if contains(tree, "/") {
+			t.Errorf("the root is not itself an entry: %v", tree)
+		}
+		// the home is not the root
+		if ok, err := s.drv.Exists(ctx, Home); err != nil || !ok {
+			t.Errorf("home %q missing: ok=%v err=%v", Home, ok, err)
+		}
+
+		// nothing above the root resolves
+		if _, err := s.Read(ctx, "/../etc/passwd"); err == nil {
+			t.Error("a path above the root resolved")
+		}
+	})
+}
+
+// ---- filesystem.feature — sessions may share ----
+
+func TestSessionsMayShareByJoin(t *testing.T) {
+	ctx := context.Background()
+	kinds := []struct {
+		name string
+		pair func(t *testing.T) (Driver, Driver)
+	}{
+		{"tmpdir", func(t *testing.T) (Driver, Driver) {
+			a, err := NewTmpDir(filepath.Join(t.TempDir(), "42"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			b, err := NewTmpDir(filepath.Join(t.TempDir(), "43"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = a.Close(); _ = b.Close() })
+			return a, b
+		}},
+		{"sqlite", func(t *testing.T) (Driver, Driver) {
+			a, err := NewSQLite(filepath.Join(t.TempDir(), "42.wsdb"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			b, err := NewSQLite(filepath.Join(t.TempDir(), "43.wsdb"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = a.Close(); _ = b.Close() })
+			return a, b
+		}},
+	}
+	for _, kind := range kinds {
+		t.Run(kind.name, func(t *testing.T) {
+			da, db := kind.pair(t)
+			a := New(da, "42")
+			if err := a.Init(ctx); err != nil {
+				t.Fatal(err)
+			}
+			b := New(db, "43")
+			if err := b.Init(ctx); err != nil {
+				t.Fatal(err)
+			}
+			if err := a.WriteMessage(ctx, 1, "user", []byte(`{"from":"42"}`)); err != nil {
+				t.Fatal(err)
+			}
+
+			// sharing is explicit, not inherited: before the join, 43 sees nothing
+			if _, err := b.Read(ctx, "/shared/messages/00000001.user.json"); err == nil {
+				t.Error("43 saw 42's path before the join")
+			}
+
+			// join 42's /data at 43's /shared
+			if err := b.Join(ctx, "/shared", a, DirData); err != nil {
+				t.Fatal(err)
+			}
+			got, err := b.Read(ctx, "/shared/messages/00000001.user.json")
+			if err != nil {
+				t.Fatalf("joined read: %v", err)
+			}
+			if string(got) != `{"from":"42"}` {
+				t.Errorf("joined read = %q", got)
+			}
+
+			// it is the same path, not a copy
+			if err := a.WriteMessage(ctx, 2, "user", []byte(`{"n":2}`)); err != nil {
+				t.Fatal(err)
+			}
+			got2, err := b.Read(ctx, "/shared/messages/00000002.user.json")
+			if err != nil {
+				t.Fatalf("joined read after write: %v", err)
+			}
+			if string(got2) != `{"n":2}` {
+				t.Errorf("joined read = %q", got2)
+			}
+		})
+	}
 }

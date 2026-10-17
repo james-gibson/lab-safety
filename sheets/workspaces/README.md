@@ -166,7 +166,7 @@ one host, and the two runs **compared**:
 
 **Commands are dynamic.** A command is registered at runtime and appears or
 disappears without a restart. In the VFS this is already the file form —
-`context/tools/*@` is enumerated at call time, so dropping a file adds a tool and
+`/tools/*@` is enumerated at call time, so dropping a file adds a tool and
 removing it takes one away. The lab's precedent is adhd's dynamic tools
 (`adhd.project.<name>.call`, a renamed upstream tool) and its honeypot decoys.
 
@@ -240,13 +240,13 @@ adopted, verified}.
 | A2 | resources are files | `resources/list` == `find` | smoke-alarm spec probe |
 | A3 | tools are files | `tools/list` == `ls *@` | smoke-alarm spec probe |
 | A4 | `tools/call` = file write + result read | correctness + latency | smoke-alarm spec probe |
-| A5 | the state machine is driven by file writes | `messages/*` → `.state/current` | `ResultLedger` over many runs |
+| A5 | the state machine is driven by file writes | `/data/messages/*` → `/state/current` | `ResultLedger` over many runs |
 | A6 | `.wsdb`-per-session access is downward-only | access scenarios | consensus across alarm instances |
 | A7 | `subscribe` ⇄ file-watch | both hosts | `DetectFlakiness` (watch races) |
 | A8 | a VFS-backed surface passes MCP spec compliance | local probe | smoke-alarm verdict (authoritative) |
 | A9 | standard tooling suffices — no bespoke standard | the §3 table compiles | — (design claim; audited by review) |
 | A10 | a command can be **replicated across hosts** and compared | same command on tmpdir + sqlite | consensus / `ResultLedger` |
-| A11 | a command can be **dynamic** (registered at runtime) | drop `context/tools/x@`, re-list | smoke-alarm re-probe |
+| A11 | a command can be **dynamic** (registered at runtime) | drop `/tools/x@`, re-list | smoke-alarm re-probe |
 | A12 | the sqlite **mirror** holds isotope records | dual-write spike (one writer, both stores) | two-invariant cross-check; independence is **positional** (spec + protocol read), not a second writer |
 | A13 | the prototype runs a **single session** (`42`) | the run opens `42.wsdb` once | a second session's isolation (rung 3) — **deferred; multi-session is out of scope** |
 

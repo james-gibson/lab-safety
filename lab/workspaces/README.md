@@ -28,6 +28,25 @@ go test ./...
 | `verify.go` | the independent measurement: the expectation from the spec, the observation through the protocol |
 | `*_test.go` | the gate: Rules §1–§3 (and §5) on **both** hosts, unchanged |
 
+## The roots — the session IS the root
+
+[`filesystem.feature`](../../sheets/workspaces/filesystem.feature) is the origin; this
+is its inversion. Paths are absolute in the session's namespace, and `..` refuses — the
+isolation is **structural**, not a permission check.
+
+```
+/                      the session IS the root
+├── root/              ~/  — the home, UNDER the root
+├── data/              task.json, messages/, artifacts/
+├── state/             current, transitions.log, logs/, isotopes/
+├── tools/             */@  — the MCP tools
+├── resources/         **   — the MCP resources
+└── prompts/           *.tmpl
+```
+
+A session may **join** another session's path at a mount point (`Store.Join`): the
+sharing is a join, not inheritance — nothing is copied, and a read follows the join.
+
 ## The gate, as the plan states it
 
 - **`minimal.feature` Rules §1–§3 are green on a real temp dir.** ✅

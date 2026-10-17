@@ -14,10 +14,11 @@ import (
 // The two invariants (SPLASH -> *Two invariants*): the traffic log is what
 // *happened*; the isotope records are what *should have happened*. They are
 // deliberately separated, and a log record without an isotope — or the reverse,
-// or a digest that disagrees — is a discrepancy.
+// or a digest that disagrees — is a discrepancy. They live in the session's
+// state.
 const (
-	DirLogs     = "logs"
-	DirIsotopes = "isotopes"
+	DirLogs     = "/state/logs"
+	DirIsotopes = "/state/isotopes"
 )
 
 func logPath(id string) string { return DirLogs + "/" + id + ".jsonl" }
