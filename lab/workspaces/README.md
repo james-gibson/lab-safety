@@ -26,6 +26,7 @@ go test ./...
 | `protocol.go` | the MCP surface (JSON-RPC 2.0) over a store: `initialize`, `tools/*`, `resources/*`, `prompts/*` |
 | `http.go` | the surface over the wire: `Server` (`http.Handler`) — the MCP surface from a separate process, plus `/healthz` |
 | `seed.go` | the spec, inverted: `Seed` materializes what the spec declares, `BindTools`, `CheckLayout` |
+| `advertise.go` | the session as a *node*: `SessionName`, `Register` — the lab's own registry, by name |
 | `cmd/workspace-mcp` | the process: serves a session's surface on `-addr`, seeded from `-spec` |
 | `mirror.go` | the two invariants, the dual-write client, the cross-check, the plane/light mapping, `Residual` |
 | `gherkin.go` | the spec reference: `SpecRef`, what the spec *declares* (isotope's step definitions), and the spec's signed isotope |
@@ -115,6 +116,31 @@ What the alarm asserts is the **handshake**, not the declarations: it never comp
 the surface to the spec (`min_capabilities` is unchecked). That the surface serves the
 spec is asserted at rung 0 (`TestSeedIsTheSpecInverted`, `TestTheSurfaceServesTheSpec`)
 and read on the wire by the eye.
+
+## Rung 2b — the session is a node, not a port
+
+`workspace-mcp -smoke-alarm <registry>` registers the session **by name** in the lab's
+own registry (smoke-alarm's `POST /isotope/register`, through `isotope.Client`), and the
+monitor resolves it by name:
+
+```sh
+smoke-alarm/spin.sh up ws42mon  --target-session workspace-42 --registry http://127.0.0.1:64192
+adhd/spin.sh        up ws42dash --smoke-alarm-instance ws42mon
+```
+
+So `spike.sh` no longer knows the session's port, nor the monitor's. That is the lab's
+model (`kb/scripts/lab/TRUST-FLOWS.md` §2: A = session, B = surface, C = authority; §5:
+the wiring is decided out of band), and it is the frame's reading of §2's premise: the
+session is a **user in the root's namespace**, and the *registry* judges its trust rung —
+not us.
+
+Two things worth knowing:
+
+- **a name is not a heartbeat.** Nothing deregisters, so a stale name outlives the
+  session; the probe is what notices, not the registry.
+- **no mDNS.** adhd's peer view reads the registry, and announcing under
+  `_adhd-isotope._tcp` would claim to *be* an adhd. LAN discovery is a later step, with
+  its own service type.
 
 ## The finding this spike lives beside (register §2)
 

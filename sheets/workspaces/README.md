@@ -331,6 +331,32 @@ exercised. Three things this step had to decide, recorded rather than assumed:
   `TestTheSurfaceServesTheSpec`) and read on the wire by the eye; making the alarm
   the authority on it is the same ticket.
 
+**Rung 2b landed — the session is a node, not a port.** The session registers
+*itself* by name in the lab's own registry (smoke-alarm `POST /isotope/register`,
+through `isotope.Client`), and the monitor resolves it **by name**:
+`--target-session workspace-42 --registry <url>`. No caller carries the session's
+address. That is the lab's model, not an invention — `TRUST-FLOWS.md` §2 already calls
+the session *A* and the surface *B* ("a harness's automatic `tools/list` reaches B and
+stops … names, not authority"), §5 already puts the wiring out of band, and adhd's peer
+discovery reads the same registry (`isotope_discovery.go` → `DiscoverIsotopes`), not
+mDNS. Live, before anything probes it:
+
+```
+registry now: workspace-42=127.0.0.1:64194 rung 2
+```
+
+This is §2's premise made concrete: **the session is a user in the root's namespace.**
+It never holds the root's material — the wire contract is the prober's — and the root
+reflects it: the trust rung is the registry's judgement, not ours. Two costs recorded
+rather than hidden:
+
+- **a name is not a heartbeat.** After the session's store is deleted the registry
+  *still* lists it — nothing deregisters — so a stale name outlives the session. The
+  probe is what notices; the registry does not.
+- **mDNS is deliberately unused.** adhd's peer view comes from the registry, and
+  announcing under `_adhd-isotope._tcp` would claim to *be* an adhd. A session that
+  needs LAN discovery announces under its own service type — a later step.
+
 **Rung 3 closed — canonicalization.** The isotope **record** is now the *spec's* signed
 isotope: `Client.Run` signs the gate with `isotope.CanonicalizeGherkinToIsotope` (family
 `workspace-vfs`, v1, key = the session seed), and the mirror stores
@@ -382,11 +408,15 @@ the slower, shared route.
   `drainWatcherUpdates` — the `old_status:"dark"` first-transition),
   `adhd/internal/headless/server.go`; smoke-alarm `internal/knownstate/store.go`,
   `internal/engine/engine.go` (`toKnownStateStatus`, `httpHandshakeMethods`).
-- Priming script (step 1) and live driver (rungs 1–2):
+- Priming script (step 1) and live driver (rungs 1–2b):
   [`lab/workspaces/spike.sh`](../../lab/workspaces/spike.sh) — builds
-  `cmd/workspace-mcp`, seeds a session from the gate, and puts it on the lab's own
-  instruments (adhd light + smoke-alarm target), on either host
-  (`DRIVER=sqlite`).
+  `cmd/workspace-mcp`, seeds a session from the gate, registers it in the lab's
+  registry, and puts it on the lab's own instruments (adhd light + smoke-alarm
+  target), on either host (`DRIVER=sqlite`). It never assembles a session URL: the
+  monitor is given `--target-session` and resolves it by name.
+- Harness flags added for that: `kb/scripts/smoke-alarm/spin.sh`
+  (`--target-session NAME --registry URL`) and `kb/scripts/adhd/spin.sh`
+  (`--smoke-alarm-instance NAME`).
 - Dual-write client (Phase 1): [`lab/workspaces/`](../../lab/workspaces/) — a Go
   module (`go test ./...`).
 - Roots: [`filesystem.feature`](filesystem.feature) — a session **is** the root (`/`),
