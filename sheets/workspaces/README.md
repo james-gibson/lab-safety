@@ -110,6 +110,42 @@ is the **pole the build inverts**. Two consequences, and they are requirements:
   instrument has no yellow"* to *"the prober never yields `degraded`"*, and puts the
   fix in the alarm rather than in adhd.
 
+  **Closed — the instrument has the rung** (smoke-alarm
+  [#34](https://github.com/james-gibson/smoke-alarm/issues/34) → PR
+  [#36](https://github.com/james-gibson/smoke-alarm/pull/36), 2026-10-17). The fix
+  needed **both** halves, and the second was not in the ticket:
+
+  - **the prober** now records every method's outcome instead of returning on the
+    first failure, and classifies *some answered* — or *all answered but a declared
+    `expected.min_capabilities` family not advertised* — as `degraded`. That field
+    was declared in every sample config and read **nowhere** in the engine;
+  - **the engine** was rewriting it back: `classifyWithPolicy` turned any failure on
+    an `EverHealthy` target into `StateRegression`, and `knownstate.IsFailure(degraded)`
+    is `true` *by spec* (`features/known-state.feature`: *"IsFailure returns true for
+    degraded, outage, and failed"*). The **rendering** was the wrong layer —
+    `targets.CheckResult.IsFailure` already excluded degraded — so a departure is now
+    neither rewritten as a regression nor escalated to an outage. The streak
+    accounting and the spec are untouched, and every existing regression/outage
+    scenario feeds an *unhealthy* result, so the change is a no-op until a degraded
+    result exists.
+
+  Our half is the **surface**: it advertises only what the session can serve, so a
+  session that has lost part of itself says so on the wire. Verified end to end, on
+  both hosts, with `spike.sh`:
+
+  ```
+  dark ──▶ green ──▶ yellow ──▶ red
+  (no session)  (it exists)  (it lost what the spec declares)  (it goes away)
+  ```
+
+  So the plane table above is now literally readable: `-42i` is yellow because a
+  **departure is its own rung**, and red is reserved for *not answering*.
+
+  One gap remains, and it is ours, not the instrument's: the declaration a target
+  carries (`min_capabilities`) is written by hand in the harness, where Phase 0's
+  rule — *the spec is the origin* — says it should be **derived** from the Gherkin,
+  as the store's expectation already is.
+
   So the store reaching `-42i` reads **green**, not yellow — the instrument cannot
   yet say *"exists but not yet independent"*. Two consequences:
 
@@ -356,6 +392,14 @@ rather than hidden:
 - **mDNS is deliberately unused.** adhd's peer view comes from the registry, and
   announcing under `_adhd-isotope._tcp` would claim to *be* an adhd. A session that
   needs LAN discovery announces under its own service type — a later step.
+
+**The middle rung landed — `-42i` is readable** (smoke-alarm#34 → PR #36). The
+surface advertises only what the session can serve, and the monitor now reads a
+partial handshake, or an unadvertised *declared* capability, as `degraded` — so the
+light moves `dark → green → yellow → red` on both hosts, with yellow meaning exactly
+*"exists, but not as declared"*. §2's finding is closed; the detail is there. One gap
+remains and it is ours: the declaration the target carries is hand-written in the
+harness, where it should be derived from the spec.
 
 **Rung 3 closed — canonicalization.** The isotope **record** is now the *spec's* signed
 isotope: `Client.Run` signs the gate with `isotope.CanonicalizeGherkinToIsotope` (family

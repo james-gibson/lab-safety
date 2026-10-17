@@ -276,6 +276,56 @@ func TestASurfaceWithNoSessionAnswersNothing(t *testing.T) {
 	}
 }
 
+// capabilityFamilies reads the advertised capability families out of an
+// `initialize` result.
+func capabilityFamilies(res map[string]any) []string {
+	raw, _ := res["capabilities"].(map[string]any)
+	out := []string{}
+	for name := range raw {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// TestTheSurfaceAdvertisesOnlyWhatItCanServe: a capability is a promise. Lose
+// part of the session and the surface stops promising it — which is what makes the
+// middle rung readable by a target that declared it (register §2, smoke-alarm#34).
+func TestTheSurfaceAdvertisesOnlyWhatItCanServe(t *testing.T) {
+	ctx := context.Background()
+	spec := gateRef(t)
+	drv, err := NewTmpDir(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = drv.Close() })
+
+	s := New(drv, "42")
+	if err := Seed(ctx, s, spec); err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(NewServer(s))
+	t.Cleanup(ts.Close)
+	endpoint := ts.URL + "/mcp"
+
+	// the whole session: every family the spec declares is promised
+	if got := capabilityFamilies(handshake(t, endpoint, "initialize")); !equalStrings(got, []string{"prompts", "resources", "tools"}) {
+		t.Errorf("advertised = %v, want all three families", got)
+	}
+
+	// the session loses what the spec declares
+	if err := drv.Delete(ctx, DirTools+"/echo@"); err != nil {
+		t.Fatal(err)
+	}
+
+	got := capabilityFamilies(handshake(t, endpoint, "initialize"))
+	if contains(got, "tools") {
+		t.Errorf("advertised = %v, want no tools once the session lost them", got)
+	}
+	// it still answers — the session exists, it is just not what was declared
+	handshake(t, endpoint, "tools/list")
+}
+
 // TestSeedIsTheSpecInverted: every file the spec names exists in the store, and
 // the store's own surfaces present the names the spec declares — on both hosts.
 // The spec's layout and the store's conventions must be one layout.

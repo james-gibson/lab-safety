@@ -112,10 +112,11 @@ it refuses (`-32001`), which is why phase 3 shows red while the server is still 
 process being alive is not a session existing — and plane `42`, *not present*, would
 otherwise be unreachable on the wire.
 
-What the alarm asserts is the **handshake**, not the declarations: it never compares
-the surface to the spec (`min_capabilities` is unchecked). That the surface serves the
-spec is asserted at rung 0 (`TestSeedIsTheSpecInverted`, `TestTheSurfaceServesTheSpec`)
-and read on the wire by the eye.
+What the alarm asserts is the **handshake** and the **declared capabilities**: it
+compares the surface to what the target declares (`expected.min_capabilities` — see
+*The finding this spike lived beside*, below), and a family the surface no longer
+advertises reads **degraded**. What it does not do is *derive* that declaration from the
+spec: today the harness writes it by hand.
 
 ## Rung 2b — the session is a node, not a port
 
@@ -142,20 +143,37 @@ Two things worth knowing:
   `_adhd-isotope._tcp` would claim to *be* an adhd. LAN discovery is a later step, with
   its own service type.
 
-## The finding this spike lives beside (register §2)
+## The finding this spike lived beside — and closed (register §2)
 
-The lab's **headless** `adhd` renders a smoke-alarm target only **green**/*red*;
-`dark` is the no-light default and **yellow has no producer** on that path. So
-`-42i` currently *reads* green. The dissent this spike manufactures is asserted here
-(rung 0) and must be surfaced as a yellow light only once the instrument has a rung
-for it — see [`james-gibson/smoke-alarm#34`](https://github.com/james-gibson/smoke-alarm/issues/34).
+The lab's **headless** `adhd` renders a smoke-alarm target as green/yellow/red;
+`dark` is the no-light default. That was not always true of the middle rung: yellow
+had **no producer** on a target check, so `-42i` read green, and the register carried
+it as a finding against the *instrument*.
 
-**Rung 2 located it.** `adhd` *does* map `degraded` → yellow
-(`internal/smokelink/watcher.go`, `mapHealthState`); the gap is smoke-alarm's **prober**,
-where `healthy` → green and *anything else* → red, and a capability mismatch is never
-examined. So the ticket is a prober fix in the alarm, not a light fix in adhd — and what
-the alarm must be able to say is *"answering, but not what was declared"*, which is
-exactly the dissent.
+**It is closed.** The gap was in two places, and both had to move:
+
+- **smoke-alarm** ([#34](https://github.com/james-gibson/smoke-alarm/issues/34) → PR
+  [#36](https://github.com/james-gibson/smoke-alarm/pull/36)): the prober now records
+  every method's outcome instead of returning on the first failure, and classifies
+  *some answered* — or *all answered, but a declared `min_capabilities` family not
+  advertised* — as `degraded`. The engine also had to stop rewriting it: a
+  `degraded` result was being turned into a regression (and escalated to an outage)
+  on any previously-healthy target, even though `targets.CheckResult.IsFailure`
+  already agreed that degraded is not a failure.
+- **this surface**: it advertises only what the session can serve
+  (`availableCapabilities`), so a session that has lost part of itself says so on the
+  wire rather than answering as if nothing were missing.
+
+The alarm needed no change. Live, on both hosts:
+
+```
+dark ──▶ green ──▶ yellow ──▶ red
+(no session)  (it exists)  (it lost what the spec declares)  (it goes away)
+```
+
+**A departure is yellow; a failure is red.** What remains is not the instrument's:
+the declaration a target carries is hand-written in the harness, where the spec
+should be its origin.
 
 ## The conjugate, before independence
 
@@ -174,6 +192,8 @@ whole reading of the spec is isotope's — parse, meaning (step definitions), id
 Still open: **consensus** (`isotope.ConsensusReporter`, N ≥ 3F+1) — separate instances
 agreeing — and the `ResultLedger` (rung 4).
 
-**Rung 2 has landed** (above). What the alarm still cannot do is the **spec check** —
-it never compares the surface to the spec — so the authority on "the surface serves what
-the spec declares" is rung 0 and the eye, not the instrument. Same ticket as the yellow.
+**Rung 2 has landed** (above), and the middle rung with it: the alarm compares the
+surface to a *declaration* the target carries, so a session that has lost part of what the
+spec declares reads **yellow** — see *The finding this spike lived beside*, below. What is
+still ours is where that declaration comes from: the harness writes it by hand, where the
+spec should be its origin.

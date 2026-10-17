@@ -72,13 +72,20 @@ func (p *Protocol) Handle(ctx context.Context, raw []byte) []byte {
 func (p *Protocol) dispatch(ctx context.Context, req rpcRequest) (any, *rpcError) {
 	switch req.Method {
 	case "initialize":
+		// Advertise only what this session can actually serve. A capability is a
+		// promise, and a surface must not make a promise its session cannot keep —
+		// so a session that has lost part of itself says so here, and a target that
+		// declares the missing family reads it as *"answering, but not as
+		// declared"* (register §2) rather than as if nothing were missing.
+		caps := map[string]any{}
+		if present, err := p.availableCapabilities(ctx); err == nil {
+			for _, name := range present {
+				caps[name] = map[string]any{}
+			}
+		}
 		return map[string]any{
 			"protocolVersion": ProtocolVersion,
-			"capabilities": map[string]any{
-				"tools":     map[string]any{},
-				"resources": map[string]any{},
-				"prompts":   map[string]any{},
-			},
+			"capabilities":    caps,
 			"serverInfo": map[string]any{
 				"name":    "workspace-" + p.store.Session(),
 				"version": "0",
@@ -179,6 +186,40 @@ func (p *Protocol) dispatch(ctx context.Context, req rpcRequest) (any, *rpcError
 }
 
 func internal(err error) *rpcError { return &rpcError{Code: -32603, Message: err.Error()} }
+
+// availableCapabilities is the promise this surface can make: a capability family
+// is advertised only while the session can serve it. A family with nothing behind
+// it is not advertised — that is the difference between *exists* and *works*, and
+// making it visible on the wire is what lets a target check read the middle rung.
+func (p *Protocol) availableCapabilities(ctx context.Context) ([]string, error) {
+	var out []string
+
+	tools, err := p.store.ToolsList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(tools) > 0 {
+		out = append(out, "tools")
+	}
+
+	resources, err := p.store.ResourcesList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(resources) > 0 {
+		out = append(out, "resources")
+	}
+
+	prompts, err := p.store.PromptList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(prompts) > 0 {
+		out = append(out, "prompts")
+	}
+
+	return out, nil
+}
 
 func mustJSON(v any) []byte {
 	b, err := json.Marshal(v)

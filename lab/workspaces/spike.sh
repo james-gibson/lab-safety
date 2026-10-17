@@ -15,9 +15,15 @@
 #   §5: the wiring is decided out of band), and it is why this script no longer
 #   knows the session's port, nor the monitor's.
 #
-# Observed (2026-10-16): dark -> green (the session exists) -> red (the session
-# goes away *while the server keeps running*). Yellow is still NOT reachable —
-# see the finding at the end and register §2.
+# Observed (2026-10-17, with smoke-alarm#34 landed): the whole plane —
+#
+#   dark ──▶ green ──▶ yellow ──▶ red
+#   (no session)  (it exists)  (it lost what the spec declares)  (it goes away)
+#
+# The middle rung is *"answering, but not as declared"*: the surface stops
+# advertising a capability its session can no longer serve, and the target — which
+# declared that capability must be there — reads degraded rather than healthy or
+# down. Point SMOKE_ALARM_SRC at a smoke-alarm checkout to build the fixed monitor.
 #
 # Usage: ./spike.sh                     # the tmpdir host (the fast one)
 #        DRIVER=sqlite ./spike.sh       # the sqlite host (the mirror)
@@ -71,6 +77,10 @@ try: d=json.load(sys.stdin)
 except Exception: print("?"); raise SystemExit
 e=d.get("error"); r=d.get("result")
 print(e.get("message") if e else json.dumps(r)[:150])'; }
+caps() { python3 -c 'import sys,json
+d=json.load(sys.stdin)
+c=(d.get("result") or {}).get("capabilities", {})
+print(",".join(sorted(c)) if c else "(none)")'; }
 targets_of() { curl -s --max-time 4 "http://127.0.0.1:$1/status" | python3 -c 'import sys,json;d=json.load(sys.stdin);print("; ".join(t["id"]+"="+t["state"] for t in d.get("targets",[])))'; }
 registry_of() { curl -s --max-time 4 "http://127.0.0.1:$1/isotope/list" | python3 -c 'import sys,json;recs=json.load(sys.stdin);print("; ".join("%s=%s rung %s" % (r["name"], r["endpoint"], r.get("trust_rung")) for r in recs) or "(empty)")'; }
 lights_of() { mcp "$1" '{"jsonrpc":"2.0","id":1,"method":"adhd.status"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["result"]["lights"])'; }
@@ -79,6 +89,11 @@ lights_list_of() { mcp "$1" '{"jsonrpc":"2.0","id":1,"method":"adhd.lights.list"
 echo "## build — the surface is a real MCP server, not a stand-in"
 ( cd "$HERE" && go build -o "$TMP/workspace-mcp" ./cmd/workspace-mcp ) || exit 1
 echo "   built: workspace-mcp   (driver $DRIVER, session $SESSION)"
+if [ -n "${SMOKE_ALARM_SRC:-}" ]; then
+	( cd "$SMOKE_ALARM_SRC" && go build -o "$TMP/ocd-smoke-alarm" ./cmd/ocd-smoke-alarm ) || exit 1
+	export ALARM_BIN="$TMP/ocd-smoke-alarm"
+	echo "   built: the monitor from $SMOKE_ALARM_SRC"
+fi
 
 echo
 echo "## phase 0 — dark: no session, no surface, no light"
@@ -127,7 +142,22 @@ echo "   adhd lights:         $(lights_list_of "$DPORT")"
 echo "   adhd summary:        $(lights_of "$DPORT")"
 
 echo
-echo "## phase 3 — the session goes away (the server keeps running)"
+echo "## phase 3 — the session loses what the spec declares (the server keeps running)"
+case "$DRIVER" in
+	sqlite) sqlite3 "$ROOT" "DELETE FROM files WHERE path = '/tools/echo@'" ;;
+	*)      rm -f "$ROOT/tools/echo@" ;;
+esac
+sleep 25
+
+echo "   the declared tool is gone, so the surface stops promising 'tools':"
+echo "   capabilities now:    $(strict "$SPORT" initialize | caps)"
+echo "   initialize now:      $(strict "$SPORT" initialize | field)"
+echo "   alarm target state:  $(targets_of "$MPORT")"
+echo "   adhd lights:         $(lights_list_of "$DPORT")"
+echo "   adhd summary:        $(lights_of "$DPORT")"
+
+echo
+echo "## phase 4 — the session goes away (the server keeps running)"
 case "$DRIVER" in
 	sqlite) sqlite3 "$ROOT" 'DELETE FROM files' ;;
 	*)      rm -rf "$ROOT" ;;
@@ -148,12 +178,16 @@ for l in sys.stdin:
     d=json.loads(l); print("   "+(d.get("old_status") or "?")+" -> "+(d.get("new_status") or "?")+"   (target "+str(d.get("target_id"))+", via "+str(d.get("via"))+")")'
 
 echo
-echo "## finding (rung 2)"
-echo "   The reachable light vocabulary on a smoke-alarm target is {green, red}; dark is the"
-echo "   no-light default. The surface now reports its *session*, so the light tracks the"
-echo "   session and not the process — but yellow (plane -42i) still has no producer."
-echo "   adhd *does* map degraded -> yellow (internal/smokelink/watcher.go, mapHealthState);"
-echo "   it is smoke-alarm's prober that never yields degraded: every failure is"
-echo "   unhealthy/outage -> red, and a capability mismatch is not checked at all. To see"
-echo "   -42i the alarm must be able to say \"answering, but not what was declared\" —"
-echo "   james-gibson/smoke-alarm#34."
+echo "## the finding, closed (rung 2 / smoke-alarm#34)"
+echo "   yellow (plane -42i) now has a producer: a target that *declared* what the"
+echo "   surface must advertise, against a surface that answers while no longer"
+echo "   advertising it. That is the middle rung — \"exists, but not as declared\" —"
+echo "   and it needed both halves:"
+echo "     * smoke-alarm  — the prober classifies a partial handshake and an"
+echo "       unadvertised min_capability as degraded, and the engine no longer"
+echo "       rewrites a *degraded* result into a regression or an outage;"
+echo "     * the surface  — advertises what the session can actually serve."
+echo "   adhd needed no change: mapHealthState already read degraded -> yellow."
+echo
+echo "   What red still means, and should: the session not answering at all. A"
+echo "   departure is yellow; a failure is red."
