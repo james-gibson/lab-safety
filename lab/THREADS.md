@@ -58,6 +58,14 @@ implemented).
 | `PLANE.md` | the measure: a plane in local-time |
 | `SPLASH.md` | the model, with references |
 | `TRUST-FLOWS.md` | the flows as diagrams |
+| `SYNAPSE.md` | the code index as a declared state: readiness vs reachability, what it ignores, and its measured cost profile |
+| `PLAIN.md` | the design without the vocabulary, and the two objections it has to survive |
+| `CHIMERA.md` | the identifier family, records, policy encryption, receipts, and the good-enough query threshold |
+| `TEMPORAL.md` | the temporal reference spec prompt, with four worked reference chains |
+| `TOPOLOGY.md` | `do / know / see` reporting, and the typed system-description model |
+| `ADDRESSING.md` | bind vs destination vs identity; reserved TLDs; three local failures |
+| `SCENARIOS.md` | the `innkeeper` world model as a test harness |
+| `HISTORY.md` | the register of eighteen historical sources and their disposition |
 | `README.md` | index and summary |
 
 ## Uncommitted changes
@@ -67,6 +75,23 @@ implemented).
 - `adhd/internal/mcpserver/proxy_consensus_test.go`,
   `ordinal_reassembly_test.go` — the tests above.
 - README summaries (SPLASH) in the ten registries.
+- `lab/{CHIMERA.md,TEMPORAL.md,PLAIN.md,SYNAPSE.md,TOPOLOGY.md,ADDRESSING.md,SCENARIOS.md,HISTORY.md}`
+  — new, untracked. Eight documents, none of which existed on disk before:
+  `CHIMERA`/`TEMPORAL` recovered from two chat exports (the identifier algebra, and the
+  temporal reference spec); `SYNAPSE` from measurements taken in this working tree;
+  `PLAIN` written to answer the "why not bare MCP" objection; `TOPOLOGY`/`ADDRESSING`/
+  `SCENARIOS`/`HISTORY` from seven further historical exports processed 2026-10-19.
+  See `HISTORY.md` for the source register.
+- `lab/SPLASH.md` — extended with the measured proxy section and the concurrency
+  figures; the index material moved out to `SYNAPSE.md`.
+- `lab/{README.md,THREADS.md}` — index and register updated for the eight documents.
+- The eighteen historical sources are **not** in this repository. They were moved to the
+  knowledge base at `kb/personal/sources/{json,ps}` — this repo is public and the
+  material includes an auth design and internal addresses. See `HISTORY.md`.
+- `kb/personal/sources/ps` — added to the kb index excludes (unreadable subset-font
+  printouts); `json/` is left indexed so the exports stay searchable.
+- `AGENTS.md` at `personal/`, `kb/`, `mcp-lab/`, `open-knowledge/`, `openttd/`, and
+  `~/.config/opencode/AGENTS.md` — Synapse call signature and registered repos.
 
 The two code changes are required for the alert paths in the exercises.
 

@@ -390,6 +390,74 @@ So the proxy has one design seen four ways — **rename** (consensus), **route**
 (improvement), **mask** (privacy), **localise** (residency) — and, being the tap, it
 is also the record of all four.
 
+## The proxy, measured
+
+The claim that a proxy can insert validation without adding cost is testable, and on
+the built chain it holds. Measurements taken 2026-10-19 on one machine (loopback,
+warm index, seven runs each, interleaved, after warm-up), every run issuing the same
+search:
+
+| path | p50 | mean |
+| --- | --- | --- |
+| direct to the code service | 135 ms | 137 ms |
+| through the proxy (nested envelopes) | 139 ms | 139 ms |
+| through a resolving front end, direct source only | 135 ms | 135 ms |
+| through the same front end, proxied source only | 137 ms | 138 ms |
+
+The hop costs two to three milliseconds, about two percent. A nested envelope on
+loopback does not register in a caller's budget, so the *zero-cost validation path*
+of the previous section is not a figure of speech: a check can be paid for out of the
+wrapping.
+
+The **consensus** use is also demonstrable rather than hypothetical. The same
+capability reached under two names — one direct, one proxied — returned identical
+hits for every query tried; the front end merged them on file location and marked
+each result with both sources. Agreement corroborates, and because provenance is
+carried per hit rather than per call, disagreement would be visible at the hit that
+disagreed.
+
+**The proxy is concurrency-transparent.** Identical searches at increasing
+concurrency, run direct and through the proxy, produced the same curve within noise
+(wall time at concurrency 1, 2, 4, 8, 16: 144, 142, 145, 169, 323 ms direct; 143,
+140, 147, 173, 320 ms proxied). Both saturate near fifty requests per second. The
+proxy therefore neither serialises concurrent callers nor caps throughput; whatever
+ceiling exists belongs to the service behind it. Scaling is near-perfect to four
+callers, the knee is at eight, and past it additional callers buy queueing rather
+than throughput.
+
+That matters because **fan-out only pays when it is concurrent**. Four scoped shards
+over one body of work cost 758 ms in sequence and 206 ms issued together — a 3.7×
+speedup against a 4× ceiling. The bound is the slowest shard, not the sum, which is
+the whole case for fanning out from smaller requests. Issued serially, the same
+shards each pay the full per-request cost and the total is worse than one broad
+request.
+
+The concurrency need not come from several agents. One caller issuing four requests
+together measured the same as issuing one (306 ms against 306 ms), and eight
+together cost 344 ms — so the fan-out is a property of how the caller dispatches,
+not of how many callers exist. Past the service's knee, though, more callers in
+flight buy nothing: the queue absorbs them.
+
+One asymmetry belongs in any fan-out design: the slowest shard is likely to be the
+one that found nothing. On this chain an empty result took 629 ms against 292 ms for
+a hit-rich one — more than twice the cost for none of the answer. A fan-out bounded
+by its slowest shard is therefore often bounded by a shard with nothing to show
+([`SYNAPSE.md`](SYNAPSE.md) has the figures).
+
+Two further properties are easy to get wrong:
+
+- **Cost appears in the fan-out, not the hop.** Reaching two names sequentially
+  costs their sum (275 ms), not their maximum.
+- **A dead source degrades the answer; it does not fail the call.** An endpoint that
+  is not listening is reported per source, with its error, while the others still
+  answer, and the envelope marks the result degraded. A caller that reads *degraded*
+  as *failed* discards good hits.
+
+One caution from the same run: a deliberately dead source left in the **default**
+source list makes every answer degraded, including correct ones. A health signal that
+is always tripped states nothing — which is the same failure as a declared state
+being taken for authority.
+
 ## Shortcut validation
 
 A cluster can take too many shortcuts. The zero-cost hidden paths above can be cheap
@@ -431,6 +499,12 @@ The renaming and masking are a boundary view; the real definitions are an index
 view. Keeping both is the same discipline as the two invariants: two
 representations, each correct for its purpose, checked against each other rather
 than merged into one that is wrong for both.
+
+The index's own report is a declaration, not authority — it answers about what it
+processed, not about what is reachable. What it claims, what it actually sees and
+what it costs are recorded separately in [`SYNAPSE.md`](SYNAPSE.md). The wider design
+family — composite application ids, the good-enough query threshold, and receipts that
+outlive access — is in [`CHIMERA.md`](CHIMERA.md).
 
 ## Probes as capability checks
 

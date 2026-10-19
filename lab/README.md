@@ -37,6 +37,14 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 | `TRUST-FLOWS.md` | diagrams | the trust flows as pictures — admission, the triangle, the plane, failover, partitions |
 | `MATH.md` | findings | the grounded figures, and which of the others are not grounded |
 | `PLANE.md` | findings | the measure as a plane in local-time: delivered vs promised vs linear time |
+| `SYNAPSE.md` | findings | the code index as a declared state — what `fully indexed` does and does not cover, and what a query costs |
+| `PLAIN.md` | reusable | the same design said without the vocabulary, for a reader who suspects the words are doing the work — names the two objections (why not bare MCP, why duplicate calls) and answers them |
+| `CHIMERA.md` | reusable | the upstream design family: the identifier algebra, records, policy encryption, receipts, and the good-enough query threshold |
+| `TEMPORAL.md` | reusable | the temporal reference specification prompt — universes as nodes, per-universe epochs, windows, and four worked reference chains as its tests |
+| `TOPOLOGY.md` | reusable | describing a system as nodes that report `do / know / see`, plus the typed `Application / Zone / Service / Binding` model |
+| `ADDRESSING.md` | reusable | bind vs destination vs identity; the reserved-TLD table; why an address is a claim |
+| `SCENARIOS.md` | reusable | a natural-language world model as a test harness: typed verbs, planes, and the two-truths-and-a-lie method |
+| `HISTORY.md` | findings | the register of eighteen historical design sources — what each held, where it went, and the eight that could not be read (originals in `kb/personal/sources/`) |
 | `THREADS.md` | findings | the whole arc — every thread, its state, its issue |
 | `FLOW.md` + `exercise.sh` | exercise | tuner ⇄ smoke-alarm ⇄ adhd, end to end |
 | `TRIPWIRE.md` + `tripwire.sh` | exercise | trusted caller vs probing caller; the honeypot |
@@ -45,6 +53,19 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 `MATH.md`, `PLANE.md` and `THREADS.md` are the ones that save time. The exercises
 are reproducible; the three findings documents are the *conclusions*, so an agent
 can start from the answer rather than the search.
+
+## The upstream family
+
+`CHIMERA.md` and `TEMPORAL.md` are the design the lab is a working instance of. The
+identifier algebra (`🦄☁️.<source>:<trace>:<ksuid>`, sources as reversed base64 of
+other ids, merge chains) and the temporal model (a universe as a first-class node with
+its own epoch and windows) come from two earlier design conversations that existed only
+as chat exports; both are now written down here, with the parts the exports had lost.
+
+They are upstream, not authoritative: where a claim in them is a measurement, it says
+so; where it is a scenario, it says that too. `SYNAPSE.md` is the same discipline
+applied to the code index — a service that reports its own readiness, and the measured
+gap between that report and what is reachable.
 
 **Two kinds of document, and the rule that separates them.** A **join artifact** must
 be readable **at once** — if a participant cannot see the pattern in one view, it
