@@ -58,6 +58,7 @@ implemented).
 | `PLANE.md` | the measure: a plane in local-time |
 | `SPLASH.md` | the model, with references |
 | `TRUST-FLOWS.md` | the flows as diagrams |
+| `CHALLENGE.md` | the re-attestation primitive: isotope, challenge, receipt, and why the order is forced |
 | `README.md` | index and summary |
 
 ## Uncommitted changes
