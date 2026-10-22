@@ -39,6 +39,7 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 | `MATH.md` | findings | the grounded figures, and which of the others are not grounded |
 | `PLANE.md` | findings | the measure as a plane in local-time: delivered vs promised vs linear time |
 | `THREADS.md` | findings | the whole arc — every thread, its state, its issue |
+| `adr/` | decisions | the choices the exercises rest on, one file per decision (canon facts in `isotope/docs/adr/`) |
 | `FLOW.md` + `exercise.sh` | exercise | tuner ⇄ smoke-alarm ⇄ adhd, end to end |
 | `TRIPWIRE.md` + `tripwire.sh` | exercise | trusted caller vs probing caller; the honeypot |
 | `RECONCILE.md` + `accounts.sh` | exercise | the verification chain and who enacts a disagreement |
