@@ -137,8 +137,10 @@ not us.
 
 Two things worth knowing:
 
-- **a name is not a heartbeat.** Nothing deregisters, so a stale name outlives the
-  session; the probe is what notices, not the registry.
+- **a name is not a heartbeat — so the session keeps one.** `workspace-mcp` renews its
+  registration while it serves and deregisters on shutdown; the registry sweeps a name
+  it has not heard from (smoke-alarm#35). Before that, a stale name outlived the
+  session until the alarm restarted, and only the probe noticed.
 - **no mDNS.** adhd's peer view reads the registry, and announcing under
   `_adhd-isotope._tcp` would claim to *be* an adhd. LAN discovery is a later step, with
   its own service type.

@@ -80,7 +80,7 @@ of nothing.
 | 9 | **replay** | exposed | **covered** | one-time credentials, consumed by the tick (the HOTP/TOTP discipline, RFC 4226/6238) | a stale tick is a partition question, not a replay one |
 | 10 | **flood / burst** | exposed | **bounded** | the pad supply *is* the rate limit; no threshold to tune | the tick makes the burst **predictable, not smaller** |
 | 11 | **partition** | exposed | **reconciled** | the tick is internal, so an isolated cluster keeps running; branches merge on reconnection | offline clusters may diverge until they meet |
-| 12 | **a name is not a heartbeat** | exposed | **still exposed** | the probe notices; the registry does not deregister | **open** — filed as smoke-alarm#35 |
+| 12 | **a name is not a heartbeat** | exposed | **covered** | the session renews its registration while it serves and deregisters on shutdown; the registry sweeps a name it has not heard from | a hard kill leaves the name until the TTL (5m default), so the sweep is a backstop, not the departure signal (smoke-alarm#35) |
 | 13 | **declared ≠ actual** | exposed | **covered, one layer up** | the verifier compares what a surface *advertises* against what the target *declared* | the declaration is still hand-written by the operator, not derived from the spec |
 | 14 | **an unobservable measure** | n/a | **covered by rule** | values are derived and externally observable; the proxy is also the tap | the numbers themselves belong to the embedder project, not here |
 
@@ -698,7 +698,7 @@ tooling and a documented failure history beats a fresh scheme. And it comes with
 | **withdrawal** | self-demotion: *"It requires no instruction; it removes itself."* |
 | **graceful restart** (RFC 4724) — forwarding state survives the restart | pre-negotiated failover: the peer already holds the mirrored traffic, so the switch is a role swap rather than a cold start |
 | **route reflection** (RFC 4456) — no full mesh required | recursive sub-clusters: a sub-cluster is a node to its parent and a cluster to its members |
-| **hold timer / keepalive** | **not adopted — and it is the filed gap**: *a name is not a heartbeat* (smoke-alarm#35) |
+| **hold timer / keepalive** | **adopted (smoke-alarm#35)**: a registration is a heartbeat with a TTL — re-register to renew, `DELETE /isotope/<name>` to leave, and a silent name is swept |
 | origin validation is BGP's **known hole** (RPKI, RFC 6480; BGPsec, RFC 8205) | the isotope is canonicalised and **re-derived** rather than trusted, so a hijacked advertisement is *detectable* — the signature BGP never had |
 
 **Dampening is the one worth pausing on**, because it is the standard practice that already
