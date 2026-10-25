@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -43,6 +44,7 @@ type options struct {
 	version    int
 	addr       string
 	smokeAlarm string
+	route      string
 }
 
 func main() {
@@ -56,6 +58,7 @@ func main() {
 	flag.IntVar(&o.version, "version", 1, "the spec's isotope version")
 	flag.StringVar(&o.addr, "addr", "127.0.0.1:0", "the listen address")
 	flag.StringVar(&o.smokeAlarm, "smoke-alarm", "", "register the session with this smoke-alarm isotope registry, so it is reached by name")
+	flag.StringVar(&o.route, "route", "", "this project's route (default: seed.json project.route in the working directory)")
 	flag.Parse()
 
 	if o.root == "" {
@@ -84,6 +87,9 @@ func run(o options) error {
 	s := workspaces.New(drv, o.session)
 	srv := workspaces.NewServer(s)
 
+	// The spec is the session's contract: its signed isotope id is what a
+	// dependent pins. Keep the ref so the id and the seeded store cannot drift.
+	var specRef workspaces.SpecRef
 	if o.specPath != "" {
 		spec, err := workspaces.LoadSpec(o.specPath, []byte(o.key), o.family, o.version)
 		if err != nil {
@@ -95,6 +101,7 @@ func run(o options) error {
 		if err := workspaces.BindTools(srv, spec); err != nil {
 			return err
 		}
+		specRef = spec
 	}
 
 	ln, err := net.Listen("tcp", o.addr)
@@ -118,18 +125,22 @@ func run(o options) error {
 	// the name behind until the TTL passed.
 	if o.smokeAlarm != "" {
 		name := workspaces.SessionName(o.session)
-		rec, err := workspaces.Register(ctx, o.smokeAlarm, name, ln.Addr().String())
+		refs := sessionReferences(o.route, specRef)
+		rec, err := workspaces.RegisterWithReferences(ctx, o.smokeAlarm, name, ln.Addr().String(), refs)
 		if err != nil {
 			fmt.Printf("registration failed name=%s registry=%s: %v\n", name, o.smokeAlarm, err)
 		} else {
 			fmt.Printf("registered name=%s endpoint=%s rung=%d (%s)\n", rec.Name, rec.Endpoint, rec.TrustRung, rec.RungName)
+		}
+		if refs.ProjectRoute != "" || refs.Contract != "" {
+			fmt.Printf("identity route=%s contract=%s\n", refs.ProjectRoute, refs.Contract)
 		}
 
 		renewCtx, stopRenew := context.WithCancel(ctx)
 		heartbeatDone := make(chan struct{})
 		go func() {
 			defer close(heartbeatDone)
-			for err := range workspaces.KeepRegistered(renewCtx, o.smokeAlarm, name, ln.Addr().String(), workspaces.HeartbeatInterval) {
+			for err := range workspaces.KeepRegistered(renewCtx, o.smokeAlarm, name, ln.Addr().String(), refs, workspaces.HeartbeatInterval) {
 				fmt.Printf("registration renewal failed name=%s: %v\n", name, err)
 			}
 		}()
@@ -159,6 +170,22 @@ func run(o options) error {
 		return err
 	}
 	return nil
+}
+
+// sessionReferences is the identity published with the session: its project
+// route and the spec's signed isotope id. A missing route or spec leaves the
+// field empty rather than inventing one.
+func sessionReferences(route string, spec workspaces.SpecRef) workspaces.References {
+	refs := workspaces.References{ProjectRoute: strings.TrimSpace(route)}
+	if refs.ProjectRoute == "" {
+		refs.ProjectRoute = workspaces.RouteFromSeed("seed.json")
+	}
+	if spec.Path != "" {
+		if iso, err := spec.Isotope(); err == nil {
+			refs.Contract = iso.String()
+		}
+	}
+	return refs
 }
 
 func open(driver, root string) (workspaces.Driver, error) {

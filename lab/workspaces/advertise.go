@@ -1,10 +1,13 @@
 package workspaces
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -36,18 +39,105 @@ import (
 // session is called.
 func SessionName(session string) string { return "workspace-" + session }
 
+// References is the project identity a session publishes: its route (the lezz
+// `seed.json` project.route) and the signed spec it serves. A dependent resolves
+// the route, not the endpoint it happens to be on, and pins the contract id it
+// was built against. Neither is a trust claim; the rung stays the registry's
+// judgement.
+type References struct {
+	ProjectRoute string `json:"project_route,omitempty"`
+	Contract     string `json:"contract,omitempty"`
+}
+
 // Register puts a session's surface into the lab's isotope registry and returns
-// the record the registry assigned — including its trust rung.
+// the record the registry assigned — including its trust rung. It publishes no
+// project identity; callers that have one use RegisterWithReferences.
 func Register(ctx context.Context, registryURL, name, endpoint string) (*isotope.Record, error) {
+	return RegisterWithReferences(ctx, registryURL, name, endpoint, References{})
+}
+
+// RegisterWithReferences registers a session together with its project route and
+// contract id.
+func RegisterWithReferences(ctx context.Context, registryURL, name, endpoint string, refs References) (*isotope.Record, error) {
 	if registryURL == "" {
 		return nil, fmt.Errorf("no registry configured")
 	}
-	return isotope.NewClient(registryURL).Register(ctx, isotope.Registration{
+	if refs.ProjectRoute == "" && refs.Contract == "" {
+		return isotope.NewClient(registryURL).Register(ctx, isotope.Registration{
+			Name:     name,
+			Role:     "standalone",
+			Endpoint: endpoint,
+			Protocol: "mcp",
+		})
+	}
+	return registerWithReferences(ctx, registryURL, isotope.Registration{
 		Name:     name,
 		Role:     "standalone",
 		Endpoint: endpoint,
 		Protocol: "mcp",
-	})
+	}, refs)
+}
+
+// registerWithReferences POSTs the shared registration plus the identity block.
+// The isotope client marshals its own wire type and drops unknown fields, so the
+// extension is sent with the same payload shape the client uses.
+func registerWithReferences(ctx context.Context, registryURL string, reg isotope.Registration, refs References) (*isotope.Record, error) {
+	body, err := json.Marshal(struct {
+		isotope.Registration
+		References
+	}{reg, refs})
+	if err != nil {
+		return nil, fmt.Errorf("register: marshal: %w", err)
+	}
+
+	endpoint := strings.TrimRight(registryURL, "/") + "/isotope/register"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("register: build request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req) //nolint:gosec // G704: the registry is the operator-configured smoke-alarm endpoint
+	if err != nil {
+		return nil, fmt.Errorf("register: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("register: status %d", resp.StatusCode)
+	}
+	var record isotope.Record
+	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
+		return nil, fmt.Errorf("register: decode response: %w", err)
+	}
+	return &record, nil
+}
+
+// RouteFromSeed reads a lezz seed file's project route without importing lezz:
+// the file is a stable wire format and this package needs one field from it.
+// `project.route` is the field (lezz ADR 0003); `seed.id` is read as the legacy
+// alias for one release, and only when the route is absent.
+func RouteFromSeed(path string) string {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	var seedFile struct {
+		Seed struct {
+			ID string `json:"id"`
+		} `json:"seed"`
+		Project struct {
+			Route string `json:"route"`
+		} `json:"project"`
+	}
+	if err := json.Unmarshal(b, &seedFile); err != nil {
+		return ""
+	}
+	if route := strings.TrimSpace(seedFile.Project.Route); route != "" {
+		return route
+	}
+	return strings.TrimSpace(seedFile.Seed.ID)
 }
 
 // HeartbeatInterval is how often a session renews its registry entry. It stays
@@ -57,11 +147,13 @@ func Register(ctx context.Context, registryURL, name, endpoint string) (*isotope
 const HeartbeatInterval = time.Minute
 
 // KeepRegistered renews a session's registry entry every interval until ctx is
-// canceled, so the name stays resolvable while the surface is up. It returns a
-// channel of renewal errors (closed when the heartbeat stops); the caller may
-// drain it for visibility or ignore it — a renewal failure is not fatal, because
-// the surface still serves and the next beat retries.
-func KeepRegistered(ctx context.Context, registryURL, name, endpoint string, interval time.Duration) <-chan error {
+// canceled, so the name stays resolvable while the surface is up. The identity
+// block is resent with every beat, so a renewal cannot erase the route or
+// contract a dependent resolved. It returns a channel of renewal errors (closed
+// when the heartbeat stops); the caller may drain it for visibility or ignore
+// it — a renewal failure is not fatal, because the surface still serves and the
+// next beat retries.
+func KeepRegistered(ctx context.Context, registryURL, name, endpoint string, refs References, interval time.Duration) <-chan error {
 	if interval <= 0 {
 		interval = HeartbeatInterval
 	}
@@ -78,7 +170,7 @@ func KeepRegistered(ctx context.Context, registryURL, name, endpoint string, int
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				if _, err := Register(ctx, registryURL, name, endpoint); err != nil {
+				if _, err := RegisterWithReferences(ctx, registryURL, name, endpoint, refs); err != nil {
 					select {
 					case errs <- err:
 					default: // a caller that is not reading must not stall the beat
