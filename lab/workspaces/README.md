@@ -141,6 +141,12 @@ Two things worth knowing:
   registration while it serves and deregisters on shutdown; the registry sweeps a name
   it has not heard from (smoke-alarm#35). Before that, a stale name outlived the
   session until the alarm restarted, and only the probe noticed.
+- **a project is not one instance — so the session publishes its route.** Alongside the
+  name, the registration carries the project's route (`seed.json` `project.route`, or
+  `-route`) and the spec's signed isotope id as its contract. A dependent resolves the
+  route (where the project is) and pins the contract (what it was built against),
+  instead of remembering an endpoint; `GET /isotope/by-route/<route>` and
+  `/isotope/by-contract/<id>` answer those questions. Neither is a trust claim.
 - **no mDNS.** adhd's peer view reads the registry, and announcing under
   `_adhd-isotope._tcp` would claim to *be* an adhd. LAN discovery is a later step, with
   its own service type.
