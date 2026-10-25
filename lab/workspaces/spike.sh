@@ -169,7 +169,7 @@ echo "   the server is still $SERVER_STATE (pid $SRV)"
 echo "   initialize now:      $(strict "$SPORT" initialize | field)"
 echo "   alarm target state:  $(targets_of "$MPORT")"
 echo "   adhd summary:        $(lights_of "$DPORT")"
-echo "   registry now:        $(registry_of "$RPORT")   <- still listed: a name is not a heartbeat"
+echo "   registry now:        $(registry_of "$RPORT")   <- still listed until the heartbeat expires (a name is not a heartbeat)"
 
 echo
 echo "## the transition, as the instrument recorded it"

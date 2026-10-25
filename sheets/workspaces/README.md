@@ -398,9 +398,13 @@ It never holds the root's material — the wire contract is the prober's — and
 reflects it: the trust rung is the registry's judgement, not ours. Two costs recorded
 rather than hidden:
 
-- **a name is not a heartbeat.** After the session's store is deleted the registry
-  *still* lists it — nothing deregisters — so a stale name outlives the session. The
-  probe is what notices; the registry does not.
+- **a name is not a heartbeat — and the registry now enforces it.** When this was
+  first observed, deleting the session's store left the registry listing its endpoint
+  until the alarm process restarted; only the probe noticed. smoke-alarm now treats a
+  registration as a heartbeat: the session renews while it serves, deregisters when it
+  stops, and the registry sweeps a name it has not heard from (smoke-alarm#35). A hard
+  kill still leaves the name until the TTL (5m default) — a backstop, not a substitute
+  for the arrival/departure signal.
 - **mDNS is deliberately unused.** adhd's peer view comes from the registry, and
   announcing under `_adhd-isotope._tcp` would claim to *be* an adhd. A session that
   needs LAN discovery announces under its own service type — a later step.

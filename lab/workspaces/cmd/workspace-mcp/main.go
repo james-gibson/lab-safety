@@ -26,6 +26,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/james-gibson/lab-safety/workspaces"
 )
@@ -67,7 +70,10 @@ func main() {
 }
 
 func run(o options) error {
-	ctx := context.Background()
+	// SIGTERM/SIGINT cancels the heartbeat and shuts the surface down, so the
+	// session can remove its registry name instead of leaving it to expire.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	drv, err := open(o.driver, o.root)
 	if err != nil {
@@ -104,6 +110,12 @@ func run(o options) error {
 	// The session registers itself, by name, with the lab's registry. It is not
 	// fatal if this fails — the surface still serves — but it must not be silent:
 	// an unregistered session is not reachable by name.
+	//
+	// A name is a heartbeat, not a label: smoke-alarm sweeps a registration it
+	// has not heard from (smoke-alarm#35), so the session renews while it serves
+	// and deregisters when it stops. Without the renewal its name would expire
+	// under a live session; without the deregistration a clean stop would leave
+	// the name behind until the TTL passed.
 	if o.smokeAlarm != "" {
 		name := workspaces.SessionName(o.session)
 		rec, err := workspaces.Register(ctx, o.smokeAlarm, name, ln.Addr().String())
@@ -112,9 +124,38 @@ func run(o options) error {
 		} else {
 			fmt.Printf("registered name=%s endpoint=%s rung=%d (%s)\n", rec.Name, rec.Endpoint, rec.TrustRung, rec.RungName)
 		}
+
+		renewCtx, stopRenew := context.WithCancel(ctx)
+		heartbeatDone := make(chan struct{})
+		go func() {
+			defer close(heartbeatDone)
+			for err := range workspaces.KeepRegistered(renewCtx, o.smokeAlarm, name, ln.Addr().String(), workspaces.HeartbeatInterval) {
+				fmt.Printf("registration renewal failed name=%s: %v\n", name, err)
+			}
+		}()
+		defer func() {
+			// Stop renewing before deleting, or a beat in flight could put the
+			// name straight back after deregistration.
+			stopRenew()
+			<-heartbeatDone
+
+			deregCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			if err := workspaces.Deregister(deregCtx, o.smokeAlarm, name); err != nil {
+				fmt.Printf("deregistration failed name=%s: %v\n", name, err)
+			}
+		}()
 	}
 
-	if err := http.Serve(ln, srv); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	httpSrv := &http.Server{Handler: srv, ReadHeaderTimeout: 10 * time.Second}
+	go func() {
+		<-ctx.Done()
+		shutCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = httpSrv.Shutdown(shutCtx)
+	}()
+
+	if err := httpSrv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil

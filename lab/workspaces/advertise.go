@@ -3,6 +3,10 @@ package workspaces
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
 
 	"github.com/james-gibson/isotope"
 )
@@ -44,4 +48,71 @@ func Register(ctx context.Context, registryURL, name, endpoint string) (*isotope
 		Endpoint: endpoint,
 		Protocol: "mcp",
 	})
+}
+
+// HeartbeatInterval is how often a session renews its registry entry. It stays
+// well inside smoke-alarm's isotope TTL (5m by default): the registry treats a
+// registration as a heartbeat and sweeps a name it has not heard from, so a
+// session that stops renewing stops resolving by name (smoke-alarm#35).
+const HeartbeatInterval = time.Minute
+
+// KeepRegistered renews a session's registry entry every interval until ctx is
+// canceled, so the name stays resolvable while the surface is up. It returns a
+// channel of renewal errors (closed when the heartbeat stops); the caller may
+// drain it for visibility or ignore it — a renewal failure is not fatal, because
+// the surface still serves and the next beat retries.
+func KeepRegistered(ctx context.Context, registryURL, name, endpoint string, interval time.Duration) <-chan error {
+	if interval <= 0 {
+		interval = HeartbeatInterval
+	}
+
+	errs := make(chan error, 16)
+	go func() {
+		defer close(errs)
+
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if _, err := Register(ctx, registryURL, name, endpoint); err != nil {
+					select {
+					case errs <- err:
+					default: // a caller that is not reading must not stall the beat
+					}
+				}
+			}
+		}
+	}()
+	return errs
+}
+
+// Deregister removes a session's registry entry so a node that shuts down
+// cleanly does not leave a name behind. A missing entry (404) is success: the
+// name is gone, which is the desired end state.
+func Deregister(ctx context.Context, registryURL, name string) error {
+	if registryURL == "" {
+		return nil
+	}
+
+	endpoint := strings.TrimRight(registryURL, "/") + "/isotope/" + url.PathEscape(name)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, endpoint, http.NoBody)
+	if err != nil {
+		return fmt.Errorf("deregister %s: build request: %w", name, err)
+	}
+
+	client := &http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Do(req) //nolint:gosec // G704: the registry is the operator-configured smoke-alarm endpoint
+	if err != nil {
+		return fmt.Errorf("deregister %s: %w", name, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
+		return fmt.Errorf("deregister %s: registry answered %s", name, resp.Status)
+	}
+	return nil
 }
