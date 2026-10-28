@@ -162,9 +162,12 @@ Two things worth knowing:
   service type with them: one ephemeral port, MCP at `POST /mcp`, and the family's
   `GET /healthz` answered for the **session** (200 when it is there, 503 when it is
   not). A live process must not read as a live session to a supervisor either — the
-  same lie `-32001` refuses on the wire. A second port for health would be one more
-  thing to allocate and publish, so health lives on the same listener and is
-  distinguished by path.
+  same lie `-32001` refuses on the wire. Two signals, two questions: a watcher that
+  speaks MCP (adhd's localprobe) already reads the *session* through `initialize`, and
+  `/healthz` is for a supervisor that cannot — so the two must agree, and neither
+  substitutes for the other. A second port for health would be one more thing to
+  allocate and publish, so health lives on the same listener and is distinguished by
+  path.
 
 ## Subscribe is a decoy until delivery exists
 

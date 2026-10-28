@@ -219,9 +219,22 @@ on GET), no mDNS service type (it advertises none — rung 2b), and no registry
 namespace beyond its own name (`workspace-42`). Health lives on the same listener
 rather than a second port, because on a shared host a port is the thing most
 likely to fight. `/healthz` is the family's convention (`tuner`, `smoke-alarm`),
-and what it must *not* do is report the process: adhd judges the instruments it
-watches at `<endpoint>/healthz`, so a 200 from a live process whose session is
-gone would be a false healthy — the same lie `-32001` refuses on the wire.
+and what it must *not* do is report the process: a 200 from a live process whose
+session is gone would be a false healthy — the same lie `-32001` refuses on the
+wire.
+
+**Two watchers, two signals — do not conflate them.** adhd probes a smoke-alarm
+endpoint's `GET /healthz` as a reachability check (`internal/dashboard`,
+`internal/demo`), while it judges a configured **binary** with an MCP
+`initialize` (`internal/localprobe` → `mcpclient.Probe`, local vs remote
+disagreement → yellow). This surface is neither by default: it is not a
+configured alarm endpoint and not a configured binary. If a workspace gets its
+own adhd (the per-workspace proxy), that adhd is the natural local observer — and
+it would watch the session through the **handshake**, which already answers
+`-32001` when the session is gone. The health path must agree with that verdict; it never
+substitutes for it. What blocks the arrangement today is addressing, not
+signalling: `features.binaries[].endpoint` is static, while the session's address
+is ephemeral and published by name (§16 finding F).
 
 ## §15 Regulatory information
 
@@ -261,6 +274,15 @@ through the protocol); rung 2 is the alarm's verdict on a live surface.
   No method in this surface needs a batch, but a client that sends one is refused
   for a reason that is not its fault, and the error code says "parse error" when
   the body parsed fine.
+- **F — declared, not wired: no watcher can reach it by name.** Nothing watches
+  this surface today in the lab's harness: `spike.sh` runs one adhd against the
+  alarm, adhd's `features.binaries` (the list its localprobe walks) is not written
+  by `adhd/spin.sh`, and the headless dashboard does not start the monitor. A
+  per-workspace adhd would be the right local observer — but it takes a **static**
+  `binaries[].endpoint`, and this surface's address is ephemeral and published
+  only as a registry name. Watching it needs either endpoint injection at start
+  (couples the two, and re-introduces "remember the port") or name resolution in
+  the probe (matches rung 2b). Filed as james-gibson/adhd#62.
 
 **Revision.** Rev 1 — created with the MCP-surface SDS pattern, from
 `protocol.go`, `http.go`, `honeypot.go`, `advertise.go` and a live `-spec` run

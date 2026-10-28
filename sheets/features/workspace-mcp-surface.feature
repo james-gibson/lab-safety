@@ -204,6 +204,17 @@ Feature: Safety Data Sheet — workspace (VFS session) MCP surface
       Then it registers "workspace-42" in the registry
       And a monitor resolves the endpoint by name
 
+    @red
+    Scenario: a workspace's own adhd watches its session
+      # BLOCKED: binaries[].endpoint is static, the session's is ephemeral
+      # (finding F, james-gibson/adhd#62).
+      # Why this matters: without it, "each workspace is watched" is only true of
+      # the alarm's target check — there is no local observer to disagree with it.
+      Given a per-workspace adhd whose binaries name "workspace-42"
+      When the session goes away
+      Then that adhd's light turns red
+      And the alarm's target reads regression
+
   Rule: §15 Regulatory information
 
     Scenario: the declaration is the gate, and it is re-derived
