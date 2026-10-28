@@ -268,7 +268,11 @@ through the protocol); rung 2 is the alarm's verdict on a live surface.
 - **D — the decoy's cost model is borrowed, not derived.** `+32` is
   `TRIPWIRE.md`'s unknown-tool price for *tools*; applying it to a resource
   method is a reading, not a measurement. If the lab prices methods separately,
-  this sheet and `Distance42i` move together.
+  this sheet and `Distance42i` move together. And a **published** distance is only
+  audit-ready when an auditor can re-derive it: this record carries the contact
+  (method, URI, outcome, peer, `advertised`) but neither the pricing rule at a
+  version nor the anchor the departure is from, so `distance_42i: 32` is evidence
+  of a knock, not yet a number someone else can recompute.
 - **E — declared, not implemented: no JSON-RPC batch.** A batch (JSON array) is refused
   `-32700`, though JSON-RPC 2.0 — and therefore MCP `2024-11-05` — allows one.
   No method in this surface needs a batch, but a client that sends one is refused
