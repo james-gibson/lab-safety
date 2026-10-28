@@ -276,7 +276,7 @@ adopted, verified}.
 | filesystem semantics | POSIX | Go stdlib `io/fs`, `os.DirFS`, `testing/fstest` | chosen · available |
 | MCP | MCP spec (`tools/*`, `resources/*`, `prompts/*`), JSON-RPC 2.0, protocol `2024-11-05` | an existing Go MCP SDK (lab currently **hand-rolls** it: adhd `internal/mcpclient`, `internal/mcpserver`) | chosen · available |
 | fs → HTTP | WebDAV | `golang.org/x/net/webdav` | chosen · available (harness only) |
-| subscribe | file-watch | `fsnotify` | chosen · available |
+| subscribe | file-watch | `fsnotify` | chosen · available (the surface answers subscribe as a **decoy** — no delivery yet) |
 | second host / mirror | SQLite | `modernc.org/sqlite` (pure-Go, no cgo) | chosen · available |
 | command identity | content address (RFC 6920) | `isotope.CanonicalizeGherkinToIsotope` | chosen · available |
 | telemetry | OTLP; **every span carries its 42i plane/rotation** | `go.opentelemetry.io/otel` — already a dep in smoke-alarm | chosen · available |
@@ -294,7 +294,7 @@ adopted, verified}.
 | A4 | `tools/call` = file write + result read | correctness + latency | smoke-alarm spec probe |
 | A5 | the state machine is driven by file writes | `/data/messages/*` → `/state/current` | `ResultLedger` over many runs |
 | A6 | `.wsdb`-per-session access is downward-only | access scenarios | consensus across alarm instances |
-| A7 | `subscribe` ⇄ file-watch | both hosts | `DetectFlakiness` (watch races) |
+| A7 | `subscribe` ⇄ file-watch | **honeypot only**: answered and recorded on both hosts; **no delivery** | `DetectFlakiness` (watch races) — still the one criterion with no result |
 | A8 | a VFS-backed surface passes MCP spec compliance | local probe | smoke-alarm verdict (authoritative) |
 | A9 | standard tooling suffices — no bespoke standard | the §3 table compiles | — (design claim; audited by review) |
 | A10 | a command can be **replicated across hosts** and compared | same command on tmpdir + sqlite | consensus / `ResultLedger` |
@@ -309,6 +309,18 @@ assumptions — **sessions may share** a path by an explicit join. That resolves
 *join*, not inheritance; and a child session sees nothing of its parent *by default*. If
 a child session is instead meant to *inherit* the parent's paths automatically, the two
 conflict and one must move.
+
+**A7 is a decoy, not a result.** The surface cannot deliver notifications, so it does
+not promise them: `initialize` states `resources: {subscribe: false, listChanged: false}`.
+`resources/subscribe` and `resources/unsubscribe` are answered exactly as a working
+surface answers (`{}` for a URI the session holds, `-32602` otherwise), and the knock is
+appended to `/state/honeypot/contacts.jsonl` with its outcome, peer and
+`distance_42i: 32` — `lab/TRIPWIRE.md`'s price for a direct method call the surface never
+offered. The decoy is invisible on the wire and on disk until someone touches it, and it
+does not judge: it records, and stops. So **A7 still has no result**; what exists is the
+criterion, the ledger, and the surface's own declaration
+([`workspace.md`](../workspace.md) §6/§11). Delivery — `fsnotify` ⇄
+`notifications/resources/updated`, on both hosts — is untouched.
 
 ## §5 The plan (condensed, so it does not get lost)
 

@@ -1,9 +1,28 @@
 package workspaces
 
 import (
+	"context"
 	"io"
 	"net/http"
 )
+
+// peerKey carries the caller's address from the transport into the protocol.
+// The store's own record of a honeypot contact should say who knocked when the
+// surface was reached over HTTP; an in-process caller has no peer and is
+// recorded as such.
+type peerKey struct{}
+
+func withPeer(ctx context.Context, peer string) context.Context {
+	if peer == "" {
+		return ctx
+	}
+	return context.WithValue(ctx, peerKey{}, peer)
+}
+
+func peerFrom(ctx context.Context) string {
+	p, _ := ctx.Value(peerKey{}).(string)
+	return p
+}
 
 // Server is a store's MCP surface served over HTTP, so the surface can be read
 // from a *different process* than the writer (register §1, rung 2).
@@ -44,7 +63,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}))
 			return
 		}
-		writeRPC(w, s.protocol.Handle(r.Context(), body))
+		writeRPC(w, s.protocol.Handle(withPeer(r.Context(), r.RemoteAddr), body))
 
 	case http.MethodGet:
 		// A human — and a plain status check — can see which session this is.
