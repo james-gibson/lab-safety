@@ -1,7 +1,13 @@
 # Exercise: tuner, smoke-alarm, and adhd round-trip
 
-**Status:** experiment report. **Basis:** one run, 2026-10-15, UTC 23:25–23:26.
-**Reproduce:** `./exercise.sh`.
+**Status:** experiment report. **Basis:** one run, 2026-10-15, UTC 23:25–23:26;
+re-run 2026-10-28 (below).
+**Reproduce:** `lab/workspaces/spike.sh` — the round-trip is its phase 2b. It used
+to have a script of its own (`lab/exercise.sh`), which set its root one level too
+high and looked for the spin harnesses inside this repo, where they are not
+(lab-safety#11). The harness is now the one that was already known to run, and it
+takes the instruments' location from `KB_SCRIPTS` (default
+`~/projects/kb/scripts`) rather than inferring it from its own path.
 
 ## Objective
 
@@ -33,12 +39,20 @@ targets as an indicator.
 ## Procedure
 
 ```sh
-scripts/tuner/spin.sh      up t0                                   # channels + mDNS
-scripts/smoke-alarm/spin.sh up flow --tuner --target http://127.0.0.1:9090/mcp
-scripts/adhd/spin.sh        up dash --smoke-alarm http://127.0.0.1:51891
-curl -XPOST :51892/tuner/audience -d '{"channel":"ntp","count":3,"signal":0.81}'
-curl -XPOST :51892/tuner/caller/ntp -d '{"message":"clock drift rising","from":"tuner","priority":"warn"}'
-curl -N ":51892/hosted/events?transport=sse"
+lab/workspaces/spike.sh    # phase 2b is this exercise; the ports are ephemeral
+```
+
+`spike.sh` starts the three components and drives the requests below; it reads each
+port from the instance it started, so nothing is hard-coded. The same sequence by
+hand, with the alarm holding a tuner block (`--tuner`) and therefore a hosted port:
+
+```sh
+scripts/tuner/spin.sh       up <name>                     # channels + mDNS
+scripts/smoke-alarm/spin.sh up <name> --tuner --target-session <isotope> --registry <url>
+scripts/adhd/spin.sh        up <name> --smoke-alarm-instance <alarm>
+curl -XPOST :<hosted>/tuner/audience    -d '{"channel":"ntp","count":3,"signal":0.81}'
+curl -XPOST :<hosted>/tuner/caller/ntp  -d '{"message":"clock drift rising","from":"tuner","priority":"warn"}'
+curl -N    ":<hosted>/hosted/events?transport=sse"
 ```
 
 ## Observations
@@ -59,7 +73,18 @@ Events 4–7 are the integration: the alarm accepts what the tuner reports and l
 it under its own `tuner` protocol. Events 8–9 close the loop: the alarm's own
 verdict about the MCP endpoint returns as an indicator on the dashboard.
 
+Re-run 2026-10-28, through `spike.sh`'s phase 2b: both reports are accepted and
+logged under `protocol: tuner` with `outcome: ok`, the audience reads back
+`ntp count=3 signal=0.81`, and the dashboard moves `dark -> green`. One difference
+in the frame: there the alarm's target is the workspace session, not the idle
+dashboard on :9090, so events 3 and 8–9 are the same observation about a different
+endpoint. Events 1–2 are the alarm's own startup lines and `spike.sh` does not print
+them, so they still rest on the original run.
+
 ## Surfaces observed
+
+Ports from the 2026-10-15 run; every port here is ephemeral and `spin.sh` picks a
+free one.
 
 | component | port | surface |
 | --- | --- | --- |
@@ -71,6 +96,10 @@ verdict about the MCP endpoint returns as an indicator on the dashboard.
 
 ## Observations of note
 
+- **The report is driven by the harness, not by the broadcaster.** `tuner`
+  advertises `_tuner._tcp` and browses `_smoke-alarm._tcp`; nothing in it posts
+  `/tuner/audience` unattended. The two POSTs stand in for a broadcaster reporting
+  what it sees, and the alarm accepts them from a loopback caller.
 - **Service discovery did not complete this run.** The tuner's browser did not
   enumerate `_smoke-alarm._tcp`, though the system resolver did
   (`dns-sd -B _smoke-alarm._tcp local.` listed the instance) and a second tuner

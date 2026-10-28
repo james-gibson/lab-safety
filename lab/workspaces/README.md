@@ -93,6 +93,12 @@ process** and lets the lab's own instrument decide:
 DRIVER=sqlite ./spike.sh   # the sqlite host
 ```
 
+The harnesses come from the KB vault: `KB_SCRIPTS` names that tree (default
+`~/projects/kb/scripts`), and the script fails with the path it wanted if one is
+absent. The same run folds in the **tuner round-trip** — phase 2b, the exercise
+`lab/FLOW.md` annotates: the broadcaster's channels, and the alarm recording the
+tuner's report under its own `protocol: tuner`.
+
 The script builds `cmd/workspace-mcp`, seeds session `42` from the gate, and registers
 it as a smoke-alarm `mcp` target (the alarm's `strict` handshake). The observed
 sequence, identical on both hosts:
