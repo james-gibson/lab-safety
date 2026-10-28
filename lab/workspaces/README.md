@@ -25,7 +25,7 @@ go test ./...
 | `store.go` | the VFS conventions — the tree, the state machine — and the MCP mapping as *file* operations |
 | `protocol.go` | the MCP surface (JSON-RPC 2.0) over a store: `initialize`, `tools/*`, `resources/*` (incl. the subscribe decoy), `prompts/*` |
 | `honeypot.go` | the subscribe decoy: answers as a real surface answers, records the knock in `/state/honeypot/contacts.jsonl`, delivers nothing |
-| `http.go` | the surface over the wire: `Server` (`http.Handler`) — the MCP surface from a separate process, plus `/healthz` |
+| `http.go` | the surface over the wire: `Server` (`http.Handler`) — `POST /mcp` is MCP; `GET /healthz` answers for the **session** (200/503), not the process; `GET /mcp` is identity |
 | `seed.go` | the spec, inverted: `Seed` materializes what the spec declares, `BindTools`, `CheckLayout` |
 | `advertise.go` | the session as a *node*: `SessionName`, `Register` — the lab's own registry, by name |
 | `cmd/workspace-mcp` | the process: serves a session's surface on `-addr`, seeded from `-spec` |
@@ -157,6 +157,14 @@ Two things worth knowing:
 - **no mDNS.** adhd's peer view reads the registry, and announcing under
   `_adhd-isotope._tcp` would claim to *be* an adhd. LAN discovery is a later step, with
   its own service type.
+- **co-hosted, not multiplexed.** The surface is a fourth listener on a host that
+  already runs adhd, smoke-alarm and tuner, so it does not share a port, a path or a
+  service type with them: one ephemeral port, MCP at `POST /mcp`, and the family's
+  `GET /healthz` answered for the **session** (200 when it is there, 503 when it is
+  not). A live process must not read as a live session to a supervisor either — the
+  same lie `-32001` refuses on the wire. A second port for health would be one more
+  thing to allocate and publish, so health lives on the same listener and is
+  distinguished by path.
 
 ## Subscribe is a decoy until delivery exists
 

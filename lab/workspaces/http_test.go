@@ -276,6 +276,70 @@ func TestASurfaceWithNoSessionAnswersNothing(t *testing.T) {
 	}
 }
 
+// TestHealthzReportsTheSessionNotTheProcess: the instruments adhd watches are
+// judged at `<endpoint>/healthz`, so a surface co-hosted with them must answer
+// there — and must not answer 200 for a live process whose session is gone. That
+// would be the same false signal -32001 exists to prevent, told to a supervisor
+// instead of a client.
+func TestHealthzReportsTheSessionNotTheProcess(t *testing.T) {
+	ctx := context.Background()
+	spec := gateRef(t)
+	drv, err := NewTmpDir(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = drv.Close() })
+
+	s := New(drv, "42")
+	if err := Seed(ctx, s, spec); err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(NewServer(s))
+	t.Cleanup(ts.Close)
+
+	probe := func() (int, map[string]any) {
+		t.Helper()
+		resp, err := http.Get(ts.URL + "/healthz")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		var got map[string]any
+		if err := json.NewDecoder(resp.Body).Decode(&got); err != nil {
+			t.Fatal(err)
+		}
+		return resp.StatusCode, got
+	}
+
+	code, got := probe()
+	if code != http.StatusOK || got["ok"] != true || got["session"] != "42" {
+		t.Fatalf("with a session: %d %v, want 200 and ok for session 42", code, got)
+	}
+
+	// the session goes away; the process does not
+	if err := drv.Delete(ctx, PathTask); err != nil {
+		t.Fatal(err)
+	}
+
+	code, got = probe()
+	if code != http.StatusServiceUnavailable {
+		t.Errorf("with no session: status = %d, want 503", code)
+	}
+	if got["ok"] != false {
+		t.Errorf("with no session: ok = %v, want false — a healthy process is not a healthy session", got["ok"])
+	}
+
+	// the identity face still answers: the surface is up, the session is not
+	resp, err := http.Get(ts.URL + "/mcp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("identity GET = %d, want 200 (it reports the surface, not the session)", resp.StatusCode)
+	}
+}
+
 // capabilityFamilies reads the advertised capability families out of an
 // `initialize` result.
 func capabilityFamilies(res map[string]any) []string {

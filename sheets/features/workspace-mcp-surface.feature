@@ -26,6 +26,11 @@ Feature: Safety Data Sheet — workspace (VFS session) MCP surface
       Then the body holds "session": "42"
       And the body holds no "result"
 
+    Scenario: health answers for the session
+      When I request "GET /healthz"
+      Then the status is 200
+      And the body holds "ok": true
+
   Rule: §2 Hazard identification
 
     Scenario: the surface states what it is
@@ -74,6 +79,13 @@ Feature: Safety Data Sheet — workspace (VFS session) MCP surface
     Scenario: deleting the session is the kill switch
       When the session store is deleted
       Then every method answers -32001
+      And the process is still running
+
+    Scenario: health does not outlive the session
+      Given the session store is deleted
+      When I request "GET /healthz"
+      Then the status is 503
+      And the body holds "ok": false
       And the process is still running
 
   Rule: §6 Accidental-release measures

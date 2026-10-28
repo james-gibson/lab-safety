@@ -20,7 +20,7 @@ else. It is the surface a monitor probes from another process, and the one whose
 | surface id | `workspace-<session>` (the prototype runs session `42`) |
 | owner repo | `github.com/james-gibson/lab-safety`, module `lab/workspaces` |
 | endpoint | `POST http://<addr>/mcp` (`-addr`, default `127.0.0.1:0` — ephemeral) |
-| transport | HTTP; JSON-RPC 2.0 per POST. `GET` returns `{ok, session, protocolVersion}`, not MCP |
+| transport | HTTP; JSON-RPC 2.0 per POST at `/mcp`. `GET /mcp` = identity (`{session, protocolVersion}`); `GET /healthz` = health (200/503, see §5); neither is MCP |
 | protocol version | `2024-11-05` |
 | server name | `workspace-42` (`initialize` → `serverInfo.name`; matches the registry name) |
 | instance identity | the **session id**, and the spec's signed isotope id published as `contract` |
@@ -94,6 +94,7 @@ is refused `-32700` although JSON-RPC 2.0 allows it (§16 finding E).
 | --- | --- | --- |
 | bind | `-addr`, default `127.0.0.1:0` (loopback, ephemeral) | enforced by the flag; pinning is a deployment choice |
 | body limit | 1 MiB per request | enforced (`http.go` → `maxBody`) |
+| supervision | `GET /healthz` → **200** when the session is present, **503** when it is not | enforced; the answer is about the session, never the process |
 | rate limiting | none at this surface | **declared, not implemented** |
 | kill switch | delete the session's store → every method answers `-32001` with the process still up | enforced |
 | stop | `SIGINT`/`SIGTERM` deregisters the name and stops the listener | enforced |
@@ -149,7 +150,8 @@ property of the surface).
 | framing | one JSON-RPC 2.0 object per `POST`; no SSE, no streaming |
 | statelessness | the process is stateless; the session is the state (a directory, or one `.wsdb`) |
 | address | `-addr`, default `127.0.0.1:0`; the bound port is printed at startup |
-| identity on `GET` | `{ok, session, protocolVersion}` — for a human and a status check |
+| identity on `GET /mcp` | `{session, protocolVersion}` — for a human and a status check |
+| health on `GET /healthz` | `{ok, session}` — 200 when the session is present, 503 when it is not, plus `reason` |
 | concurrency | one writer per session (A13); the contact ledger is serialised in-process |
 
 ## §10 Stability and reactivity
@@ -209,6 +211,17 @@ test:
 - a caller that wants it **by name** needs a running alarm registry and
   `-smoke-alarm`; the harness takes the instruments from `KB_SCRIPTS`
   (default `~/projects/kb/scripts`) and fails closed if they are missing.
+
+**Co-hosted, not multiplexed.** The surface is a fourth listener on a host that
+already runs adhd, smoke-alarm and tuner, so it shares nothing with them: no
+port (ephemeral), no path (MCP at `/mcp`, health at `/healthz`, identity at `/mcp`
+on GET), no mDNS service type (it advertises none — rung 2b), and no registry
+namespace beyond its own name (`workspace-42`). Health lives on the same listener
+rather than a second port, because on a shared host a port is the thing most
+likely to fight. `/healthz` is the family's convention (`tuner`, `smoke-alarm`),
+and what it must *not* do is report the process: adhd judges the instruments it
+watches at `<endpoint>/healthz`, so a 200 from a live process whose session is
+gone would be a false healthy — the same lie `-32001` refuses on the wire.
 
 ## §15 Regulatory information
 
