@@ -36,7 +36,7 @@ implemented).
 | item | state | artifacts | issue |
 | --- | --- | --- | --- |
 | tuner ⇄ smoke-alarm ⇄ adhd round-trip | implemented (exercise; folded into `spike.sh`) | `lab/FLOW.md`, `lab/workspaces/spike.sh` (phase 2b) | lab-safety#11 |
-| honeypot tool; trusted vs probing caller | implemented (exercise) | `lab/{TRIPWIRE.md,tripwire.sh}` | — |
+| honeypot tool; trusted vs probing caller | implemented (exercise, graded contact at a configurable 42i threshold) | `lab/{TRIPWIRE.md,tripwire.sh}` | lab-safety#24 · adhd#61 |
 | alarm merges the reported security component | modified | `smoke-alarm/internal/health/server.go` | smoke-alarm#23 |
 | observer adhd renders alarm components as indicators | modified | `adhd/internal/smokelink/watcher.go` | — |
 | node honeypot: weights → distance → rung → eviction | design (unit-tested only; `internal/engine`, `internal/mcp_faults`) | — | — |

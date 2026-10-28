@@ -1,7 +1,8 @@
 # The verification chain
 
-**Status:** design note and experiment report. **Reproduce:** `./accounts.sh`.
-Related: `TRIPWIRE.md`, `SPLASH.md`.
+**Status:** design note and experiment report. **Reproduce:** `./accounts.sh`
+(re-run 2026-10-28, unchanged; the script builds the binaries itself and needs no
+spin harness). Related: `TRIPWIRE.md`, `SPLASH.md`.
 
 ## Topology
 

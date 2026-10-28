@@ -12,7 +12,6 @@
 #
 set -euo pipefail
 
-SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SMOKE_REPO="${SMOKE_REPO:-$HOME/projects/personal/smoke-alarm}"
 ADHD_REPO="${ADHD_REPO:-$HOME/projects/personal/adhd}"
 BIN="${BIN:-/tmp/kb-lab-tripwire}"
