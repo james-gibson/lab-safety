@@ -40,7 +40,7 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 | `PLANE.md` | findings | the measure as a plane in local-time: delivered vs promised vs linear time |
 | `THREADS.md` | findings | the whole arc — every thread, its state, its issue |
 | `adr/` | decisions | the choices the exercises rest on, one file per decision (canon facts in `isotope/docs/adr/`) |
-| `FLOW.md` + `exercise.sh` | exercise | tuner ⇄ smoke-alarm ⇄ adhd, end to end |
+| `FLOW.md` | exercise | tuner ⇄ smoke-alarm ⇄ adhd, end to end — reproduced by `workspaces/spike.sh`, phase 2b |
 | `TRIPWIRE.md` + `tripwire.sh` | exercise | trusted caller vs probing caller; the honeypot |
 | `RECONCILE.md` + `accounts.sh` | exercise | the verification chain and who enacts a disagreement |
 | `survey/README.md` | dataset | the **model survey** — what agents want from an integration endpoint. `survey/profiles/*.json` are the observations; `models.csv`, the summary table and `survey.feature` are checked projections of them |
@@ -90,10 +90,16 @@ agents recursed*.
 ## Exercises at a glance
 
 ```sh
-./exercise.sh    # tuner + smoke-alarm + adhd round-trip
-./tripwire.sh    # honeypot: trusted vs probing caller, observed by a second adhd
-./accounts.sh    # ingress -> verifier -> monitor chain; who settles a disagreement
+./tripwire.sh           # honeypot: trusted vs probing caller, observed by a second adhd
+./accounts.sh           # ingress -> verifier -> monitor chain; who settles a disagreement
+./workspaces/spike.sh   # the lab's real instruments, end to end: the plane
+                        #   dark -> green -> yellow -> red, and the
+                        #   tuner ⇄ smoke-alarm ⇄ adhd round-trip (phase 2b)
 ```
 
-Each builds the working-tree binaries, uses only ephemeral `/tmp` state, and tears
-itself down. They assume the local checkouts under `~/projects/personal/`.
+`tripwire.sh` and `accounts.sh` build the working-tree binaries from the local
+checkouts under `~/projects/personal/`. `spike.sh` runs the installed instrument
+binaries and finds the spin harnesses through `KB_SCRIPTS` (default
+`~/projects/kb/scripts`), stopping with the path it wanted when one is missing — it
+does not infer them from its own location. Each script uses only ephemeral spin
+instances and tears itself down.
