@@ -129,6 +129,7 @@ Composition` reads as *"the declared inventory does not match the surface"*.
 | --- | --- | --- | --- | --- |
 | adhd MCP server | `adhd` | 18 static + dynamic | [adhd.md](adhd.md) | [features/adhd-mcp-surface.feature](features/adhd-mcp-surface.feature) |
 | hosted service MCP | `ocd-smoke-alarm` | 4 | [ocd-smoke-alarm.md](ocd-smoke-alarm.md) | [features/ocd-smoke-alarm-mcp-surface.feature](features/ocd-smoke-alarm-mcp-surface.feature) |
+| workspace VFS session | `lab/workspaces` | 9 methods (dynamic tools) | [workspace.md](workspace.md) | [features/workspace-mcp-surface.feature](features/workspace-mcp-surface.feature) |
 
 ## Registers
 

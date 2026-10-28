@@ -23,7 +23,8 @@ go test ./...
 | --- | --- |
 | `driver.go` | the `Driver` host interface + `TmpDir` and `SQLite` |
 | `store.go` | the VFS conventions — the tree, the state machine — and the MCP mapping as *file* operations |
-| `protocol.go` | the MCP surface (JSON-RPC 2.0) over a store: `initialize`, `tools/*`, `resources/*`, `prompts/*` |
+| `protocol.go` | the MCP surface (JSON-RPC 2.0) over a store: `initialize`, `tools/*`, `resources/*` (incl. the subscribe decoy), `prompts/*` |
+| `honeypot.go` | the subscribe decoy: answers as a real surface answers, records the knock in `/state/honeypot/contacts.jsonl`, delivers nothing |
 | `http.go` | the surface over the wire: `Server` (`http.Handler`) — the MCP surface from a separate process, plus `/healthz` |
 | `seed.go` | the spec, inverted: `Seed` materializes what the spec declares, `BindTools`, `CheckLayout` |
 | `advertise.go` | the session as a *node*: `SessionName`, `Register` — the lab's own registry, by name |
@@ -157,6 +158,58 @@ Two things worth knowing:
   `_adhd-isotope._tcp` would claim to *be* an adhd. LAN discovery is a later step, with
   its own service type.
 
+## Subscribe is a decoy until delivery exists
+
+A7 (`subscribe` ⇄ file-watch) has no delivery half yet, so the surface cannot
+honestly promise one. `initialize` therefore states it:
+
+```json
+"resources": {"subscribe": false, "listChanged": false}
+```
+
+A caller that subscribes anyway has gone past what the surface offered, and that
+call is the decoy ([`honeypot.go`](honeypot.go), `lab/TRIPWIRE.md`). It answers
+exactly as a working surface answers — `{}` for a URI the session holds, `-32602`
+for one it does not, `-32602` for a malformed request — so nothing on the wire
+distinguishes it, and the knock is appended to the session's own state:
+
+```
+$ curl -s :PORT/mcp -d '{"jsonrpc":"2.0","id":2,"method":"resources/subscribe",
+                         "params":{"uri":"resource://workspace/config"}}'
+{"jsonrpc":"2.0","id":2,"result":{}}
+
+$ cat 42/state/honeypot/contacts.jsonl
+{"at":"…","method":"resources/subscribe","uri":"resource://workspace/config",
+ "outcome":"accepted","via":"method","peer":"127.0.0.1:58059",
+ "advertised":false,"distance_42i":32}
+```
+
+Four properties, each a test:
+
+- **not promised** — `TestInitializeDoesNotPromiseDelivery`;
+- **plausible** — `TestSubscribeAnswersPlausiblyAndRecordsTheKnock` (`{}` exactly)
+  and `TestSubscribeRefusesAURIItsNotHoldButStillRecordsIt` (a refusal is still
+  contact, and the refusal is the one a real surface gives);
+- **invisible** — `TestTheDecoyDoesNotRevealItself` (no "contact", "decoy" or
+  "recorded" in the answer) and `TestTheDecoyIsInvisibleUntilTouched` (the
+  directory does not exist until someone knocks);
+- **not delivery** — `TestSubscribeDeliversNothing`: the resource changes under
+  the subscription and nothing arrives. A green there is *the absence of A7's
+  fast rung*, held so it cannot be mistaken for passing.
+
+The cost model is the tripwire's: a direct method call the surface never offered
+is the unknown-tool case, `+32` `distance_42i`, and the cost is the caller's.
+What is **not** done is the verdict — this surface writes the contact and stops.
+Accumulating it, holding a sensitivity, and firing an alert at a crossing is the
+detector's job (the honeypotted node is not the detector), and no detector reads
+this ledger yet.
+
+The surface is declared, not just described:
+[`sheets/workspace.md`](../../sheets/workspace.md) §2/§6/§11 with
+[`features/workspace-mcp-surface.feature`](../../sheets/features/workspace-mcp-surface.feature),
+and §16 records the two findings this leaves open (the contact is not judged; the
+gate does not declare subscribe until delivery exists).
+
 ## The finding this spike lived beside — and closed (register §2)
 
 The lab's **headless** `adhd` renders a smoke-alarm target as green/yellow/red;
@@ -211,3 +264,8 @@ surface to a *declaration* the target carries, so a session that has lost part o
 spec declares reads **yellow** — see *The finding this spike lived beside*, above. What is
 still ours is where that declaration comes from: the harness writes it by hand, where the
 spec should be its origin.
+
+**A7 is a decoy, not a result.** `resources/subscribe` is answered and recorded, and
+delivers nothing (*Subscribe is a decoy until delivery exists*, above). The fast rung —
+`fsnotify` ⇄ `notifications/resources/updated`, on both hosts — does not exist, so A7
+stays the one criterion without a result; the register's §4 row says so.

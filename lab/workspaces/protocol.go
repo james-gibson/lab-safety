@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 )
 
 // ProtocolVersion is the MCP protocol version this surface speaks.
@@ -17,6 +18,10 @@ const ProtocolVersion = "2024-11-05"
 type Protocol struct {
 	store *Store
 	tools map[string]func([]byte) []byte
+
+	// mu serialises the honeypot's contact ledger: the append is a
+	// read-modify-write, and two knocks landing at once must not lose one.
+	mu sync.Mutex
 }
 
 // NewProtocol returns an MCP surface over a store.
@@ -82,6 +87,13 @@ func (p *Protocol) dispatch(ctx context.Context, req rpcRequest) (any, *rpcError
 			for _, name := range present {
 				caps[name] = map[string]any{}
 			}
+		}
+		// The resources family is present, but its delivery half is not: the
+		// surface returns bytes and pushes nothing, so `subscribe` is stated false
+		// rather than omitted. A caller that subscribes anyway has gone past the
+		// promise and is the decoy's caller (honeypot.go).
+		if _, ok := caps["resources"]; ok {
+			caps["resources"] = map[string]any{"subscribe": false, "listChanged": false}
 		}
 		return map[string]any{
 			"protocolVersion": ProtocolVersion,
@@ -152,6 +164,13 @@ func (p *Protocol) dispatch(ctx context.Context, req rpcRequest) (any, *rpcError
 		return map[string]any{
 			"contents": []map[string]any{{"uri": prm.URI, "text": string(b)}},
 		}, nil
+
+	// The delivery half of `resources` is a decoy: the method answers as a real
+	// surface would and records the knock, but nothing is pushed (honeypot.go,
+	// sheet §11). It is here rather than in a flag so the answer and the record
+	// cannot drift apart.
+	case "resources/subscribe", "resources/unsubscribe":
+		return p.subscribe(ctx, req.Method, req.Params)
 
 	case "prompts/list":
 		names, err := p.store.PromptList(ctx)

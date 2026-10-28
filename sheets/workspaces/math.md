@@ -298,7 +298,10 @@ copy.
 
 1. **A7 — the pull term.** `P(caught in time)` is unmeasured because there is no
    subscription. Until it exists, §4's third factor is the largest unquantified term in
-   the model.
+   the model. The surface's `resources/subscribe` is a **decoy**, not a subscription: it
+   answers and records the knock, and pushes nothing — so it does not move this term at
+   all, and a green `TestSubscribeDeliversNothing` is the absence of the mechanism, not
+   evidence about it.
 2. **The dedupe filter's parameters, its window, and its role.** The mechanism exists in
    design (§4); what is unmeasured is: **`n_burst` per tick** (which fixes `m`), whether
    the window `T` exceeds the retry horizon `τ_max` — the lab's defaults put them
