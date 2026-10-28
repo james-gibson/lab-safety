@@ -38,6 +38,7 @@ receipt, a honeypot contact. Model: `lab/PLANE.md`. Figures:
 | `CHALLENGE.md` | design | re-attestation: why a fresh run, not a stable token, is what re-admits — isotope, challenge, receipt, and the order they force |
 | `MATH.md` | findings | the grounded figures, and which of the others are not grounded |
 | `PLANE.md` | findings | the measure as a plane in local-time: delivered vs promised vs linear time |
+| `RADIUS.md` + `radius.py` | findings | the radius of a honeypot trigger — tolerance, catchment, observation and blast, from a cluster configuration; `./radius.py --check` |
 | `THREADS.md` | findings | the whole arc — every thread, its state, its issue |
 | `adr/` | decisions | the choices the exercises rest on, one file per decision (canon facts in `isotope/docs/adr/`) |
 | `FLOW.md` | exercise | tuner ⇄ smoke-alarm ⇄ adhd, end to end — reproduced by `workspaces/spike.sh`, phase 2b |
