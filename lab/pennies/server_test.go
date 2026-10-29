@@ -176,3 +176,52 @@ func TestManifestIsReadPerCall(t *testing.T) {
 		t.Errorf("the handshake served a stale manifest: %+v", manifest)
 	}
 }
+
+// A replay inside the rotation is a second use, and a second use is a second
+// bill. It is not refused: the penny is a credential, the call is a call.
+func TestReplayIsBilled(t *testing.T) {
+	srv := httptest.NewServer(New(Options{Enforce: true}))
+	defer srv.Close()
+
+	granted := structured(t, call(t, srv, "pennies.grant", map[string]any{}))
+	penny, _ := granted["penny"].(string)
+
+	first := structured(t, call(t, srv, "barista.path", map[string]any{"penny": penny}))
+	second := structured(t, call(t, srv, "barista.path", map[string]any{"penny": penny}))
+
+	if got, _ := first["redemption"].(float64); got != 1 {
+		t.Errorf("first redemption = %v, want 1", first["redemption"])
+	}
+	if got, _ := second["redemption"].(float64); got != 2 {
+		t.Errorf("second redemption = %v, want 2", second["redemption"])
+	}
+	if billed, _ := second["billed"].(bool); !billed {
+		t.Error("the second use was not billed")
+	}
+}
+
+// The accounting invariant: every accepted redemption is recorded. The failure
+// is not the replay, it is a use that leaves no record — the unbilled delta.
+func TestUnbilledReplayLeavesDelta(t *testing.T) {
+	surface := New(Options{Enforce: true, UnbilledReplay: true})
+	srv := httptest.NewServer(surface)
+	defer srv.Close()
+
+	granted := structured(t, call(t, srv, "pennies.grant", map[string]any{}))
+	penny, _ := granted["penny"].(string)
+
+	call(t, srv, "barista.path", map[string]any{"penny": penny})
+	second := structured(t, call(t, srv, "barista.path", map[string]any{"penny": penny}))
+
+	if billed, _ := second["billed"].(bool); billed {
+		t.Fatal("the fixture billed the second redemption; it exists not to")
+	}
+
+	ledger := surface.Ledger()
+	if ledger.Accepted != 2 || ledger.Recorded != 1 {
+		t.Fatalf("ledger = %+v, want 2 accepted and 1 recorded", ledger)
+	}
+	if ledger.Unbilled != 1 {
+		t.Errorf("unbilled delta = %d, want 1", ledger.Unbilled)
+	}
+}

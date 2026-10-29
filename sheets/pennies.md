@@ -104,6 +104,14 @@ A priced tool that answers without a token is a **gate that does not exist the
 moment the surface is not started with `--enforce`**. That is deliberate: the
 harness's job is to be caught by `GATE-OPEN`.
 
+## §11a Accounting
+
+`barista.path` counts every redemption it accepts, including a second use of the same
+penny in the same rotation. The ledger is `granted / accepted / recorded` on
+`pennies.status`, and the invariant is **accepted == recorded**: a use that happened is a use
+that is billed. `--unbilled-replay` accepts the second use and drops its record, which is the
+failure the ledger exposes — *not* the replay itself.
+
 ## §12 Ecological information
 
 None beyond the lab's LAN.

@@ -272,6 +272,14 @@ The harness can also be wrong on purpose, which is what makes it a test:
 | `--enforce=false` | `GATE-OPEN` (error): the priced tool answered without a token |
 | `--register-undeclared` | `PROBE-TOOLS-EXTRA` (error): served a tool no sheet declares |
 | no `--gate` | `GATE-UNVERIFIED` (note): "enforced" is a claim, not a result |
+| `--unbilled-replay` | the ledger's own delta: `accepted 2, recorded 1`. Not a checker state — the surface accepts a second redemption and does not record it. |
+
+That last row is the accounting invariant, and it is a different thing from a replay. A
+penny is a credential, so presenting it twice is a **second use**, and a second use is a second
+bill: refusing it would punish the retry that at-least-once delivery produces. What must not
+happen is an accepted use that leaves no record — the **unbilled delta**. `pennies.status`
+reports `granted/accepted/recorded`, and `lab/pennies/server_test.go` pins both directions: the
+honest surface bills the replay, the broken one leaves `unbilled: 1`.
 
 `lab/pennies/invariants_test.go` runs all four against the real sheets and policy, so the
 checker is itself checked: the harness that passes its declaration has to pass, and the harness

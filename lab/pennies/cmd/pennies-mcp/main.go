@@ -8,6 +8,8 @@
 //
 //	--enforce=false           serve the priced tool without a penny (GATE-OPEN)
 //	--register-undeclared     install a tool no sheet declares (PROBE-TOOLS-EXTRA)
+//	--unbilled-replay         accept a second redemption and do not record it
+//	                          (the unbilled delta; not a tool-list or gate state)
 package main
 
 import (
@@ -27,6 +29,7 @@ func main() {
 	manifest := flag.String("manifest", ".well-known/lab-safety.json", "policy manifest served by the handshake")
 	enforce := flag.Bool("enforce", true, "require a penny for barista.path")
 	undeclared := flag.Bool("register-undeclared", false, "install pennies.bonus, which no sheet declares")
+	unbilled := flag.Bool("unbilled-replay", false, "accept a second redemption of a penny without recording it")
 	flag.Parse()
 
 	ln, err := net.Listen("tcp", *addr)
@@ -36,7 +39,12 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Handler:           pennies.New(pennies.Options{Enforce: *enforce, Undeclared: *undeclared, ManifestPath: *manifest}),
+		Handler: pennies.New(pennies.Options{
+			Enforce:        *enforce,
+			Undeclared:     *undeclared,
+			UnbilledReplay: *unbilled,
+			ManifestPath:   *manifest,
+		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

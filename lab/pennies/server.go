@@ -43,6 +43,10 @@ type Options struct {
 	// ManifestPath is read on every call, so a regenerated manifest is served
 	// without a restart. An empty path serves an empty object.
 	ManifestPath string
+	// UnbilledReplay accepts a second redemption of the same penny but does not
+	// record it: the delta is unbilled. It is the failure #73 is about — not
+	// the replay itself, which is a second use and should be a second bill.
+	UnbilledReplay bool
 }
 
 // Tool is one installed tool.
@@ -66,7 +70,18 @@ type surface struct {
 	tools    []Tool
 	rotation string
 	pennies  map[string]string // penny -> rotation it was issued in
-	lastPen  string
+	seen     map[string]int    // penny -> redemptions accepted in this rotation
+
+	// The ledger. granted counts pennies issued; accepted counts redemptions
+	// the surface allowed; recorded counts the ones it wrote down. The
+	// invariant is accepted == recorded: a redemption that happened is a
+	// redemption that is billed, whether or not it was the first use of the
+	// penny.
+	granted  int
+	accepted int
+	recorded int
+
+	lastPen string
 }
 
 // New builds the harness surface and installs its tools. Installation happens
@@ -74,7 +89,7 @@ type surface struct {
 // is what "dynamic" means in the sheets (adhd.cluster.join installs tools the
 // same way).
 func New(opts Options) *surface {
-	s := &surface{opts: opts, pennies: map[string]string{}}
+	s := &surface{opts: opts, pennies: map[string]string{}, seen: map[string]int{}}
 	s.rotate()
 	s.install()
 	return s
@@ -236,6 +251,11 @@ func (s *surface) invoke(tool Tool, args map[string]any) (map[string]any, error)
 			"price":       map[string]any{"amount": 0.01, "currency": "USD", "unit": "token"},
 			"enforced":    s.opts.Enforce,
 			"tools":       len(s.tools),
+			"ledger": map[string]any{
+				"granted":  s.granted,
+				"accepted": s.accepted,
+				"recorded": s.recorded,
+			},
 		}, nil
 
 	case "barista.manifest":
@@ -263,7 +283,8 @@ func (s *surface) invoke(tool Tool, args map[string]any) (map[string]any, error)
 		}, nil
 
 	case "barista.path":
-		if err := s.admit(args); err != nil {
+		redemption, billed, err := s.admit(args)
+		if err != nil {
 			return nil, err
 		}
 		s.mu.Lock()
@@ -272,6 +293,8 @@ func (s *surface) invoke(tool Tool, args map[string]any) (map[string]any, error)
 		return map[string]any{
 			"path":        "/api/v1/turn/" + rotation,
 			"rotation_id": rotation,
+			"redemption":  redemption,
+			"billed":      billed,
 		}, nil
 
 	case "pennies.bonus":
@@ -283,25 +306,37 @@ func (s *surface) invoke(tool Tool, args map[string]any) (map[string]any, error)
 // admit enforces the priced tool's gate. A penny is valid only for the rotation
 // it was issued in: that is the vanishing path, and it is the part of the
 // prototype that is actually enforceable server-side.
-func (s *surface) admit(args map[string]any) error {
+func (s *surface) admit(args map[string]any) (redemption int, billed bool, err error) {
 	if !s.opts.Enforce {
-		return nil
+		return 0, false, nil
 	}
 	penny, _ := args["penny"].(string)
 	if penny == "" {
-		return &refusal{reason: "no penny: barista.path requires a token"}
+		return 0, false, &refusal{reason: "no penny: barista.path requires a token"}
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	rotation, ok := s.pennies[penny]
 	if !ok {
-		return &refusal{reason: "unknown penny"}
+		return 0, false, &refusal{reason: "unknown penny"}
 	}
 	if rotation != s.rotation {
-		return &refusal{reason: "stale penny: issued in a previous rotation"}
+		return 0, false, &refusal{reason: "stale penny: issued in a previous rotation"}
 	}
-	return nil
+
+	// A redemption that happens is a redemption that is billed. The second use
+	// of a penny is a second use, not a replay to be refused: the penny is a
+	// credential, and the call is a call. What must not happen is a use that
+	// leaves no record — that is the unbilled delta.
+	s.accepted++
+	s.seen[penny]++
+	redemption = s.seen[penny]
+	billed = !s.opts.UnbilledReplay || redemption == 1
+	if billed {
+		s.recorded++
+	}
+	return redemption, billed, nil
 }
 
 // grant rotates the surface and issues a penny in the new rotation. The
@@ -313,6 +348,8 @@ func (s *surface) grant() string {
 	s.rotate()
 	penny := "pnn_" + randomHex(8)
 	s.pennies = map[string]string{penny: s.rotation}
+	s.seen = map[string]int{}
+	s.granted++
 	s.lastPen = penny
 	return penny
 }
@@ -402,4 +439,26 @@ func writeRPCError(w http.ResponseWriter, id json.RawMessage, code int, message 
 	})
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(body)
+}
+
+// Ledger is the surface's own accounting: pennies issued, redemptions accepted,
+// and redemptions recorded. Unbilled is the delta the accounting invariant is
+// about.
+type Ledger struct {
+	Granted  int `json:"granted"`
+	Accepted int `json:"accepted"`
+	Recorded int `json:"recorded"`
+	Unbilled int `json:"unbilled"`
+}
+
+// Ledger returns a snapshot of the surface's accounting.
+func (s *surface) Ledger() Ledger {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return Ledger{
+		Granted:  s.granted,
+		Accepted: s.accepted,
+		Recorded: s.recorded,
+		Unbilled: s.accepted - s.recorded,
+	}
 }
