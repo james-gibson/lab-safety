@@ -83,6 +83,7 @@ Flags:
   --out=<path>         manifest: write here instead of stdout
   --probe=<url>        check: POST tools/list here and compare with --surface
   --surface=<id>       check: the sheet the probed endpoint belongs to
+  --gate               check: call enforced skills without a token, then with one
   --json               check: emit findings as JSON
 `)
 }
@@ -121,6 +122,7 @@ func cmdCheck(args []string) {
 	policyPath := fs.String("policy", "policy/skills.yaml", "policy file")
 	probeURL := fs.String("probe", "", "live MCP endpoint to compare against --surface")
 	surface := fs.String("surface", "", "the sheet the probed endpoint belongs to")
+	gateProbe := fs.Bool("gate", false, "drive the token gate of every enforced skill")
 	asJSON := fs.Bool("json", false, "emit findings as JSON")
 	_ = fs.Parse(args)
 
@@ -131,6 +133,7 @@ func cmdCheck(args []string) {
 		Policy:       pol,
 		ProbeURL:     *probeURL,
 		ProbeSurface: *surface,
+		GateProbe:    *gateProbe,
 	})
 	if err != nil {
 		fatal("%v", err)

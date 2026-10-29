@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -30,6 +31,10 @@ type Options struct {
 	// declared tools of ProbeSurface.
 	ProbeURL     string
 	ProbeSurface string
+	// GateProbe drives the token gate: call a priced tool without a token and
+	// require a refusal, then grant a token and require acceptance. Without it,
+	// an "enforced" claim is reported as unverified.
+	GateProbe bool
 	// Client is used for the probe; nil means a 5s-timeout default.
 	Client *http.Client
 }
@@ -44,6 +49,20 @@ func Check(opts Options) ([]Finding, error) {
 		return nil, fmt.Errorf("no policy loaded")
 	}
 
+	// The grant tool is a tool like any other: if the policy says tokens come
+	// from it, a sheet has to declare it, or the price is anchored to nothing.
+	if grant := opts.Policy.Grants.GrantTool; grant != "" {
+		if _, _, ok := findTool(opts.Sheets, grant); !ok {
+			findings = append(findings, Finding{
+				Severity: "error",
+				Code:     "GRANT-TOOL-UNKNOWN",
+				Subject:  grant,
+				Detail:   "grants.grant_tool names a tool no safety data sheet declares",
+			})
+		}
+	}
+
+	var enforced, declared []SkillDecl
 	for _, skill := range opts.Policy.Skills {
 		sheet, tool, ok := findTool(opts.Sheets, skill.Tool)
 		switch {
@@ -84,18 +103,39 @@ func Check(opts Options) ([]Finding, error) {
 				Detail:   "priced at zero, so the token is free and the skill is gated by nothing",
 			})
 		}
+
+		if skill.Gate.Enforcement == Enforced {
+			enforced = append(enforced, skill)
+			continue
+		}
+		declared = append(declared, skill)
 	}
 
-	// Token gates. One note for the set: the manifest publishes a price for
-	// every skill, and no surface checks a token yet.
-	if gated := len(opts.Policy.Skills); gated > 0 {
+	// A priced skill whose gate is only declared is the honest case the
+	// manifest labels: the price exists on paper and a token costs nothing.
+	if len(declared) > 0 {
 		findings = append(findings, Finding{
 			Severity: "note",
 			Code:     "GATE-NOT-ENFORCED",
-			Subject:  fmt.Sprintf("%d skill(s)", gated),
-			Detail: "a token is required by declaration, but no surface reads one: " +
+			Subject:  fmt.Sprintf("%d skill(s)", len(declared)),
+			Detail: "a token is required by declaration, but no surface is known to read one: " +
 				"the price is declared, so a token currently costs nothing",
 		})
+	}
+
+	// An "enforced" claim is only worth what a probe says it is.
+	for _, skill := range enforced {
+		if !opts.GateProbe || opts.ProbeURL == "" {
+			findings = append(findings, Finding{
+				Severity: "note",
+				Code:     "GATE-UNVERIFIED",
+				Subject:  skill.Scope,
+				Detail: "declared enforced, but no gate probe ran in this check " +
+					"(use --probe=<url> --gate)",
+			})
+			continue
+		}
+		findings = append(findings, verifyGate(opts, skill)...)
 	}
 
 	// The issuance endpoints are a surface too. By sheets/README.md a surface
@@ -216,14 +256,24 @@ func compareTools(sheets []Sheet, surfaceID string, served []string) []Finding {
 	}
 
 	var findings []Finding
-	declared := map[string]bool{}
+
+	// Missing: a literal tool the sheet claims the surface serves. A dynamic
+	// tool is registered at runtime and may legitimately be absent from a cold
+	// tools/list, so it is never "missing".
+	expected := map[string]bool{}
+	// Allowed: everything the sheet declares, literal or patterned. A dynamic
+	// per-project tool is declared as "adhd.project.<name>.call", and a served
+	// "adhd.project.kb.call" matches it.
+	var allowed []*regexp.Regexp
 	for _, tool := range sheet.Tools {
-		// A dynamic tool is registered at runtime and absent from a cold
-		// tools/list, so it is neither expected nor a surprise.
-		if tool.Dynamic || strings.Contains(tool.Name, "<") {
+		pattern := declaredMatcher(tool.Name)
+		if pattern == nil {
 			continue
 		}
-		declared[tool.Name] = true
+		allowed = append(allowed, pattern)
+		if !tool.Dynamic && !strings.Contains(tool.Name, "<") {
+			expected[tool.Name] = true
+		}
 	}
 
 	servedSet := map[string]bool{}
@@ -232,13 +282,20 @@ func compareTools(sheets []Sheet, surfaceID string, served []string) []Finding {
 	}
 
 	var missing, extra []string
-	for name := range declared {
+	for name := range expected {
 		if !servedSet[name] {
 			missing = append(missing, name)
 		}
 	}
 	for _, name := range served {
-		if !declared[name] {
+		matched := false
+		for _, pattern := range allowed {
+			if pattern.MatchString(name) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
 			extra = append(extra, name)
 		}
 	}
@@ -268,7 +325,8 @@ func compareTools(sheets []Sheet, surfaceID string, served []string) []Finding {
 			Severity: "note",
 			Code:     "PROBE-OK",
 			Subject:  surfaceID,
-			Detail:   fmt.Sprintf("%d declared tools served, none undeclared", len(declared)),
+			Detail: fmt.Sprintf("%d tool(s) declared (including runtime patterns), %d served, "+
+				"none undeclared", len(allowed), len(served)),
 		})
 	}
 	return findings
@@ -379,3 +437,196 @@ func sortFindings(findings []Finding) {
 		return findings[i].Subject < findings[j].Subject
 	})
 }
+
+// toolReply is one tools/call answer, reduced to what a gate probe needs.
+type toolReply struct {
+	Fields  map[string]any
+	Refused bool  // the surface declined: a JSON-RPC error or isError
+	Err     error // the call itself could not be made
+}
+
+// callTool performs one tools/call.
+func callTool(client *http.Client, url, name string, args map[string]any) toolReply {
+	body, err := json.Marshal(map[string]any{
+		"jsonrpc": "2.0",
+		"id":      1,
+		"method":  "tools/call",
+		"params": map[string]any{
+			"name":      name,
+			"arguments": args,
+		},
+	})
+	if err != nil {
+		return toolReply{Err: err}
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return toolReply{Err: fmt.Errorf("gate probe request: %w", err)}
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return toolReply{Err: fmt.Errorf("gate probe %s: %w", url, err)}
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return toolReply{Err: fmt.Errorf("read gate probe response: %w", err)}
+	}
+	if resp.StatusCode != http.StatusOK {
+		return toolReply{Err: fmt.Errorf("gate probe %s: %s", url, resp.Status)}
+	}
+
+	var decoded struct {
+		Result struct {
+			Content           []struct{ Type, Text string } `json:"content"`
+			StructuredContent map[string]any                `json:"structuredContent"`
+			IsError           bool                          `json:"isError"`
+		} `json:"result"`
+		Error *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	payload := jsonPayload(raw)
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		return toolReply{Err: fmt.Errorf("decode tools/call: %w", err)}
+	}
+	if decoded.Error != nil {
+		// A refusal is the surface saying "no token here" — the lab's -32001
+		// arm. Any JSON-RPC error counts: the call did not return a result.
+		return toolReply{Refused: true}
+	}
+	if decoded.Result.IsError {
+		return toolReply{Refused: true}
+	}
+
+	fields := decoded.Result.StructuredContent
+	if fields == nil {
+		for _, content := range decoded.Result.Content {
+			if content.Type != "text" {
+				continue
+			}
+			var parsed map[string]any
+			if err := json.Unmarshal([]byte(content.Text), &parsed); err == nil {
+				fields = parsed
+				break
+			}
+		}
+	}
+	return toolReply{Fields: fields}
+}
+
+// verifyGate runs the gate invariant against a live surface: the priced tool
+// must refuse without a token, and accept a token the grant tool just issued.
+// Anything else means the manifest's "enforced" claim is false, which is an
+// error, not a note.
+func verifyGate(opts Options, skill SkillDecl) []Finding {
+	grants := opts.Policy.Grants
+	if grants.GrantTool == "" || grants.TokenArg == "" || grants.TokenField == "" {
+		return []Finding{{
+			Severity: "error",
+			Code:     "GATE-PROBE-MISCONFIG",
+			Subject:  skill.Scope,
+			Detail: "the gate is claimed enforced, but grants.grant_tool, grants.token_arg and " +
+				"grants.token_field are not all set: the probe does not know how to obtain a token",
+		}}
+	}
+
+	client := opts.Client
+	if client == nil {
+		client = &http.Client{Timeout: 5 * time.Second}
+	}
+
+	// 1. Without a token the surface must decline.
+	open := callTool(client, opts.ProbeURL, skill.Tool, map[string]any{})
+	if open.Err != nil {
+		return []Finding{{
+			Severity: "error",
+			Code:     "GATE-PROBE-FAILED",
+			Subject:  skill.Scope,
+			Detail:   open.Err.Error(),
+		}}
+	}
+	if !open.Refused {
+		return []Finding{{
+			Severity: "error",
+			Code:     "GATE-OPEN",
+			Subject:  skill.Scope,
+			Detail: fmt.Sprintf("%s answered without a token: the manifest says this skill is gated, "+
+				"and the surface does not check", skill.Tool),
+		}}
+	}
+
+	// 2. The grant tool must hand out a token.
+	granted := callTool(client, opts.ProbeURL, grants.GrantTool, map[string]any{})
+	if granted.Err != nil || granted.Refused {
+		return []Finding{{
+			Severity: "error",
+			Code:     "GATE-PROBE-FAILED",
+			Subject:  skill.Scope,
+			Detail:   fmt.Sprintf("%s did not issue a token", grants.GrantTool),
+		}}
+	}
+	token, _ := granted.Fields[grants.TokenField].(string)
+	if token == "" {
+		return []Finding{{
+			Severity: "error",
+			Code:     "GATE-PROBE-FAILED",
+			Subject:  skill.Scope,
+			Detail: fmt.Sprintf("%s answered without %q in its result",
+				grants.GrantTool, grants.TokenField),
+		}}
+	}
+
+	// 3. With that token the same call must be accepted.
+	withToken := callTool(client, opts.ProbeURL, skill.Tool, map[string]any{grants.TokenArg: token})
+	if withToken.Err != nil {
+		return []Finding{{
+			Severity: "error",
+			Code:     "GATE-PROBE-FAILED",
+			Subject:  skill.Scope,
+			Detail:   withToken.Err.Error(),
+		}}
+	}
+	if withToken.Refused {
+		return []Finding{{
+			Severity: "error",
+			Code:     "GATE-BROKEN",
+			Subject:  skill.Scope,
+			Detail: fmt.Sprintf("%s refused a token just issued by %s: the gate cannot be passed",
+				skill.Tool, grants.GrantTool),
+		}}
+	}
+
+	return []Finding{{
+		Severity: "note",
+		Code:     "GATE-VERIFIED",
+		Subject:  skill.Scope,
+		Detail: fmt.Sprintf("%s refused without a token and accepted one from %s",
+			skill.Tool, grants.GrantTool),
+	}}
+}
+
+// declaredMatcher compiles a sheet's tool name into a matcher. A dynamic tool
+// declared with a placeholder ("adhd.project.<name>.call") matches every
+// instance of it, so a live surface that has installed one is not reported as
+// undeclared.
+func declaredMatcher(name string) *regexp.Regexp {
+	if strings.TrimSpace(name) == "" {
+		return nil
+	}
+	pattern := regexp.QuoteMeta(name)
+	pattern = placeholderRe.ReplaceAllString(pattern, `.+`)
+	re, err := regexp.Compile(`^(?:` + pattern + `)$`)
+	if err != nil {
+		return nil
+	}
+	return re
+}
+
+var placeholderRe = regexp.MustCompile(`<[^>]+>`)

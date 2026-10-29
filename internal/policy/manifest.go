@@ -125,6 +125,10 @@ func Build(sheets []Sheet, p *Policy) Manifest {
 	}
 
 	for _, decl := range p.Skills {
+		enforcement := decl.Gate.Enforcement
+		if enforcement != Enforced {
+			enforcement = Declared
+		}
 		skill := Skill{
 			Scope: decl.Scope,
 			Tool:  decl.Tool,
@@ -132,8 +136,8 @@ func Build(sheets []Sheet, p *Policy) Manifest {
 			Note:  decl.Note,
 			Gate: Gate{
 				Endpoint:    p.RegistrationEndpoint,
-				Enforcement: Declared,
-				Note:        "the token this skill requires is not issued by any surface in the lab yet",
+				Enforcement: enforcement,
+				Note:        gateNote(enforcement, p.Grants.GrantTool),
 			},
 		}
 		if sheet, tool, ok := findTool(sheets, decl.Tool); ok {
@@ -160,6 +164,22 @@ func Build(sheets []Sheet, p *Policy) Manifest {
 	}
 	sort.Slice(m.Body.Skills, func(i, j int) bool { return m.Body.Skills[i].Scope < m.Body.Skills[j].Scope })
 	return m
+}
+
+// gateNote states what backs the gate, in the manifest's own vocabulary: an
+// enforced gate is one a live surface refuses, a declared one is a price with
+// nothing behind it yet.
+func gateNote(enforcement, grantTool string) string {
+	if enforcement == Enforced {
+		if grantTool == "" {
+			return "claimed enforced, but no grant tool is declared to drive the check"
+		}
+		return "the surface refuses this tool without a token; `lab-safety check --probe --gate` verifies it"
+	}
+	if grantTool != "" {
+		return "the token is issued by " + grantTool + " but no surface is known to read it"
+	}
+	return "the token this skill requires is not issued by any surface in the lab yet"
 }
 
 // WriteJSON encodes the manifest with indentation.

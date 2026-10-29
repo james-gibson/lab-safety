@@ -219,6 +219,8 @@ lab-safety manifest [--out=<path>]      # emit x_lab_safety_manifest
 lab-safety check [--json]               # contradictions and declared-not-enforced
 lab-safety check --probe=<url> --surface=<id>
                                         # compare a live tools/list with its sheet
+lab-safety check --probe=<url> --surface=<id> --gate
+                                        # drive the token gate of enforced skills
 ```
 
 Two halves, deliberately kept apart:
@@ -246,6 +248,34 @@ requires timing to be *uncorrelated* — the cloak would make timing the credent
 
 The name in the issue was `x_barista_manifest`. The key is `x_lab_safety_manifest` because the
 document is a policy declaration, not a persona's menu; a surface's "secret menu" is its sheet.
+
+### Testing the invariants
+
+A declaration is only worth the surface it is checked against. `lab/pennies` is that surface: a
+harness MCP endpoint whose tools are **installed at runtime** — a handshake
+(`barista.manifest`), an issuer (`pennies.grant`), and a priced path (`barista.path`) that
+refuses without a penny from the current rotation and accepts one the issuer just minted.
+It is declared in [`sheets/pennies.md`](sheets/pennies.md) and its price and gate are in
+`policy/skills.yaml`, so the ordinary manifest includes it.
+
+```sh
+go run ./lab/pennies/cmd/pennies-mcp --addr=127.0.0.1:18099 &
+lab-safety check --probe=http://127.0.0.1:18099/mcp --surface=pennies --gate
+#  note  GATE-VERIFIED   barista:path  refused without a token and accepted one from pennies.grant
+#  note  PROBE-OK        pennies       …
+```
+
+The harness can also be wrong on purpose, which is what makes it a test:
+
+| started with | the checker must say |
+| --- | --- |
+| `--enforce=false` | `GATE-OPEN` (error): the priced tool answered without a token |
+| `--register-undeclared` | `PROBE-TOOLS-EXTRA` (error): served a tool no sheet declares |
+| no `--gate` | `GATE-UNVERIFIED` (note): "enforced" is a claim, not a result |
+
+`lab/pennies/invariants_test.go` runs all four against the real sheets and policy, so the
+checker is itself checked: the harness that passes its declaration has to pass, and the harness
+that is lying has to fail.
 
 ---
 

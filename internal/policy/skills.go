@@ -18,14 +18,22 @@ type Price struct {
 	Unit     string  `yaml:"unit" json:"unit"`
 }
 
+// GateDecl says whether the surface enforces the token. "enforced" is a claim
+// the checker verifies against a live surface (`check --probe --gate`); a claim
+// it has not verified is reported, not trusted.
+type GateDecl struct {
+	Enforcement string `yaml:"enforcement" json:"enforcement"`
+}
+
 // SkillDecl is one priced skill: the scope a caller requests, the tool it
 // unlocks, and what the token costs. The tool must be declared by a safety data
 // sheet — that join is what the checker verifies.
 type SkillDecl struct {
-	Scope string `yaml:"scope" json:"scope"`
-	Tool  string `yaml:"tool" json:"tool"`
-	Note  string `yaml:"note,omitempty" json:"note,omitempty"`
-	Price Price  `yaml:"price" json:"price"`
+	Scope string   `yaml:"scope" json:"scope"`
+	Tool  string   `yaml:"tool" json:"tool"`
+	Note  string   `yaml:"note,omitempty" json:"note,omitempty"`
+	Price Price    `yaml:"price" json:"price"`
+	Gate  GateDecl `yaml:"gate,omitempty" json:"gate,omitempty"`
 }
 
 // Grants is the token-issuance policy. It is a commercial declaration, so it
@@ -36,6 +44,13 @@ type Grants struct {
 	Required  bool    `yaml:"required" json:"required"`
 	UnitValue float64 `yaml:"unit_value" json:"unit_value"`
 	Currency  string  `yaml:"currency" json:"currency"`
+
+	// GrantTool is the tool that issues a token, and TokenArg/TokenField are
+	// how a caller passes it and reads it back. Together they are what
+	// `check --gate` drives: no token → refused, granted token → accepted.
+	GrantTool  string `yaml:"grant_tool,omitempty" json:"grant_tool,omitempty"`
+	TokenArg   string `yaml:"token_arg,omitempty" json:"token_arg,omitempty"`
+	TokenField string `yaml:"token_field,omitempty" json:"token_field,omitempty"`
 }
 
 // Timing is the barista prototype's "temporal cloak" (issue #1): a client-side
@@ -94,6 +109,12 @@ func (p *Policy) validate() error {
 		seen[s.Scope] = true
 		if s.Price.Amount < 0 {
 			return fmt.Errorf("skill %q: price cannot be negative", s.Scope)
+		}
+		switch s.Gate.Enforcement {
+		case "", Declared, Enforced:
+		default:
+			return fmt.Errorf("skill %q: gate.enforcement must be %q or %q, got %q",
+				s.Scope, Declared, Enforced, s.Gate.Enforcement)
 		}
 	}
 	return nil

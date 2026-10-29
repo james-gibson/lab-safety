@@ -17,6 +17,12 @@ grants:
   required: true
   unit_value: 0.01
   currency: USD
+  # The harness surface's issuer. `check --gate` drives these three: call the
+  # priced tool without a token (must be refused), grant one, call again (must
+  # be accepted). A grant tool no sheet declares is a finding, not an anchor.
+  grant_tool: pennies.grant
+  token_arg: penny
+  token_field: penny
 
 # The barista prototype's "temporal cloak". It is carried so the manifest states
 # it, not so a surface can rely on it: a client-side beat is not verifiable by
@@ -53,3 +59,13 @@ skills:
     tool: adhd.project.<name>.call
     note: per-project proxy tool, installed at runtime
     price: {amount: 0.01, currency: USD, unit: token}
+
+  # The harness's vanishing path. This is the one skill whose gate is real: the
+  # surface refuses it without a penny and accepts one issued by pennies.grant.
+  # `gate.enforcement: enforced` is a claim the checker verifies against the live
+  # harness, and reports as GATE-UNVERIFIED when no probe runs.
+  - scope: barista:path
+    tool: barista.path
+    note: the vanishing path; a penny buys the current rotation's path
+    price: {amount: 0.01, currency: USD, unit: token}
+    gate: {enforcement: enforced}
