@@ -208,6 +208,45 @@ Lab-safety will import `github.com/james-gibson/isotope` for wire types and trus
 
 The **policy object** it will read is already being written down: one **safety data sheet per MCP surface** in the lab, in the 16-section SDS format and laid out as Gherkin, under [`sheets/`](sheets/README.md). A surface is not permissible until it is declared — and an SDS makes a surface that does not match its own documentation a failing test rather than a stale sentence.
 
+## The policy manifest
+
+The sheets are the declaration; the manifest is that declaration made machine-readable, so a
+caller can read a surface's hazard classes, minimum rungs and containment before it connects,
+and so a surface can be checked against its own sheet instead of being trusted to match it.
+
+```
+lab-safety manifest [--out=<path>]      # emit x_lab_safety_manifest
+lab-safety check [--json]               # contradictions and declared-not-enforced
+lab-safety check --probe=<url> --surface=<id>
+                                        # compare a live tools/list with its sheet
+```
+
+Two halves, deliberately kept apart:
+
+| half | source | what it says |
+| --- | --- | --- |
+| safety | `sheets/*.md` | what the surface serves, its hazard classes, rungs, §5 controls |
+| commercial | [`policy/skills.yaml`](policy/skills.yaml) | the issuer's endpoints, the price of a token, which skills a token buys |
+
+A **skill** is a *tear-sheet*: a tool — often installed at runtime, the way
+`adhd.cluster.join` installs per-project proxies — that a caller may only reach with a token.
+The price is **per credential, not per request**. That distinction is the whole of the
+"liquidity anchor": one cent buys an identity, and an identity may call as often as the
+surface's rate policy allows. It does not make a request flood cost a cent per request, and
+the manifest must not say it does.
+
+Everything the manifest cannot stand behind is labelled `declared` rather than quietly
+implied. Today that is most of it: no surface issues or reads a token, so
+`lab-safety check` reports `GATE-NOT-ENFORCED`, `ISSUER-UNDECLARED` (the auth/token/register
+endpoints have no sheet of their own), and `RUNG-NOT-ENFORCED` for every surface whose §7
+says the gate is not read. The prototype's **temporal cloak** is carried as
+`x_lab_safety_manifest.timing` and reported as `TIMING-UNENFORCEABLE`: a beat is written in a
+manifest the caller can read, so it distinguishes nothing, and rung 4 of the 42i lattice
+requires timing to be *uncorrelated* — the cloak would make timing the credential.
+
+The name in the issue was `x_barista_manifest`. The key is `x_lab_safety_manifest` because the
+document is a policy declaration, not a persona's menu; a surface's "secret menu" is its sheet.
+
 ---
 
 ## How the Tools Connect

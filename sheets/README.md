@@ -34,6 +34,7 @@ Two artifact kinds share the same style — markdown with linked executable Gher
 | `features/<surface>-mcp-surface.feature` | **sheet** | the linked executable scenarios |
 | `workspaces/README.md` | **register** | a plan and the standards it commits to |
 | `workspaces/standards.feature` | **register** | the linked executable scenarios |
+| `../policy/skills.yaml` | **declaration** | the priced tear-sheet skills and the issuer endpoints; every skill names a tool a sheet already declares, and the manifest joins the two |
 
 A **sheet** declares a surface (what exists). A **register** records a *plan* —
 which existing standard each layer adopts, and which slower validator keeps the

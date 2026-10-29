@@ -1,0 +1,468 @@
+{
+  "issuer": "https://lezz.go",
+  "authorization_endpoint": "https://lezz.go/v1/auth",
+  "token_endpoint": "https://lezz.go/v1/token",
+  "registration_endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+  "x_lab_safety_manifest": {
+    "version": "0.1.0",
+    "status": "declared",
+    "note": "Derived from the safety data sheets. A field marked \"declared\" is written down but not applied by any surface; a price buys a credential, not a request.",
+    "generated_from": [
+      "adhd.md",
+      "ocd-smoke-alarm.md",
+      "workspace.md"
+    ],
+    "skills": [
+      {
+        "scope": "anchor:l_anc",
+        "tool": "adhd.path.negotiate",
+        "surface": "adhd",
+        "classes": [
+          "E",
+          "W"
+        ],
+        "min_rung": 4,
+        "price": {
+          "amount": 0.01,
+          "currency": "USD",
+          "unit": "token"
+        },
+        "gate": {
+          "endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+          "enforcement": "declared",
+          "note": "the token this skill requires is not issued by any surface in the lab yet"
+        },
+        "note": "paid credential before negotiating a path"
+      },
+      {
+        "scope": "isotope:th_sig",
+        "tool": "adhd.rung.respond",
+        "surface": "adhd",
+        "classes": [
+          "C"
+        ],
+        "min_rung": 0,
+        "price": {
+          "amount": 0.01,
+          "currency": "USD",
+          "unit": "token"
+        },
+        "gate": {
+          "endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+          "enforcement": "declared",
+          "note": "the token this skill requires is not issued by any surface in the lab yet"
+        },
+        "note": "thinking-signature receipt the caller must produce"
+      },
+      {
+        "scope": "path:p_rot",
+        "tool": "adhd.path.verify",
+        "surface": "adhd",
+        "classes": [
+          "E"
+        ],
+        "min_rung": 4,
+        "price": {
+          "amount": 0.01,
+          "currency": "USD",
+          "unit": "token"
+        },
+        "gate": {
+          "endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+          "enforcement": "declared",
+          "note": "the token this skill requires is not issued by any surface in the lab yet"
+        },
+        "note": "rotating path claim"
+      },
+      {
+        "scope": "project:call",
+        "tool": "adhd.project.<name>.call",
+        "surface": "adhd",
+        "classes": [
+          "E"
+        ],
+        "min_rung": 4,
+        "dynamic": true,
+        "price": {
+          "amount": 0.01,
+          "currency": "USD",
+          "unit": "token"
+        },
+        "gate": {
+          "endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+          "enforcement": "declared",
+          "note": "the token this skill requires is not issued by any surface in the lab yet"
+        },
+        "note": "per-project proxy tool, installed at runtime"
+      }
+    ],
+    "surfaces": [
+      {
+        "id": "adhd",
+        "sheet": "adhd.md",
+        "owner": "`github.com/james-gibson/adhd`",
+        "endpoint": "`http://<host>:9090/mcp` (`--mcp-addr` override; `mcp_server.enabled`)",
+        "transport": "`POST /mcp` = JSON-RPC 2.0; `GET /mcp` = SSE",
+        "protocol": "`2024-11-05`",
+        "classes": [
+          "C",
+          "E",
+          "H",
+          "R",
+          "W",
+          "X"
+        ],
+        "tools": [
+          {
+            "name": "adhd.status",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "adhd.lights.list",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "adhd.lights.get",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "adhd.isotope.status",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "adhd.isotope.peers",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "adhd.isotope.instance",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "adhd.rung.respond",
+            "classes": [
+              "C"
+            ]
+          },
+          {
+            "name": "adhd.rung.verify",
+            "classes": [
+              "C"
+            ]
+          },
+          {
+            "name": "adhd.rung.challenge",
+            "classes": [
+              "E"
+            ]
+          },
+          {
+            "name": "adhd.cluster.join",
+            "classes": [
+              "W"
+            ]
+          },
+          {
+            "name": "adhd.cluster.leave",
+            "classes": [
+              "W"
+            ]
+          },
+          {
+            "name": "adhd.hurl.run",
+            "classes": [
+              "X"
+            ]
+          },
+          {
+            "name": "adhd.gh.run",
+            "classes": [
+              "X"
+            ]
+          },
+          {
+            "name": "adhd.dependabot.alerts",
+            "classes": [
+              "E",
+              "R"
+            ]
+          },
+          {
+            "name": "adhd.path.negotiate",
+            "classes": [
+              "E",
+              "W"
+            ]
+          },
+          {
+            "name": "adhd.path.verify",
+            "classes": [
+              "E"
+            ]
+          },
+          {
+            "name": "adhd.path.list",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "adhd.proxy",
+            "classes": [
+              "E"
+            ]
+          },
+          {
+            "name": "adhd.project.<name>.call",
+            "classes": [
+              "E"
+            ],
+            "dynamic": true
+          },
+          {
+            "name": "adhd.dependabot.<owner>.<repo>",
+            "classes": [
+              "E",
+              "R"
+            ],
+            "dynamic": true
+          },
+          {
+            "name": "decoys from `honeypot-tools",
+            "classes": [
+              "H"
+            ],
+            "dynamic": true
+          }
+        ],
+        "min_rung_by_class": {
+          "C": 0,
+          "E": 4,
+          "R": 0,
+          "W": 3,
+          "X": 6
+        },
+        "rung_status": "not enforced (§16, finding b)",
+        "rung_enforced": false,
+        "controls": [
+          {
+            "name": "rate limiting on proxy paths",
+            "owner": "ocd-smoke-alarm` enforces; `lab-safety` audits",
+            "status": "declared (alarm-side)",
+            "enforced": false
+          },
+          {
+            "name": "proxy-path registration gate",
+            "owner": "lab-safety` must acknowledge each registration before the path is live",
+            "status": "declared, not implemented",
+            "enforced": false
+          },
+          {
+            "name": "kill switch",
+            "owner": "adhd.cluster.leave` removes a peer and its dynamic tools; process stop removes the surface",
+            "status": "enforced (leave); declared (gate)",
+            "enforced": false
+          }
+        ]
+      },
+      {
+        "id": "ocd-smoke-alarm",
+        "sheet": "ocd-smoke-alarm.md",
+        "owner": "`github.com/james-gibson/smoke-alarm`",
+        "endpoint": "`/mcp`, `/acp`, `/a2a` on `Hosted.ListenAddr` (default `:0`)",
+        "transport": "`HTTP` + `SSE` (`Hosted.Transports`)",
+        "protocol": "`2024-11-05`",
+        "classes": [
+          "R"
+        ],
+        "tools": [
+          {
+            "name": "smoke.health",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "smoke.tuner_list_channels",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "smoke.tuner_audience",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "smoke.tuner_caller_messages",
+            "classes": [
+              "R"
+            ]
+          }
+        ],
+        "min_rung_by_class": {
+          "R": 0
+        },
+        "rung_status": "not enforced (surface does not read rungs)",
+        "rung_enforced": false,
+        "controls": [
+          {
+            "name": "opt-in",
+            "owner": "Hosted.Enabled` must be set",
+            "status": "enforced",
+            "enforced": true
+          },
+          {
+            "name": "bind",
+            "owner": "Hosted.ListenAddr` (default `:0`)",
+            "status": "enforced — *note `:0` is all-interfaces, random port; not loopback-pinned*",
+            "enforced": true
+          },
+          {
+            "name": "protocols/transports",
+            "owner": "explicit allow-lists (`Hosted.Protocols`, `Hosted.Transports`)",
+            "status": "enforced",
+            "enforced": true
+          },
+          {
+            "name": "rate limiting",
+            "owner": "none at this surface",
+            "status": "declared (the alarm's rate policy applies to *monitored targets*, not to this surface)",
+            "enforced": false
+          }
+        ]
+      },
+      {
+        "id": "workspace-<session>",
+        "sheet": "workspace.md",
+        "owner": "`github.com/james-gibson/lab-safety`, module `lab/workspaces`",
+        "endpoint": "`POST http://<addr>/mcp` (`-addr`, default `127.0.0.1:0` — ephemeral)",
+        "transport": "HTTP; JSON-RPC 2.0 per POST. `GET` returns `{ok, session, protocolVersion}`, not MCP",
+        "protocol": "`2024-11-05`",
+        "classes": [
+          "C",
+          "H",
+          "R",
+          "W"
+        ],
+        "tools": [
+          {
+            "name": "initialize",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "tools/list",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "tools/call",
+            "classes": [
+              "W"
+            ]
+          },
+          {
+            "name": "resources/list",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "resources/read",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "prompts/list",
+            "classes": [
+              "R"
+            ]
+          },
+          {
+            "name": "prompts/get",
+            "classes": [
+              "C"
+            ]
+          },
+          {
+            "name": "resources/subscribe",
+            "classes": [
+              "H"
+            ]
+          },
+          {
+            "name": "resources/unsubscribe",
+            "classes": [
+              "H"
+            ]
+          }
+        ],
+        "min_rung_by_class": {
+          "C": 0,
+          "H": 0,
+          "R": 0,
+          "W": 3
+        },
+        "rung_enforced": false,
+        "controls": [
+          {
+            "name": "bind",
+            "owner": "-addr`, default `127.0.0.1:0` (loopback, ephemeral)",
+            "status": "enforced by the flag; pinning is a deployment choice",
+            "enforced": true
+          },
+          {
+            "name": "body limit",
+            "owner": "1 MiB per request",
+            "status": "enforced (`http.go` → `maxbody`)",
+            "enforced": true
+          },
+          {
+            "name": "rate limiting",
+            "owner": "none at this surface",
+            "status": "declared, not implemented",
+            "enforced": false
+          },
+          {
+            "name": "kill switch",
+            "owner": "delete the session's store → every method answers `-32001` with the process still up",
+            "status": "enforced",
+            "enforced": true
+          },
+          {
+            "name": "stop",
+            "owner": "SIGINT`/`SIGTERM` deregisters the name and stops the listener",
+            "status": "enforced",
+            "enforced": true
+          }
+        ]
+      }
+    ],
+    "timing": {
+      "standardized_latency_ms": 250,
+      "jitter_ms": 50
+    },
+    "grants": {
+      "provider": "token-issuance",
+      "required": true,
+      "unit_value": 0.01,
+      "currency": "USD"
+    }
+  }
+}

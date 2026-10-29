@@ -1,0 +1,55 @@
+# The policy manifest: what the lab publishes, and what it sells.
+#
+# The safety half of the manifest is generated from sheets/*.md — do not repeat
+# a surface's tools or rungs here. This file carries only what a sheet must not:
+# the issuer's endpoints, the price of a token, and which skills a token buys.
+#
+# A price is per credential. It buys one tear-sheet skill for as long as the
+# token is valid; it is not a per-request meter, and it does not price load.
+
+issuer: https://lezz.go
+authorization_endpoint: https://lezz.go/v1/auth
+token_endpoint: https://lezz.go/v1/token
+registration_endpoint: https://lezz.go/api/v1/gate/{{token_id}}/register
+
+grants:
+  provider: token-issuance
+  required: true
+  unit_value: 0.01
+  currency: USD
+
+# The barista prototype's "temporal cloak". It is carried so the manifest states
+# it, not so a surface can rely on it: a client-side beat is not verifiable by
+# the surface, and rung 4 of the 42i lattice requires timing to be uncorrelated.
+timing:
+  standardized_latency_ms: 250
+  jitter_ms: 50
+
+skills:
+  # A thinking-signature receipt: the caller must produce it, so the token buys
+  # the right to be asked for one.
+  - scope: isotope:th_sig
+    tool: adhd.rung.respond
+    note: thinking-signature receipt the caller must produce
+    price: {amount: 0.01, currency: USD, unit: token}
+
+  # The "liquidity anchor": a paid credential for path negotiation. The token is
+  # the collateral, not the request.
+  - scope: anchor:l_anc
+    tool: adhd.path.negotiate
+    note: paid credential before negotiating a path
+    price: {amount: 0.01, currency: USD, unit: token}
+
+  # Path rotation: a token buys a rotating path claim.
+  - scope: path:p_rot
+    tool: adhd.path.verify
+    note: rotating path claim
+    price: {amount: 0.01, currency: USD, unit: token}
+
+  # A dynamic skill, registered at runtime per project. This is the case the
+  # price exists for: `adhd.cluster.join` can install tools after startup, so a
+  # static sheet cannot be the thing a caller was charged for.
+  - scope: project:call
+    tool: adhd.project.<name>.call
+    note: per-project proxy tool, installed at runtime
+    price: {amount: 0.01, currency: USD, unit: token}
