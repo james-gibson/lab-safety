@@ -1,8 +1,8 @@
 {
-  "issuer": "https://lezz.go",
-  "authorization_endpoint": "https://lezz.go/v1/auth",
-  "token_endpoint": "https://lezz.go/v1/token",
-  "registration_endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+  "issuer": "https://issuer.example",
+  "authorization_endpoint": "https://issuer.example/v1/auth",
+  "token_endpoint": "https://issuer.example/v1/token",
+  "registration_endpoint": "https://issuer.example/api/v1/gate/{{token_id}}/register",
   "x_lab_safety_manifest": {
     "version": "0.1.0",
     "status": "declared",
@@ -29,7 +29,7 @@
           "unit": "token"
         },
         "gate": {
-          "endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+          "endpoint": "https://issuer.example/api/v1/gate/{{token_id}}/register",
           "enforcement": "declared",
           "note": "the token is issued by pennies.grant but no surface is known to read it"
         },
@@ -50,7 +50,7 @@
           "unit": "token"
         },
         "gate": {
-          "endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+          "endpoint": "https://issuer.example/api/v1/gate/{{token_id}}/register",
           "enforcement": "enforced",
           "note": "the surface refuses this tool without a token; `lab-safety check --probe --gate` verifies it"
         },
@@ -70,7 +70,7 @@
           "unit": "token"
         },
         "gate": {
-          "endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+          "endpoint": "https://issuer.example/api/v1/gate/{{token_id}}/register",
           "enforcement": "declared",
           "note": "the token is issued by pennies.grant but no surface is known to read it"
         },
@@ -90,7 +90,7 @@
           "unit": "token"
         },
         "gate": {
-          "endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+          "endpoint": "https://issuer.example/api/v1/gate/{{token_id}}/register",
           "enforcement": "declared",
           "note": "the token is issued by pennies.grant but no surface is known to read it"
         },
@@ -111,7 +111,7 @@
           "unit": "token"
         },
         "gate": {
-          "endpoint": "https://lezz.go/api/v1/gate/{{token_id}}/register",
+          "endpoint": "https://issuer.example/api/v1/gate/{{token_id}}/register",
           "enforcement": "declared",
           "note": "the token is issued by pennies.grant but no surface is known to read it"
         },

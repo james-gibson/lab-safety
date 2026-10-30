@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -282,6 +283,131 @@ func TestBuildEmptyPolicyIsDeclared(t *testing.T) {
 	}
 	if m.Body.Grants != nil {
 		t.Error("empty grants were emitted")
+	}
+}
+
+// The endpoints are URLs, so the loader must not accept something that only
+// looks like one: a value with no scheme and no host is a typo the manifest
+// would otherwise publish as a declaration.
+func TestLoadPolicyValidatesEndpoints(t *testing.T) {
+	tests := []struct{ name, yaml, wantErr string }{
+		{"placeholder", "issuer: https://issuer.example\n", ""},
+		{"templated registration",
+			`registration_endpoint: "https://issuer.example/api/v1/gate/{{token_id}}/register"`, ""},
+		{"no scheme", "token_endpoint: issuer.example/v1/token", "scheme"},
+		{"no host", "token_endpoint: https:///v1/token", "no host"},
+		{"wrong scheme", "authorization_endpoint: ftp://issuer.example/v1/auth", "scheme"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "skills.yaml")
+			if err := os.WriteFile(path, []byte(tc.yaml), 0o600); err != nil {
+				t.Fatalf("write policy: %v", err)
+			}
+			_, err := LoadPolicy(path)
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("error = %v, want one containing %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestPlaceholderHosts(t *testing.T) {
+	placeholders := []string{
+		"example.com", "example.net", "example.org", "auth.example.com",
+		"issuer.example", "gate.invalid", "svc.test", "localhost", "api.localhost",
+		"EXAMPLE.com.",
+	}
+	for _, host := range placeholders {
+		if !isPlaceholderHost(host) {
+			t.Errorf("%q is not recognised as reserved", host)
+		}
+	}
+
+	live := []string{"lezz.go", "auth.jamesgibson.dev", "127.0.0.1", "notexample.com", "test.example.org.evil"}
+	for _, host := range live {
+		if isPlaceholderHost(host) {
+			t.Errorf("%q was treated as reserved", host)
+		}
+	}
+}
+
+// The repository's own policy must stay on reserved ground while no issuer runs:
+// `https://lezz.go` parses, resolves nowhere, and reads as the real domain of the
+// Go module next door. That is the mistake this test keeps out of the manifest.
+func TestRepoPolicyIssuerIsReserved(t *testing.T) {
+	pol, err := LoadPolicy(filepath.Join("..", "..", "policy", "skills.yaml"))
+	if err != nil {
+		t.Fatalf("load policy: %v", err)
+	}
+	for _, raw := range []string{
+		pol.Issuer, pol.AuthorizationEndpoint, pol.TokenEndpoint, pol.RegistrationEndpoint,
+	} {
+		u, err := url.Parse(raw)
+		if err != nil {
+			t.Fatalf("%q does not parse: %v", raw, err)
+		}
+		if !isPlaceholderHost(u.Hostname()) {
+			t.Errorf("%q names a host that is not reserved: the manifest would advertise an issuer "+
+				"that does not exist (#32)", raw)
+		}
+	}
+}
+
+// A placeholder and an undeclared live endpoint are different findings: one says
+// the manifest names no issuer, the other says an issuer exists with no sheet.
+// Reporting the first as the second lets a placeholder pass for a surface.
+func TestCheckDistinguishesPlaceholderIssuer(t *testing.T) {
+	sheet, _ := ParseSheet(fixtureSheet)
+	sheet.ID = "fixture"
+
+	pol := &Policy{
+		Issuer:                "https://issuer.example",
+		AuthorizationEndpoint: "https://issuer.example/v1/auth",
+		TokenEndpoint:         "https://issuer.example/v1/token",
+		RegistrationEndpoint:  "https://issuer.example/api/v1/gate/{{token_id}}/register",
+		Skills: []SkillDecl{
+			{Scope: "exec:run", Tool: "fixture.exec", Price: Price{Amount: 0.01, Currency: "USD", Unit: "token"}},
+		},
+	}
+
+	findings, err := Check(Options{Sheets: []Sheet{sheet}, Policy: pol})
+	if err != nil {
+		t.Fatalf("check: %v", err)
+	}
+	placeholders := 0
+	for _, f := range findings {
+		if f.Severity == "error" {
+			t.Errorf("unexpected error: %+v", f)
+		}
+		if f.Code == "ISSUER-PLACEHOLDER" {
+			placeholders++
+		}
+	}
+	if placeholders != 3 {
+		t.Errorf("ISSUER-PLACEHOLDER findings = %d, want 3 (auth, token, registration)", placeholders)
+	}
+	if f, ok := finding("ISSUER-UNDECLARED", findings); ok {
+		t.Errorf("a reserved host was reported as an undeclared live surface: %+v", f)
+	}
+
+	pol.TokenEndpoint = "https://auth.jamesgibson.dev/v1/token"
+	findings, err = Check(Options{Sheets: []Sheet{sheet}, Policy: pol})
+	if err != nil {
+		t.Fatalf("check: %v", err)
+	}
+	if _, ok := finding("ISSUER-UNDECLARED", findings); !ok {
+		t.Errorf("a live endpoint was not reported as undeclared: %+v", findings)
+	}
+	if f, ok := finding("ISSUER-PLACEHOLDER", findings); ok && f.Subject == "token" {
+		t.Errorf("the live endpoint was called a placeholder: %+v", f)
 	}
 }
 
