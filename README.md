@@ -212,6 +212,85 @@ Lab-safety will import `github.com/james-gibson/isotope` for wire types and trus
 
 The **policy object** it will read is already being written down: one **safety data sheet per MCP surface** in the lab, in the 16-section SDS format and laid out as Gherkin, under [`sheets/`](sheets/README.md). A surface is not permissible until it is declared — and an SDS makes a surface that does not match its own documentation a failing test rather than a stale sentence.
 
+## The policy manifest
+
+The sheets are the declaration; the manifest is that declaration made machine-readable, so a
+caller can read a surface's hazard classes, minimum rungs and containment before it connects,
+and so a surface can be checked against its own sheet instead of being trusted to match it.
+
+```
+lab-safety manifest [--out=<path>]      # emit x_lab_safety_manifest
+lab-safety check [--json]               # contradictions and declared-not-enforced
+lab-safety check --probe=<url> --surface=<id>
+                                        # compare a live tools/list with its sheet
+lab-safety check --probe=<url> --surface=<id> --gate
+                                        # drive the token gate of enforced skills
+```
+
+Two halves, deliberately kept apart:
+
+| half | source | what it says |
+| --- | --- | --- |
+| safety | `sheets/*.md` | what the surface serves, its hazard classes, rungs, §5 controls |
+| commercial | [`policy/skills.yaml`](policy/skills.yaml) | the issuer's endpoints, the price of a token, which skills a token buys |
+
+A **skill** is a *tear-sheet*: a tool — often installed at runtime, the way
+`adhd.cluster.join` installs per-project proxies — that a caller may only reach with a token.
+The price is **per credential, not per request**. That distinction is the whole of the
+"liquidity anchor": one cent buys an identity, and an identity may call as often as the
+surface's rate policy allows. It does not make a request flood cost a cent per request, and
+the manifest must not say it does.
+
+Everything the manifest cannot stand behind is labelled `declared` rather than quietly
+implied. Today that is most of it: no surface issues or reads a token, so
+`lab-safety check` reports `GATE-NOT-ENFORCED`, `ISSUER-PLACEHOLDER` (the auth/token/register
+endpoints are on `issuer.example`, so the manifest names no issuer that could be called —
+`ISSUER-UNDECLARED` is the same finding for a live endpoint with no sheet), and
+`RUNG-NOT-ENFORCED` for every surface whose §7
+says the gate is not read. The prototype's **temporal cloak** is carried as
+`x_lab_safety_manifest.timing` and reported as `TIMING-UNENFORCEABLE`: a beat is written in a
+manifest the caller can read, so it distinguishes nothing, and rung 4 of the 42i lattice
+requires timing to be *uncorrelated* — the cloak would make timing the credential.
+
+The name in the issue was `x_barista_manifest`. The key is `x_lab_safety_manifest` because the
+document is a policy declaration, not a persona's menu; a surface's "secret menu" is its sheet.
+
+### Testing the invariants
+
+A declaration is only worth the surface it is checked against. `lab/pennies` is that surface: a
+harness MCP endpoint whose tools are **installed at runtime** — a handshake
+(`barista.manifest`), an issuer (`pennies.grant`), and a priced path (`barista.path`) that
+refuses without a penny from the current rotation and accepts one the issuer just minted.
+It is declared in [`sheets/pennies.md`](sheets/pennies.md) and its price and gate are in
+`policy/skills.yaml`, so the ordinary manifest includes it.
+
+```sh
+go run ./lab/pennies/cmd/pennies-mcp --addr=127.0.0.1:18099 &
+lab-safety check --probe=http://127.0.0.1:18099/mcp --surface=pennies --gate
+#  note  GATE-VERIFIED   barista:path  refused without a token and accepted one from pennies.grant
+#  note  PROBE-OK        pennies       …
+```
+
+The harness can also be wrong on purpose, which is what makes it a test:
+
+| started with | the checker must say |
+| --- | --- |
+| `--enforce=false` | `GATE-OPEN` (error): the priced tool answered without a token |
+| `--register-undeclared` | `PROBE-TOOLS-EXTRA` (error): served a tool no sheet declares |
+| no `--gate` | `GATE-UNVERIFIED` (note): "enforced" is a claim, not a result |
+| `--unbilled-replay` | the ledger's own delta: `accepted 2, recorded 1`. Not a checker state — the surface accepts a second redemption and does not record it. |
+
+That last row is the accounting invariant, and it is a different thing from a replay. A
+penny is a credential, so presenting it twice is a **second use**, and a second use is a second
+bill: refusing it would punish the retry that at-least-once delivery produces. What must not
+happen is an accepted use that leaves no record — the **unbilled delta**. `pennies.status`
+reports `granted/accepted/recorded`, and `lab/pennies/server_test.go` pins both directions: the
+honest surface bills the replay, the broken one leaves `unbilled: 1`.
+
+`lab/pennies/invariants_test.go` runs all four against the real sheets and policy, so the
+checker is itself checked: the harness that passes its declaration has to pass, and the harness
+that is lying has to fail.
+
 ---
 
 ## How the Tools Connect
