@@ -2,7 +2,9 @@ package policy
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -95,6 +97,10 @@ func LoadPolicy(path string) (*Policy, error) {
 }
 
 func (p *Policy) validate() error {
+	if err := p.validateEndpoints(); err != nil {
+		return err
+	}
+
 	seen := map[string]bool{}
 	for i, s := range p.Skills {
 		if s.Scope == "" {
@@ -118,4 +124,59 @@ func (p *Policy) validate() error {
 		}
 	}
 	return nil
+}
+
+// validateEndpoints requires every endpoint the policy publishes to be an
+// absolute http(s) URL with a host. A placeholder is a URL that will not
+// resolve; it is not a URL that cannot be parsed, and a value like
+// "issuer.example/v1/auth" or "https:///v1/auth" is neither a placeholder nor a
+// reachable endpoint — it is a typo that the manifest would publish as fact.
+func (p *Policy) validateEndpoints() error {
+	for _, endpoint := range []struct{ field, raw string }{
+		{"issuer", p.Issuer},
+		{"authorization_endpoint", p.AuthorizationEndpoint},
+		{"token_endpoint", p.TokenEndpoint},
+		{"registration_endpoint", p.RegistrationEndpoint},
+	} {
+		if endpoint.raw == "" {
+			continue
+		}
+		u, err := url.Parse(endpoint.raw)
+		if err != nil {
+			return fmt.Errorf("%s %q: %w", endpoint.field, endpoint.raw, err)
+		}
+		if u.Scheme != "https" && u.Scheme != "http" {
+			return fmt.Errorf("%s %q: scheme must be http or https, got %q",
+				endpoint.field, endpoint.raw, u.Scheme)
+		}
+		if u.Hostname() == "" {
+			return fmt.Errorf("%s %q: no host", endpoint.field, endpoint.raw)
+		}
+	}
+	return nil
+}
+
+// isPlaceholderHost reports whether a host is a reserved name that cannot
+// belong to a live issuer: RFC 2606 (example.com/net/org, .example, .invalid,
+// .test) and RFC 6761 (localhost). `.go` is not one of these — lezz.go is a
+// repository name, not a registrable domain — which is why a policy can only be
+// required to parse and to admit when it is living on reserved ground.
+func isPlaceholderHost(host string) bool {
+	h := strings.ToLower(strings.TrimSuffix(host, "."))
+	if h == "" {
+		return false
+	}
+	if h == "localhost" || strings.HasSuffix(h, ".localhost") {
+		return true
+	}
+	switch h {
+	case "example", "example.com", "example.net", "example.org":
+		return true
+	}
+	for _, suffix := range []string{".example", ".invalid", ".test", ".example.com", ".example.net", ".example.org"} {
+		if strings.HasSuffix(h, suffix) {
+			return true
+		}
+	}
+	return false
 }

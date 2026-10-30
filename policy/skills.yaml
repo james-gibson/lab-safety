@@ -7,10 +7,16 @@
 # A price is per credential. It buys one tear-sheet skill for as long as the
 # token is valid; it is not a per-request meter, and it does not price load.
 
-issuer: https://lezz.go
-authorization_endpoint: https://lezz.go/v1/auth
-token_endpoint: https://lezz.go/v1/token
-registration_endpoint: https://lezz.go/api/v1/gate/{{token_id}}/register
+# There is no live issuer yet (#32). These are reserved `.example` hosts, so the
+# published manifest names an endpoint that could never resolve instead of one
+# that merely does not answer: `lezz.go` is a repository name, not a registrable
+# domain, and a committed manifest must not advertise it as an issuer. `check`
+# reports the four as ISSUER-PLACEHOLDER, not ISSUER-UNDECLARED, until a real
+# issuer replaces them.
+issuer: https://issuer.example
+authorization_endpoint: https://issuer.example/v1/auth
+token_endpoint: https://issuer.example/v1/token
+registration_endpoint: https://issuer.example/api/v1/gate/{{token_id}}/register
 
 grants:
   provider: token-issuance

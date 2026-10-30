@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -149,6 +150,22 @@ func Check(opts Options) ([]Finding, error) {
 		{"registration", opts.Policy.RegistrationEndpoint},
 	} {
 		if endpoint.url == "" {
+			continue
+		}
+		// A reserved host cannot serve an issuer, so the honest finding is that
+		// the manifest names a placeholder — not that a live surface is missing
+		// from the sheets. Collapsing the two would make an example value look
+		// like an undeclared endpoint, which is the ambiguity that lets a
+		// placeholder pass for an issuer.
+		if u, err := url.Parse(endpoint.url); err == nil && isPlaceholderHost(u.Hostname()) {
+			findings = append(findings, Finding{
+				Severity: "note",
+				Code:     "ISSUER-PLACEHOLDER",
+				Subject:  endpoint.kind,
+				Detail: fmt.Sprintf("%s is published at %s, a reserved domain: nothing serves an "+
+					"issuer there, so the manifest names a placeholder rather than a surface",
+					endpoint.url, u.Hostname()),
+			})
 			continue
 		}
 		findings = append(findings, Finding{

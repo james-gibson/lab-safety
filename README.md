@@ -239,8 +239,10 @@ the manifest must not say it does.
 
 Everything the manifest cannot stand behind is labelled `declared` rather than quietly
 implied. Today that is most of it: no surface issues or reads a token, so
-`lab-safety check` reports `GATE-NOT-ENFORCED`, `ISSUER-UNDECLARED` (the auth/token/register
-endpoints have no sheet of their own), and `RUNG-NOT-ENFORCED` for every surface whose §7
+`lab-safety check` reports `GATE-NOT-ENFORCED`, `ISSUER-PLACEHOLDER` (the auth/token/register
+endpoints are on `issuer.example`, so the manifest names no issuer that could be called —
+`ISSUER-UNDECLARED` is the same finding for a live endpoint with no sheet), and
+`RUNG-NOT-ENFORCED` for every surface whose §7
 says the gate is not read. The prototype's **temporal cloak** is carried as
 `x_lab_safety_manifest.timing` and reported as `TIMING-UNENFORCEABLE`: a beat is written in a
 manifest the caller can read, so it distinguishes nothing, and rung 4 of the 42i lattice
