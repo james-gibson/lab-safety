@@ -21,6 +21,13 @@ type Server struct {
 // NewServer returns a store's MCP surface, ready to serve.
 func NewServer(s *Store) *Server { return &Server{protocol: NewProtocol(s)} }
 
+// NewNamedServer returns a store's MCP surface under an explicit name — the
+// agent's own surface, for example — so a watcher can tell it apart from the
+// session surface it shares a store with (adhd#63).
+func NewNamedServer(s *Store, name string) *Server {
+	return &Server{protocol: NewNamedProtocol(s, name)}
+}
+
 // RegisterTool binds a tool name to its stand-in implementation (the "@ file").
 func (s *Server) RegisterTool(name string, fn func([]byte) []byte) {
 	s.protocol.RegisterTool(name, fn)

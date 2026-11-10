@@ -57,6 +57,18 @@ func TestRegisterWithoutARegistryIsAnError(t *testing.T) {
 	}
 }
 
+// TestAgentNameIsDistinctFromSessionName pins the two-name split adhd#63 depends
+// on: the session surface and the agent surface are different nodes in the
+// registry, so a watcher can hold both without one masking the other.
+func TestAgentNameIsDistinctFromSessionName(t *testing.T) {
+	if SessionName("42") == AgentName("42") {
+		t.Fatalf("session and agent names must not collide")
+	}
+	if AgentName("42") != "workspace-agent-42" {
+		t.Fatalf("AgentName(42) = %q, want workspace-agent-42", AgentName("42"))
+	}
+}
+
 // isotopeRegistrationBody mirrors isotope.Registration; declared here so the test
 // asserts the *shape on the wire*, not our own struct's field names.
 type isotopeRegistrationBody struct {
