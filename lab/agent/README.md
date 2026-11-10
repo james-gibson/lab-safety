@@ -24,6 +24,27 @@ Stdout carries the ACP protocol; logs go to stderr. With `-spec` the store is
 seeded from the Gherkin and every declared tool gets the echo stand-in, as in
 `cmd/workspace-mcp`. Without it, a store that is not present is initialised.
 
+### Its own MCP surface
+
+By default the agent is stdio-only — that is all an editor needs. To make the
+agent *watchable* by name (adhd#63), it can also serve the session's MCP surface
+over HTTP **in its own process** and register it with a smoke-alarm isotope
+registry:
+
+```sh
+/tmp/workspace-agent -driver tmpdir -root /tmp/ws42/42 \
+  -addr 127.0.0.1:0 \
+  -smoke-alarm http://127.0.0.1:6100
+```
+
+`-addr` opens the listener (default `127.0.0.1:0` when `-smoke-alarm` is set and
+`-addr` is empty); `-smoke-alarm` registers it under `workspace-agent-42`
+(`AgentName`), distinct from the session surface's `workspace-42`. Because the
+surface is served by *this* process, a watcher that resolves `workspace-agent-42`
+through the registry (adhd's `localprobe`, adhd#62) is watching the agent's
+liveness — the surface dies with the agent, unlike a separate `workspace-mcp`
+process that can outlive it.
+
 ## In an editor
 
 Zed launches the binary as an agent over stdio. Add an `agent_servers` entry

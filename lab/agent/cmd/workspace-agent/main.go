@@ -15,9 +15,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"os"
 
 	acp "github.com/ironpark/acp-go"
@@ -28,13 +31,15 @@ import (
 )
 
 type options struct {
-	driver   string
-	root     string
-	session  string
-	specPath string
-	key      string
-	family   string
-	version  int
+	driver     string
+	root       string
+	session    string
+	specPath   string
+	key        string
+	family     string
+	version    int
+	addr       string
+	smokeAlarm string
 }
 
 func main() {
@@ -46,6 +51,8 @@ func main() {
 	flag.StringVar(&o.key, "key", "seed-42", "the session seed: the material the spec's isotope is signed with")
 	flag.StringVar(&o.family, "family", "workspace-vfs", "the spec's isotope family")
 	flag.IntVar(&o.version, "version", 1, "the spec's isotope version")
+	flag.StringVar(&o.addr, "addr", "", "serve the agent's own MCP surface on this HTTP address (e.g. 127.0.0.1:0); empty = stdio only")
+	flag.StringVar(&o.smokeAlarm, "smoke-alarm", "", "register the agent's MCP surface with this smoke-alarm isotope registry, so it is reached by name")
 	flag.Parse()
 
 	if o.root == "" {
@@ -70,8 +77,10 @@ func run(o options) error {
 	s := workspaces.New(drv, o.session)
 
 	toolNames := make([]string, 0)
+	var spec workspaces.SpecRef
+	haveSpec := false
 	if o.specPath != "" {
-		spec, err := workspaces.LoadSpec(o.specPath, []byte(o.key), o.family, o.version)
+		spec, err = workspaces.LoadSpec(o.specPath, []byte(o.key), o.family, o.version)
 		if err != nil {
 			return err
 		}
@@ -83,6 +92,7 @@ func run(o options) error {
 			return err
 		}
 		toolNames = want.Tools
+		haveSpec = true
 	} else if ok, err := s.Present(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -96,6 +106,44 @@ func run(o options) error {
 
 	log.SetOutput(os.Stderr)
 	log.Printf("workspace-agent session=%s driver=%s spec=%s", o.session, drv.Name(), o.specPath)
+
+	// The agent's own MCP surface (adhd#63): the same store, served by *this*
+	// process. A watcher that reaches it by name is watching the agent's
+	// liveness, not a separate surface process that can outlive it.
+	if o.addr != "" || o.smokeAlarm != "" {
+		srv := workspaces.NewNamedServer(s, workspaces.AgentName(o.session))
+		if haveSpec {
+			if err := workspaces.BindTools(srv, spec); err != nil {
+				return err
+			}
+		}
+
+		addr := o.addr
+		if addr == "" {
+			addr = "127.0.0.1:0"
+		}
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			return err
+		}
+		log.Printf("workspace-agent mcp listening http://%s/mcp", ln.Addr())
+
+		if o.smokeAlarm != "" {
+			name := workspaces.AgentName(o.session)
+			rec, err := workspaces.Register(ctx, o.smokeAlarm, name, ln.Addr().String())
+			if err != nil {
+				log.Printf("workspace-agent registration failed name=%s registry=%s: %v", name, o.smokeAlarm, err)
+			} else {
+				log.Printf("workspace-agent registered name=%s endpoint=%s rung=%d (%s)", rec.Name, rec.Endpoint, rec.TrustRung, rec.RungName)
+			}
+		}
+
+		go func() {
+			if err := http.Serve(ln, srv); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Printf("workspace-agent mcp server: %v", err)
+			}
+		}()
+	}
 
 	conn := acp1.NewAgentSideConnection(
 		func(c *acp1.AgentSideConnection) acp1.Agent {

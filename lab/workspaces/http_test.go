@@ -94,6 +94,35 @@ func names(res map[string]any, key, field string) []string {
 	return out
 }
 
+// TestANamedSurfaceAdvertisesItsOwnName is the adhd#63 split, taken on the wire:
+// the agent's own surface names itself `workspace-agent-42`, not the session
+// surface's `workspace-42`, so the registry and the wire agree on what a watcher
+// is watching even though both surfaces share one store.
+func TestANamedSurfaceAdvertisesItsOwnName(t *testing.T) {
+	drv, err := NewTmpDir(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = drv.Close() })
+
+	s := New(drv, "42")
+	if err := Seed(context.Background(), s, gateRef(t)); err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(NewNamedServer(s, AgentName("42")))
+	t.Cleanup(ts.Close)
+	endpoint := ts.URL + "/mcp"
+
+	init := handshake(t, endpoint, "initialize")
+	info, _ := init["serverInfo"].(map[string]any)
+	if info["name"] != "workspace-agent-42" {
+		t.Errorf("serverInfo = %v, want workspace-agent-42", init["serverInfo"])
+	}
+	// the surface still answers the full handshake, so adhd's localprobe
+	// (initialize + tools/list) reads it as healthy.
+	handshake(t, endpoint, "tools/list")
+}
+
 // TestTheWireContractIsTheProbers is A8 at rung 0: the handshake a separate
 // process performs — over a socket, not through the driver — is answered.
 func TestTheWireContractIsTheProbers(t *testing.T) {

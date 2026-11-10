@@ -32,6 +32,13 @@ import (
 // session is called.
 func SessionName(session string) string { return "workspace-" + session }
 
+// AgentName is the name the agent's own MCP surface registers under. It is
+// distinct from SessionName on purpose: the session surface (workspace-42) is
+// served by workspace-mcp, while the agent surface (workspace-agent-42) is served
+// by the workspace-agent process itself, so a watcher that resolves this name
+// (adhd#62) is watching the agent's liveness, not the session's (adhd#63).
+func AgentName(session string) string { return "workspace-agent-" + session }
+
 // Register puts a session's surface into the lab's isotope registry and returns
 // the record the registry assigned — including its trust rung.
 func Register(ctx context.Context, registryURL, name, endpoint string) (*isotope.Record, error) {

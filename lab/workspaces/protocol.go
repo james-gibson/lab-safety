@@ -16,12 +16,21 @@ const ProtocolVersion = "2024-11-05"
 // path — a reader speaks the protocol, not the driver (register §5, Phase 2).
 type Protocol struct {
 	store *Store
+	name  string
 	tools map[string]func([]byte) []byte
 }
 
-// NewProtocol returns an MCP surface over a store.
+// NewProtocol returns an MCP surface over a store, named as the session's
+// surface (SessionName).
 func NewProtocol(s *Store) *Protocol {
-	return &Protocol{store: s, tools: map[string]func([]byte) []byte{}}
+	return NewNamedProtocol(s, SessionName(s.session))
+}
+
+// NewNamedProtocol returns an MCP surface over a store under an explicit name.
+// A surface that is not the session's — the agent's own surface, for example —
+// names itself truthfully so the registry and the wire agree (adhd#63).
+func NewNamedProtocol(s *Store, name string) *Protocol {
+	return &Protocol{store: s, name: name, tools: map[string]func([]byte) []byte{}}
 }
 
 // RegisterTool binds a tool name to its stand-in implementation (the "@ file").
@@ -87,7 +96,7 @@ func (p *Protocol) dispatch(ctx context.Context, req rpcRequest) (any, *rpcError
 			"protocolVersion": ProtocolVersion,
 			"capabilities":    caps,
 			"serverInfo": map[string]any{
-				"name":    "workspace-" + p.store.Session(),
+				"name":    p.name,
 				"version": "0",
 			},
 		}, nil
