@@ -1,0 +1,59 @@
+name: wan-ingress
+
+# The fuzzing cadence from lab-safety#38: a 30s smoke per target on every PR,
+# ten minutes per target nightly, and a static build for both OSes and arches.
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 3 * * *"
+
+jobs:
+  smoke:
+    if: github.event_name != 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+      - name: Fuzz smoke — 30s per target
+        shell: bash
+        run: |
+          for target in FuzzResolveName FuzzQuarantineContract FuzzBorderForward FuzzCanonicalize FuzzConfig; do
+            go test ./internal/ingress -run='^$' -fuzz="^${target}$" -fuzztime=30s
+          done
+
+  cross-build:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: ./scripts/build-wan-ingress.sh
+
+  nightly-fuzz:
+    if: github.event_name == 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Fuzz — 10m per target
+        shell: bash
+        run: |
+          for target in FuzzResolveName FuzzQuarantineContract FuzzBorderForward FuzzCanonicalize FuzzConfig; do
+            go test ./internal/ingress -run='^$' -fuzz="^${target}$" -fuzztime=10m
+          done
