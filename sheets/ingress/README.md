@@ -73,8 +73,16 @@ the binary's claim cannot drift apart.
   wan-ingress and its signed border. Both call `adhd.proxy` with the same method,
   so only the boundary varies. The test asserts that an unsigned border copy and
   a caller without a token are refused, then reports latency with blue-latency's
-  own rank test. Per the lab's playbook, latency is the **cost** of the boundary;
-  the finding is whether trust is enforced.
+  own rank test. `--connection-mode hold|new` additionally keeps or closes the
+  ingress↔border and border↔target connections, exposing the connection-churn
+  cost in the border's own `/stats`. Per the lab's playbook, latency is the
+  **cost** of the boundary; the finding is whether trust is enforced.
+  Run both connection modes to get the churn comparison:
+
+  ```sh
+  python3 sheets/ingress/blue_adhd_proxy_test.py --calls 60 --connection-mode hold --out /tmp/blue-proxy-hold.json
+  python3 sheets/ingress/blue_adhd_proxy_test.py --calls 60 --connection-mode new  --out /tmp/blue-proxy-new.json
+  ```
 - **Self-healing.** The registry entry is a renewed lease with a best-effort
   delete on clean exit (the TTL remains authoritative until smoke-alarm#112);
   SIGHUP swaps bad config out without dropping the listener; a launchd/systemd

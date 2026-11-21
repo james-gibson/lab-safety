@@ -166,6 +166,8 @@ def verdict(mod, baseline: list[float], live: list[float]) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--calls", type=int, default=60, help="calls per path (>=50 for the rank test)")
+    ap.add_argument("--connection-mode", choices=("hold", "new"), default="hold",
+                    help="hold: reuse ingress↔border and border↔target connections; new: close each")
     ap.add_argument("--out", default=os.path.join(tempfile.gettempdir(), "blue-adhd-proxy-baseline.json"))
     args = ap.parse_args()
     if args.calls < 50:
@@ -232,6 +234,7 @@ def main() -> int:
         spawn([
             sys.executable, os.path.join(REPO, "sheets", "ingress", "border_adapter.py"),
             "--addr", border_addr, "--key", BORDER_KEY, "--target", target_mcp,
+            "--connection-mode", args.connection_mode,
         ], "border")
         wait_for("signed border", lambda: tcp_open(border_port))
 
@@ -294,6 +297,9 @@ def main() -> int:
         for label, ok in trust.items():
             print("   %-32s %s" % (label, "PASS" if ok else "FAIL"))
 
+        # Count only the measured path, not the one-off trust probes.
+        get("http://%s/stats/reset" % border_addr)
+
         print("\n## baseline metric — %d calls per path, method adhd.status" % args.calls)
         adhd_proxy_call(direct_mcp, target_mcp, "adhd.status", 0)
         adhd_proxy_call(ingress_mcp, forward_url, "adhd.status", 0)
@@ -323,6 +329,9 @@ def main() -> int:
                 if first_ingress_failure is None:
                     first_ingress_failure = (status, body)
 
+        border_stats_status, border_stats_body = get("http://%s/stats" % border_addr)
+        border_stats = json.loads(border_stats_body) if border_stats_status == 200 else {"error": "stats unavailable"}
+
         baseline = log_latencies(os.path.expanduser("~/Library/Logs/kb-adhd-%s.jsonl" % direct_name), "tools/call")
         live = log_latencies(os.path.expanduser("~/Library/Logs/kb-adhd-%s.jsonl" % ingress_name), "tools/call")
         mod = load_blue_latency()
@@ -342,6 +351,8 @@ def main() -> int:
                             "p95_ms": round(pct(ingress_ms, 0.95), 3)},
             },
             "overhead_median_ms": round(pct(ingress_ms, 0.5) - pct(direct_ms, 0.5), 3),
+            "connection_mode": args.connection_mode,
+            "border_stats": border_stats,
             "trust": trust,
             "blue_latency": rank,
             "note": "latency is the cost of the boundary, not a finding; the finding is unsigned-forward rejection",
@@ -354,6 +365,7 @@ def main() -> int:
         print("   ingress  p50 %.2fms p95 %.2fms ok=%s" % (
             result["paths"]["ingress"]["p50_ms"], result["paths"]["ingress"]["p95_ms"], ingress_ok))
         print("   overhead +%.2fms  (cost, not a finding)" % result["overhead_median_ms"])
+        print("   connections (%s): %s" % (args.connection_mode, border_stats))
         print("   blue-latency: p=%.6f  %s" % (rank["p_value"], rank["label"]))
         if first_direct_failure:
             print("   first direct failure: %s" % (first_direct_failure,))
