@@ -215,6 +215,12 @@ func newHandler(cfg Config, store *announce.Store, client *http.Client) http.Han
 		_ = json.NewEncoder(w).Encode(store.Status())
 	})
 
+	// le.ad: the empty desk. It is a connection point, never a content store.
+	mux.HandleFunc("/desk", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(store.Desk(cfg.Seed, cfg.Name, cfg.Slot))
+	})
+
 	// The inversion challenge: a monitor asks the upstream address plane to
 	// prove that the announced rotation is present on the cluster tick, not just
 	// on the node that made the claim.

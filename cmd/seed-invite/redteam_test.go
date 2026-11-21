@@ -95,6 +95,41 @@ func TestRedTeamForgedDNSRecordsCannotArmExpectation(t *testing.T) {
 	}
 }
 
+func TestRedTeamStaleLastSeenCannotKeepDeskOccupied(t *testing.T) {
+	// The attacker cannot forge a new signature, but they can replay the old
+	// TXT record. The desk must read the lease, not the lingering "last seen"
+	// entry: a stale record must not leave le.ad looking occupied.
+	now := int64(50)
+	store := announce.NewStoreWithClock(testKey, "seed-42", 5*time.Second, 0,
+		func() time.Time { return time.Unix(now, 0) })
+	a := redteamSigned(t, "seed-42", "wan-ingress", "slot-a", "rot-stale", "nonce-stale", 10)
+	if err := store.Add(a); err != nil {
+		t.Fatal(err)
+	}
+	cfg := testConfig("http://127.0.0.1:1")
+	cfg.Slot = "slot-a"
+	proxy := httptest.NewServer(newHandler(cfg, store, &http.Client{}))
+	defer proxy.Close()
+
+	now = 61 // two ticks plus slack
+	status := store.Status()
+	if _, ok := status.Last[a.Name+"/"+a.Slot]; !ok {
+		t.Fatal("test premise failed: the old rotation is no longer in status.Last")
+	}
+	resp, err := proxy.Client().Get(proxy.URL + "/desk")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var desk announce.Desk
+	if err := json.NewDecoder(resp.Body).Decode(&desk); err != nil {
+		t.Fatal(err)
+	}
+	if !desk.Empty || desk.Content != 0 || desk.LeaseUntil != nil {
+		t.Fatalf("stale desk = %+v, want empty with no lease", desk)
+	}
+}
+
 func TestRedTeamWrongTickCannotArmExpectation(t *testing.T) {
 	store, _ := testStore(t)
 	for _, tick := range []int64{9, 12, 1 << 40} {

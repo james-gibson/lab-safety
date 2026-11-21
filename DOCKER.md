@@ -48,10 +48,13 @@ can probe `/healthz` without adding curl or wget.
    curl -fsS http://127.0.0.1:8443/healthz
    curl -fsS http://127.0.0.1:8080/healthz
    curl -fsS http://127.0.0.1:8080/status
+   curl -fsS http://127.0.0.1:8080/desk
    ```
 
 Ports default to `8443` (ingress) and `8080` (address plane). Override with
-`WAN_INGRESS_PORT` and `SEED_INVITE_PORT`.
+`WAN_INGRESS_PORT` and `SEED_INVITE_PORT`. The `/desk` route is the le.ad empty
+desk: it reports `content: 0` and returns to `empty: true` when the signed
+rotation lease runs out. It never carries agreements or content.
 
 ## What "secured" means here
 

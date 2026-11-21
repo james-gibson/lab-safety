@@ -40,6 +40,59 @@ func testStore(t *testing.T) (*announce.Store, announce.Announcement) {
 	return store, a
 }
 
+func TestDeskEndpoint(t *testing.T) {
+	now := int64(50)
+	store := announce.NewStoreWithClock(testKey, "seed-42", 5*time.Second, 0,
+		func() time.Time { return time.Unix(now, 0) })
+	a, err := announce.Announcement{
+		Version:  1,
+		Seed:     "seed-42",
+		Name:     "wan-ingress",
+		Slot:     "slot-a",
+		Rotation: "rot-desk",
+		Tick:     10,
+		Nonce:    "nonce-desk",
+	}.Sign(testKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := testConfig("http://127.0.0.1:1")
+	cfg.Slot = "slot-a"
+	proxy := httptest.NewServer(newHandler(cfg, store, &http.Client{}))
+	defer proxy.Close()
+
+	getDesk := func() announce.Desk {
+		t.Helper()
+		resp, err := proxy.Client().Get(proxy.URL + "/desk")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("desk status = %d, want 200", resp.StatusCode)
+		}
+		var desk announce.Desk
+		if err := json.NewDecoder(resp.Body).Decode(&desk); err != nil {
+			t.Fatal(err)
+		}
+		return desk
+	}
+
+	if desk := getDesk(); !desk.Empty || desk.Content != 0 || desk.LeaseUntil != nil {
+		t.Fatalf("boot desk = %+v, want empty", desk)
+	}
+	if err := store.Add(a); err != nil {
+		t.Fatal(err)
+	}
+	if desk := getDesk(); desk.Empty || desk.Content != 0 || desk.Rotation != a.Rotation || desk.LeaseUntil == nil {
+		t.Fatalf("armed desk = %+v, want occupied with no content", desk)
+	}
+	now = 61
+	if desk := getDesk(); !desk.Empty || desk.Content != 0 || desk.LeaseUntil != nil {
+		t.Fatalf("expired desk = %+v, want empty", desk)
+	}
+}
+
 func testRegistry(t *testing.T, endpoint string) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

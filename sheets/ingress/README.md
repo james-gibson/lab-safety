@@ -27,6 +27,18 @@ Parts 10 and 11 were added by fuzz crashers found in `FuzzCanonicalize`:
 then failed to reparse. Both regression seeds live in
 `internal/ingress/testdata/fuzz/FuzzCanonicalize/`.
 
+The empty desk has its own Gherkin-first origin in
+[`le-ad-desk.feature`](le-ad-desk.feature), derived from
+[`le_ad_desk.sh`](le_ad_desk.sh). It is deliberately a separate declaration: the
+desk is an address-plane surface, not a new claim by the border.
+
+| field | value |
+| --- | --- |
+| isotope | `XnWmP4EMW6C3QTibqeRpd3EsU60UZxoq8wRwRRJBmxU` |
+| tokens | 20 |
+| parts | 3 |
+| signature prefix (key `seed-42`) | `0c3ab2637a830dfd…` |
+
 Parts 12–19 make the front a member of the lab rather than an anonymous port:
 the smoke-alarm handshake (deferred/healthy), the monitor's verdict when the
 process dies, the registry lease (renew/deregister), SIGHUP reload (rejected
@@ -178,6 +190,27 @@ systemd; `scripts/build-wan-ingress.sh` emits static `seed-invite` and
 registered isotope identity are unchanged — this is an address-plane addition,
 not a new claim by the border.
 
+### le.ad — the empty desk
+
+`le.ad` is the connection point the rotation plane points at; it is **not** a
+second authority. `seed-invite` exposes it as `GET /desk`, whose JSON always
+reports `content: 0`. While a signed expectation is inside its two-tick lease the
+desk reports `empty: false` with the `rotation`, `tick` and `lease_until`; once
+the lease runs out — or the ticket is consumed — it returns to `empty: true`
+with no `lease_until`. The lingering `last seen` announcement in `/status` is
+not enough to keep it occupied, which is the red-team regression in
+`TestRedTeamStaleLastSeenCannotKeepDeskOccupied`.
+
+The desk holds neither agreements nor content: it only states whether the
+seed-addressed connection point is currently live. The border remains the
+agreement + HMAC enforcement boundary, so a visitor cannot turn a desk lease
+into a forwarded call without the one-shot invite ticket.
+
+```sh
+curl -fsS http://127.0.0.1:18090/desk
+# {"seed":"seed-42","name":"wan-ingress","slot":"wan-ingress","content":0,"empty":true}
+```
+
 ### Red-team gate for the address plane
 
 Run [`red_team_seed_invite.sh`](red_team_seed_invite.sh) after any change to the
@@ -195,6 +228,7 @@ headers and stand up a lying peer; it does **not** hold the seed announcement ke
 | inversion challenge without a positive tick | `403` |
 | lying peer claims a rotation the node never saw | `403` |
 | local claim with no corroborating peer | `403` |
+| replayed TXT kept in `last seen` after lease expiry | `/desk` still reports `empty: true`, `content: 0` |
 | stolen rotation ticket plus attacker bearer token | real ingress returns `403`; no border call |
 
 The last case stands up the real `wan-ingress` server behind the address plane,

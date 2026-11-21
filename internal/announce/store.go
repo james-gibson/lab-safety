@@ -23,6 +23,20 @@ type Status struct {
 	Seen        []Announcement          `json:"seen"`
 }
 
+// Desk is the le.ad view: a connection point that holds no content. It is
+// non-empty only while a signed expectation is inside its lease window, and it
+// returns to empty when that lease runs out or the ticket is consumed.
+type Desk struct {
+	Seed       string     `json:"seed"`
+	Name       string     `json:"name"`
+	Slot       string     `json:"slot"`
+	Content    int        `json:"content"`
+	Empty      bool       `json:"empty"`
+	Rotation   string     `json:"rotation,omitempty"`
+	Tick       int64      `json:"tick,omitempty"`
+	LeaseUntil *time.Time `json:"lease_until,omitempty"`
+}
+
 // Store verifies announcements and holds the expectations they arm.
 type Store struct {
 	mu       sync.Mutex
@@ -167,4 +181,43 @@ func (s *Store) Status() Status {
 		Last:        last,
 		Seen:        seen,
 	}
+}
+
+// Desk reports the live lease for one slot. It prunes expired expectations on
+// the way out, so a desk whose lease has run out is reported as empty.
+func (s *Store) Desk(seed, name, slot string) Desk {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	now := s.now()
+	for key, exp := range s.expected {
+		if now.After(exp.ExpiresAt) {
+			delete(s.expected, key)
+		}
+	}
+
+	desk := Desk{Seed: seed, Name: name, Slot: slot, Content: 0, Empty: true}
+	var best Expectation
+	found := false
+	for _, exp := range s.expected {
+		a := exp.Announcement
+		if seed != "" && a.Seed != seed {
+			continue
+		}
+		if a.Name != name || a.Slot != slot {
+			continue
+		}
+		if !found || a.Tick > best.Announcement.Tick {
+			best = exp
+			found = true
+		}
+	}
+	if found {
+		until := best.ExpiresAt
+		desk.Empty = false
+		desk.Rotation = best.Announcement.Rotation
+		desk.Tick = best.Announcement.Tick
+		desk.LeaseUntil = &until
+	}
+	return desk
 }

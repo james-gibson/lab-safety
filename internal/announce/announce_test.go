@@ -102,3 +102,27 @@ func TestStoreExpiresExpectation(t *testing.T) {
 		t.Fatal("expired expectation was accepted")
 	}
 }
+
+func TestDeskReturnsToEmptyWhenLeaseRunsOut(t *testing.T) {
+	now := int64(50)
+	a := signedAnnouncement(t, 10)
+	store := NewStoreWithClock(testKey, "seed-42", 5*time.Second, 0,
+		func() time.Time { return time.Unix(now, 0) })
+	if err := store.Add(a); err != nil {
+		t.Fatal(err)
+	}
+
+	desk := store.Desk("seed-42", a.Name, a.Slot)
+	if desk.Empty || desk.Content != 0 || desk.Rotation != a.Rotation || desk.LeaseUntil == nil {
+		t.Fatalf("live desk = %+v, want occupied with no content", desk)
+	}
+	if got := desk.LeaseUntil.Unix(); got != 60 {
+		t.Fatalf("lease until = %d, want 60", got)
+	}
+
+	now = 61 // past the two-tick lease
+	desk = store.Desk("seed-42", a.Name, a.Slot)
+	if !desk.Empty || desk.Content != 0 || desk.LeaseUntil != nil {
+		t.Fatalf("expired desk = %+v, want empty with no lease", desk)
+	}
+}
