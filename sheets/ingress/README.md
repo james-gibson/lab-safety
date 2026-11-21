@@ -177,3 +177,26 @@ systemd; `scripts/build-wan-ingress.sh` emits static `seed-invite` and
 `seed-announce` artifacts alongside `wan-ingress`. The feature file and the
 registered isotope identity are unchanged — this is an address-plane addition,
 not a new claim by the border.
+
+### Red-team gate for the address plane
+
+Run [`red_team_seed_invite.sh`](red_team_seed_invite.sh) after any change to the
+announce format, tick rules, expectation store or invite handler. The attacker in
+these tests can write DNS/mDNS `TXT` records, guess nonces, replay traffic, choose
+headers and stand up a lying peer; it does **not** hold the seed announcement key.
+
+| attack | expected result |
+| --- | --- |
+| forged HMAC, wrong seed, wrong slot in a poisoned DNS record | record ignored, no expectation armed |
+| tick in the past or more than one tick ahead | record rejected as replay/skew |
+| nonce presented with a different invite | `403`, does not burn the right expectation |
+| replayed nonce after one successful call | `403`, no second forward |
+| 16 simultaneous callers with one nonce | exactly one winner, one backend call |
+| inversion challenge without a positive tick | `403` |
+| lying peer claims a rotation the node never saw | `403` |
+| local claim with no corroborating peer | `403` |
+| stolen rotation ticket plus attacker bearer token | real ingress returns `403`; no border call |
+
+The last case stands up the real `wan-ingress` server behind the address plane,
+so the test proves the rotation ticket is **not** a bearer token: the agreement
+and HMAC border remain the enforcement boundary.

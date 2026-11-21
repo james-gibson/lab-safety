@@ -187,6 +187,21 @@ func statusHasRotation(status announce.Status, name, rotation string, tick int64
 	return false
 }
 
+// announcementSink is the only path from a DNS/mDNS record into the store. It
+// pins the configured slot as well as the seed so a signed record for a different
+// slot cannot arm this process.
+func announcementSink(cfg Config, store *announce.Store) func(announce.Announcement) {
+	return func(a announce.Announcement) {
+		if cfg.Slot != "" && a.Slot != cfg.Slot {
+			log.Printf("ignore announcement %q: slot %q is not configured %q", a.Rotation, a.Slot, cfg.Slot)
+			return
+		}
+		if err := store.Add(a); err != nil {
+			log.Printf("ignore announcement %q: %v", a.Rotation, err)
+		}
+	}
+}
+
 func newHandler(cfg Config, store *announce.Store, client *http.Client) http.Handler {
 	mux := http.NewServeMux()
 
@@ -209,7 +224,13 @@ func newHandler(cfg Config, store *announce.Store, client *http.Client) http.Han
 			name = cfg.Name
 		}
 		rotation := r.URL.Query().Get("rotation")
-		tick, _ := strconv.ParseInt(r.URL.Query().Get("tick"), 10, 64)
+		tick, err := strconv.ParseInt(r.URL.Query().Get("tick"), 10, 64)
+		if err != nil || tick <= 0 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_ = json.NewEncoder(w).Encode(challengeResult{Name: name, Rotation: rotation})
+			return
+		}
 		local := store.Confirm(name, rotation, tick)
 		result := challengeResult{Confirmed: local, Local: local, Name: name, Rotation: rotation, Tick: tick}
 		for _, peer := range cfg.Peers {
@@ -376,15 +397,7 @@ func main() {
 	store := announce.NewStore(keyBytes, cfg.Seed, interval, cfg.TickOffset)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	sink := func(a announce.Announcement) {
-		if cfg.Slot != "" && a.Slot != cfg.Slot {
-			log.Printf("ignore announcement %q: slot %q is not configured %q", a.Rotation, a.Slot, cfg.Slot)
-			return
-		}
-		if err := store.Add(a); err != nil {
-			log.Printf("ignore announcement %q: %v", a.Rotation, err)
-		}
-	}
+	sink := announcementSink(cfg, store)
 	if cfg.DNSDomain != "" {
 		source := &announce.DNSSource{Domain: cfg.DNSDomain, Interval: interval, Lookup: nil}
 		go func() {
