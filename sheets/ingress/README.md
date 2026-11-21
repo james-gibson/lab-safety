@@ -87,3 +87,26 @@ the binary's claim cannot drift apart.
   delete on clean exit (the TTL remains authoritative until smoke-alarm#112);
   SIGHUP swaps bad config out without dropping the listener; a launchd/systemd
   unit (`scripts/`) gives crash recovery on the host.
+
+## Operating it — network access is not enough
+
+Installing the binary and opening a port buys you a listener that refuses
+everything. The defaults are fail-closed, so a deployment needs operator-owned
+inputs before it forwards a single byte:
+
+| input | default | without it |
+| --- | --- | --- |
+| agreements | none | every name quarantines `unknown`; no address is ever guessed from the request |
+| admission token | empty | every `/resolve` and `/forward` caller is `untrusted` (403) |
+| border key and agreed `border` | empty | `border_unconfigured` (422); no payload crosses the boundary |
+| smoke-alarm registry | empty | no `wan-ingress` lease, so nobody can address the front by name |
+| a real border service | not shipped | nothing understands the signed envelope; `border_adapter.py` is only a test double |
+
+`scripts/install-wan-ingress.sh` therefore has no usable default config: it
+requires `CONFIG=...`. Copy
+[`configs/wan-ingress.example.json`](../../configs/wan-ingress.example.json) and
+[`configs/wan-ingress-agreements.example.json`](../../configs/wan-ingress-agreements.example.json)
+as shapes, fill in the real token, HMAC key, border URL and registry, then install
+that file. Only then does `/readyz` go green and `/mcp` advertise
+`"ingress":"forward"` — and only after agreed traffic has actually crossed the
+border.

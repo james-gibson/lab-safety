@@ -9,16 +9,20 @@
 #   CONFIG=./configs/wan-ingress.json \
 #   ./scripts/install-wan-ingress.sh
 #
+# CONFIG is deliberately required. There is no ready-made policy: copy
+# configs/wan-ingress.example.json, fill in the operator-owned token, border key,
+# agreement path and registry, then install that file.
+#
 # Override HOME/LOGDIR to install somewhere other than the user's agents.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BINARY="${BINARY:-$HERE/../dist/wan-ingress}"
-CONFIG="${CONFIG:-$HERE/../configs/wan-ingress.json}"
 LOGDIR="${LOGDIR:-$HOME/Library/Logs}"
 
-[ -x "$BINARY" ] || { echo "binary not found or not executable: $BINARY" >&2; exit 1; }
+[ -n "${CONFIG:-}" ] || { echo "CONFIG is required; copy configs/wan-ingress.example.json and fill it in" >&2; exit 1; }
 [ -f "$CONFIG" ] || { echo "config not found: $CONFIG" >&2; exit 1; }
+[ -x "$BINARY" ] || { echo "binary not found or not executable: $BINARY" >&2; exit 1; }
 BINARY="$(cd "$(dirname "$BINARY")" && pwd)/$(basename "$BINARY")"
 CONFIG="$(cd "$(dirname "$CONFIG")" && pwd)/$(basename "$CONFIG")"
 mkdir -p "$LOGDIR"
