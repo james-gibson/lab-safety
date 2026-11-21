@@ -17,13 +17,14 @@ gave the same identity:
 
 | field | value |
 | --- | --- |
-| isotope | `m9IezbqaBCfurSzt6AwDc1axgBrbhnt2gGXAQY7jjfs` |
-| tokens | 67 |
-| parts | 10 |
-| signature prefix (key `seed-42`) | `8116a1f2adf728c8…` |
+| isotope | `6Ond5kxsQgMt43RBzU2kRcsrdAvTbLFPzCWYqUHNrj4` |
+| tokens | 73 |
+| parts | 11 |
+| signature prefix (key `seed-42`) | `36adf48859846abc…` |
 
-The tenth part was added by a fuzz crasher (`"0 ."` was canonicalised with a
-trailing space, then changed again on a second read); the regression seed lives
+Two parts were added by fuzz crashers found in `FuzzCanonicalize`: `"0 ."`
+was canonicalised with a trailing space (tenth part), and `"%25"` decoded to
+`"%"` which then failed to reparse (eleventh part). Both regression seeds live
 in `internal/ingress/testdata/fuzz/FuzzCanonicalize/`.
 
 Re-check with:

@@ -32,7 +32,10 @@ func ParseName(raw string) (string, error) {
 		!utf8.ValidString(decoded) || hasControl(decoded) {
 		return "", ErrMalformed
 	}
-	if strings.ContainsAny(decoded, "/\\") || strings.Contains(decoded, "..") {
+	// A decoded '%' would be read as another escape on the next pass (and a
+	// bare '%' is a malformed escape), so the canonical form would not be a
+	// valid raw name. Refuse it here; one decode, one interpretation.
+	if strings.ContainsAny(decoded, "/\\%") || strings.Contains(decoded, "..") {
 		return "", ErrMalformed
 	}
 

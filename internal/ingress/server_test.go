@@ -184,7 +184,19 @@ func TestTrailingDotNameCanonicalizesToAgreedKey(t *testing.T) {
 	}
 }
 
-// Scenario 7: a known name reaches only the agreed border, with a signature.
+// Fuzz regression 5f8f3f6c02d5868c: "%25" must not become a canonical name
+// that fails to reparse.
+func TestEncodedPercentQuarantined(t *testing.T) {
+	srv := testServer(t, sampleResolver(t), &Forwarder{BorderKey: []byte(testKey)}, testToken)
+	defer srv.Close()
+
+	status, body := doRequest(t, srv.Client(), http.MethodGet, srv.URL+"/resolve?name=%2525", authHeaders())
+	if status != http.StatusUnprocessableEntity || decisionFrom(t, body).Reason != "malformed" {
+		t.Fatalf("status = %d, body = %s; want quarantine/malformed", status, body)
+	}
+}
+
+// Scenario 8: a known name reaches only the agreed border, with a signature.
 func TestForwardReachesOnlyAgreedBorderSigned(t *testing.T) {
 	border, attacker := &capture{}, &capture{}
 	borderSrv, attackerSrv := httptest.NewServer(border), httptest.NewServer(attacker)
@@ -217,7 +229,7 @@ func TestForwardReachesOnlyAgreedBorderSigned(t *testing.T) {
 	}
 }
 
-// Scenario 8: a known name is quarantined when no border key is configured.
+// Scenario 9: a known name is quarantined when no border key is configured.
 func TestNoBorderKeyQuarantines(t *testing.T) {
 	border := &capture{}
 	borderSrv := httptest.NewServer(border)
@@ -240,7 +252,7 @@ func TestNoBorderKeyQuarantines(t *testing.T) {
 	}
 }
 
-// Scenario 9: health answers without any agreements.
+// Scenario 10: health answers without any agreements.
 func TestHealthWithoutConfig(t *testing.T) {
 	srv := testServer(t, nil, nil, "")
 	defer srv.Close()
@@ -254,7 +266,7 @@ func TestHealthWithoutConfig(t *testing.T) {
 	}
 }
 
-// Scenario 10: a quarantine is visible on the status surface.
+// Scenario 11: a quarantine is visible on the status surface.
 func TestQuarantineVisibleOnStatus(t *testing.T) {
 	observer := NewObserver()
 	server := &Server{Resolver: sampleResolver(t), Forwarder: &Forwarder{BorderKey: []byte(testKey)}, Token: testToken, Observer: observer}

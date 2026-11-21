@@ -33,6 +33,9 @@ func TestParseName(t *testing.T) {
 		{raw: "%34%32", want: "42"},
 		{raw: "0 .", want: "0"}, // fuzz regression: trim to a fixed point, not one pass
 		{raw: "0%20.", want: "0"},
+		{raw: "%25", fail: true}, // fuzz regression 5f8f3f6c02d5868c: a decoded % cannot be reparsed
+		{raw: "%", fail: true},
+		{raw: "42%2525", fail: true},
 		{raw: "", fail: true},
 		{raw: "%00", fail: true},
 		{raw: "a/../b", fail: true},

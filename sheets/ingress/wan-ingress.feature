@@ -66,6 +66,15 @@ Feature: WAN ingress — the resolver forwards only by agreement
     And the JSON field "decision" is "forward"
     And the JSON field "namespace" is "session-42"
 
+  # Fuzz regression 5f8f3f6c02d5868c: "%25" decoded to "%" and then stopped
+  # being a valid raw name on the next read. One decode, one interpretation.
+  Scenario: an encoded percent is quarantined rather than reparsed
+    Given a fresh process with an agreement mapping "42" to namespace "session-42" at an agreed border
+    When I run "curl -sS -w '\n%{http_code}' '<addr>/resolve?name=%2525' -H 'Authorization: Bearer <token>'"
+    Then the command exits 0
+    And the final line is "422"
+    And the JSON field "reason" is "malformed"
+
   Scenario: a known name reaches only the agreed border with a signature
     Given a fresh process with a capturing border and an agreement mapping "42" to namespace "session-42"
     When I run "curl -sS -X POST '<addr>/forward?name=42' -H 'Authorization: Bearer <token>' -H 'X-Lab-Address: http://attacker.invalid'"

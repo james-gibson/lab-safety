@@ -108,4 +108,5 @@ lab-level choice for distribution.
   runs a 30s smoke per target on every PR, a 10m nightly per target on Linux
   and macOS runners, and the four-artifact static cross-build. Crashers become
   `testdata/fuzz/` regressions and update the feature, not just the code — the
-  `"0 ."` non-idempotence found by `FuzzCanonicalize` is the first example.
+  `"0 ."` non-idempotence and the `%25` reparse failure found by
+  `FuzzCanonicalize` are the first two examples.

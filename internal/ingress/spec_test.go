@@ -11,9 +11,9 @@ import (
 
 // TestFeatureIsTheOrigin is the Gherkin-first gate: the binary's declaration
 // is read by isotope itself, from the same feature the shell-to-gherkin canon
-// validated (isotope m9IezbqaBCfurSzt6AwDc1axgBrbhnt2gGXAQY7jjfs, 67 tokens,
-// 10 parts, including the fuzz-regression scenario). The validator's result and
-// this test cannot drift independently.
+// validated (isotope 6Ond5kxsQgMt43RBzU2kRcsrdAvTbLFPzCWYqUHNrj4, 73 tokens,
+// 11 parts, including the two fuzz-regression scenarios). The validator's
+// result and this test cannot drift independently.
 func TestFeatureIsTheOrigin(t *testing.T) {
 	path := filepath.Join("..", "..", "sheets", "ingress", "wan-ingress.feature")
 	raw, err := os.ReadFile(path)
