@@ -67,6 +67,14 @@ the binary's claim cannot drift apart.
   that name from the registry (what a seed-42 invite ultimately points to) and
   forwards both the monitor probe and the data-plane call. No caller carries
   the ingress port.
+- **Blue-team baseline.** [`blue_adhd_proxy_test.py`](blue_adhd_proxy_test.py)
+  stands up two caller adhd proxies, a target adhd and a harness border. One
+  caller reaches the target directly; the other reaches it by invite through
+  wan-ingress and its signed border. Both call `adhd.proxy` with the same method,
+  so only the boundary varies. The test asserts that an unsigned border copy and
+  a caller without a token are refused, then reports latency with blue-latency's
+  own rank test. Per the lab's playbook, latency is the **cost** of the boundary;
+  the finding is whether trust is enforced.
 - **Self-healing.** The registry entry is a renewed lease with a best-effort
   delete on clean exit (the TTL remains authoritative until smoke-alarm#112);
   SIGHUP swaps bad config out without dropping the listener; a launchd/systemd
