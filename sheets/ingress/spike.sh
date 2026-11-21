@@ -32,11 +32,13 @@ TMP="$(mktemp -d "${TMPDIR:-/tmp}/wan-ingress.XXXXXX")"
 LOG="$HOME/Library/Logs/kb-adhd-${DASH}.jsonl"
 ING=""
 BORDER=""
+PROXY=""
 cleanup() {
 	"$ADHD_SH" down "$DASH" >/dev/null 2>&1 || true
 	"$ALARM_SH" down "$MON" >/dev/null 2>&1 || true
 	if [ -n "$ING" ]; then kill "$ING" 2>/dev/null || true; wait "$ING" 2>/dev/null || true; fi
 	if [ -n "$BORDER" ]; then kill "$BORDER" 2>/dev/null || true; wait "$BORDER" 2>/dev/null || true; fi
+	if [ -n "$PROXY" ]; then kill "$PROXY" 2>/dev/null || true; wait "$PROXY" 2>/dev/null || true; fi
 	rm -rf "$TMP"
 }
 "$ADHD_SH" down "$DASH" >/dev/null 2>&1 || true
@@ -47,6 +49,7 @@ trap cleanup EXIT
 free_port() { python3 -c 'import socket;s=socket.socket();s.bind(("127.0.0.1",0));print(s.getsockname()[1]);s.close()'; }
 IPORT="$(free_port)"
 BPORT="$(free_port)"
+PPORT="$(free_port)"
 TOKEN="spike-token"
 KEY="spike-border-key"
 
@@ -83,6 +86,7 @@ wait_for_text() { # <description> <pattern> <command...>
 
 echo "## build — the front is the real binary"
 ( cd "$REPO" && go build -o "$TMP/wan-ingress" ./cmd/wan-ingress ) || exit 1
+( cd "$REPO" && go build -o "$TMP/invite-proxy" ./sheets/ingress/proxy ) || exit 1
 if [ -n "${SMOKE_ALARM_SRC:-}" ]; then
 	( cd "$SMOKE_ALARM_SRC" && go build -o "$TMP/ocd-smoke-alarm" ./cmd/ocd-smoke-alarm ) || exit 1
 	export ALARM_BIN="$TMP/ocd-smoke-alarm"
@@ -94,11 +98,20 @@ MPORT="$(cat "$SCRIPTS/smoke-alarm/instances/$MON/port")"
 echo "   registry: $(registry "$MPORT")"
 echo "   lights:   (dark — adhd is not up yet)"
 
+# The visitor's address is an invite, not a URL. This proxy stands in for the
+# peer cluster's egress/alarms: it resolves the isotope name in the registry and
+# forwards. Neither the monitor nor the forward test knows the ingress port.
+"$TMP/invite-proxy" -addr="127.0.0.1:$PPORT" -registry="http://127.0.0.1:$MPORT" \
+	-name="wan-ingress" -token="$TOKEN" >"$TMP/proxy.log" 2>&1 &
+PROXY=$!
+sleep 1
+echo "   invite:   wan-ingress → registry → current binding (no URL held by the caller)"
+
 # spin.sh's stock target is a strict MCP/tools target. Swap in the declaration
 # this feature makes, then let smoke-alarm reload it over SIGHUP — its own
 # config-reload path, with no change to the vault tooling.
 CFG="$SCRIPTS/smoke-alarm/instances/$MON/config.yaml"
-python3 - "$CFG" "$IPORT" <<'PY'
+python3 - "$CFG" "$PPORT" <<'PY'
 import sys
 path, port = sys.argv[1], sys.argv[2]
 text = open(path).read()
@@ -137,7 +150,13 @@ EOF
 "$TMP/wan-ingress" -config "$TMP/config.json" -heartbeat=100ms >"$TMP/ingress.log" 2>&1 &
 ING=$!
 disown "$ING" 2>/dev/null || true
-for _ in $(seq 1 40); do curl -fsS --max-time 1 "http://127.0.0.1:$IPORT/healthz" >/dev/null 2>&1 && break; sleep 0.25; done
+UP=0
+for _ in $(seq 1 40); do
+	if curl -fsS --max-time 1 "http://127.0.0.1:$PPORT/healthz" >/dev/null 2>&1; then UP=1; break; fi
+	sleep 0.25
+done
+[ "$UP" = 1 ] || { echo "FAILED: invite proxy could not resolve wan-ingress" >&2; exit 1; }
+echo "   visitor:       healthz answered through the invite, not a URL"
 sleep 3
 "$ADHD_SH" up "$DASH" --smoke-alarm-instance "$MON" >/dev/null || exit 1
 DPORT="$(cat "$SCRIPTS/adhd/instances/$DASH/port")"
@@ -161,7 +180,7 @@ cat >"$TMP/config.json" <<EOF
 EOF
 kill -HUP "$ING"
 sleep 1
-echo "   forward:        $(curl -sS "http://127.0.0.1:$IPORT/forward?name=42" -X POST -H "Authorization: Bearer $TOKEN" -d payload | json)"
+echo "   forward:        $(curl -sS "http://127.0.0.1:$PPORT/forward?name=42" -X POST -d payload | json)  (no caller token — the invite grants it)"
 wait_for_text "healthy alarm target" 'wan-ingress=healthy' targets "$MPORT" >/dev/null || exit 1
 LIGHTS="$(wait_for_text 'green light' 'wan-ingress=green' lights "$DPORT")" || exit 1
 echo "   alarm target:   $(targets "$MPORT")"

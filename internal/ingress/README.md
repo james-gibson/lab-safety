@@ -115,6 +115,12 @@ A stopped process is judged by the monitor, not by itself. `sheets/ingress/spike
 drives the real smoke-alarm and adhd spin harnesses through that whole
 `dark → yellow → green → red` sequence and asserts every hop.
 
+The monitor does not hold the ingress URL either. In the harness, both the probe
+and the data-plane call go through [`sheets/ingress/proxy`](../../sheets/ingress/proxy/),
+which resolves the isotope name `wan-ingress` from the registry — the shape a
+seed-42 invite ultimately takes — before forwarding. The listener URL is a
+binding, not an address; no visitor carries it.
+
 Admission runs before resolution: a caller without the token gets `403
 untrusted` and learns no route. A name is parsed once (a single percent-decode,
 bounded length, UTF-8 and control-character checks), lower-cased and used only

@@ -61,6 +61,13 @@ the binary's claim cannot drift apart.
   target. `sheets/ingress/spike.sh` drives the real monitor and adhd light:
   `dark → yellow → green → red`, asserted from the monitor's own status and the
   light log, never from the front's `/healthz`.
-- **Self-healing.** The registry entry is a renewed lease with a clean
-  deregister; SIGHUP swaps bad config out without dropping the listener; a
-  launchd/systemd unit (`scripts/`) gives crash recovery on the host.
+- **No URL for visitors.** The front's listener URL is only a binding; its
+  address is the isotope name `wan-ingress`. The harness's
+  [`proxy/`](proxy/) stands in for another cluster's egress/alarms: it resolves
+  that name from the registry (what a seed-42 invite ultimately points to) and
+  forwards both the monitor probe and the data-plane call. No caller carries
+  the ingress port.
+- **Self-healing.** The registry entry is a renewed lease with a best-effort
+  delete on clean exit (the TTL remains authoritative until smoke-alarm#112);
+  SIGHUP swaps bad config out without dropping the listener; a launchd/systemd
+  unit (`scripts/`) gives crash recovery on the host.
