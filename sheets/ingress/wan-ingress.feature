@@ -103,3 +103,59 @@ Feature: WAN ingress — the resolver forwards only by agreement
     When I run "sh -c 'curl -sS \"<addr>/resolve?name=nowhere\" >/dev/null; curl -sS \"<addr>/status\"'"
     Then the command exits 0
     And the JSON field "quarantined.unknown" is "1"
+
+  # The ingress is a node in the lab, not an anonymous port. The monitor is the
+  # lab's own smoke-alarm and the light is adhd's view of the alarm's target.
+  # A defensive ingress answers but promises no forwarding: the declared
+  # min_capability is absent, so the alarm reads degraded and adhd reads yellow.
+  Scenario: a defensive ingress is degraded to the monitor
+    Given a fresh process with no agreements and no border key
+    When I run "curl -sS -X POST '<addr>/mcp' -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}'"
+    Then the command exits 0
+    And the JSON field "result.serverInfo.name" is "wan-ingress"
+    And the body has no "result.capabilities.ingress" field
+
+  Scenario: a forwarding ingress is healthy to the monitor
+    Given a fresh process with an agreement mapping "42" to namespace "session-42" at an agreed border and a completed forward
+    When I run "curl -sS -X POST '<addr>/mcp' -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}'"
+    Then the command exits 0
+    And the JSON field "result.capabilities.ingress" is "forward"
+
+  Scenario: a stopped ingress is unhealthy to the monitor
+    Given a smoke-alarm target watching a fresh ingress
+    When I stop the ingress process
+    Then the alarm classifies the target as "unhealthy"
+
+  # A registry name is a lease: renew it while serving, ask the registry to drop
+  # it on a clean exit, and let a crash expire it. The beat retries; it is never
+  # fatal. Until smoke-alarm#112 lands, the delete is best-effort and the TTL is
+  # the authority — the scenario asserts the request, not a guarantee.
+  Scenario: the registry name is renewed while the ingress serves
+    Given a fresh process with a recording smoke-alarm registry and a heartbeat interval of one millisecond
+    When I wait for two heartbeat intervals
+    Then the registry received at least two registrations for "wan-ingress"
+
+  Scenario: a clean shutdown asks the registry to drop the ingress name
+    Given a fresh process with a recording smoke-alarm registry
+    When I stop the process with SIGTERM
+    Then the registry received a deletion for "wan-ingress"
+
+  # Traffic is added later. SIGHUP swaps the config in place; a bad config is
+  # refused without taking the listener down, so the last good policy survives.
+  Scenario: a rejected reload keeps the last good agreements
+    Given a fresh process with an agreement mapping "42" to namespace "session-42" at an agreed border
+    When I send SIGHUP after replacing the agreements with invalid JSON
+    Then I run "curl -sS '<addr>/resolve?name=42' -H 'Authorization: Bearer <token>'"
+    And the JSON field "decision" is "forward"
+
+  Scenario: a reload adds an agreed namespace without a restart
+    Given a fresh process with no agreements
+    When I send SIGHUP after adding an agreement mapping "42" to namespace "session-42" at an agreed border
+    Then I run "curl -sS '<addr>/resolve?name=42' -H 'Authorization: Bearer <token>'"
+    And the JSON field "decision" is "forward"
+
+  Scenario: the service supervisor restarts a crashed ingress
+    Given a launchd service definition for "wan-ingress"
+    When I inspect the service definition
+    Then the definition sets RunAtLoad to true
+    And the definition sets KeepAlive to true

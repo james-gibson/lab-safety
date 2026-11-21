@@ -1,0 +1,14 @@
+[Unit]
+Description=lab-safety WAN ingress
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=__BINARY__ -config __CONFIG__
+Restart=always
+RestartSec=2s
+StandardOutput=append:__LOGDIR__/wan-ingress.log
+StandardError=append:__LOGDIR__/wan-ingress.err.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,13 +1,9 @@
 package ingress
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 	"sync"
 )
 
@@ -40,6 +36,28 @@ func (o *Observer) Record(d Decision) {
 	}
 }
 
+// Snapshot returns a consistent copy of the counters. A reload shares the
+// observer so these numbers survive a config swap.
+func (o *Observer) Snapshot() (uint64, map[string]uint64) {
+	if o == nil {
+		return 0, map[string]uint64{}
+	}
+	o.mu.Lock()
+	quarantined := make(map[string]uint64, len(o.quarantined))
+	for reason, count := range o.quarantined {
+		quarantined[reason] = count
+	}
+	forwarded := o.forwarded
+	o.mu.Unlock()
+	return forwarded, quarantined
+}
+
+// Forwarded is the count of accepted forwards the monitor has observed.
+func (o *Observer) Forwarded() uint64 {
+	forwarded, _ := o.Snapshot()
+	return forwarded
+}
+
 type statusBody struct {
 	Forwarded   uint64            `json:"forwarded"`
 	Quarantined map[string]uint64 `json:"quarantined"`
@@ -48,14 +66,7 @@ type statusBody struct {
 
 // ServeStatus publishes the counters as JSON.
 func (o *Observer) ServeStatus(ready bool, w http.ResponseWriter, _ *http.Request) {
-	o.mu.Lock()
-	quarantined := make(map[string]uint64, len(o.quarantined))
-	for reason, count := range o.quarantined {
-		quarantined[reason] = count
-	}
-	forwarded := o.forwarded
-	o.mu.Unlock()
-
+	forwarded, quarantined := o.Snapshot()
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(statusBody{
 		Forwarded: forwarded, Quarantined: quarantined, Ready: ready,
@@ -77,28 +88,4 @@ func ServeReadyz(ready bool, w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	_, _ = fmt.Fprint(w, "ready")
-}
-
-// Register puts the front into the lab's isotope registry by name, in the same
-// shape lab/workspaces uses. The registry — not this process — judges the rung.
-func Register(ctx context.Context, registryURL, name, endpoint string) (int, []byte, error) {
-	body, err := json.Marshal(map[string]string{
-		"name": name, "role": "standalone", "endpoint": endpoint, "protocol": "http",
-	})
-	if err != nil {
-		return 0, nil, err
-	}
-	url := strings.TrimRight(registryURL, "/") + "/isotope/register"
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return 0, nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return 0, nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-	answer, err := io.ReadAll(io.LimitReader(resp.Body, 1<<16))
-	return resp.StatusCode, answer, err
 }

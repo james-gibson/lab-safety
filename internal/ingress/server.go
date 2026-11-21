@@ -15,11 +15,18 @@ type Server struct {
 	Forwarder *Forwarder
 	Token     string
 	Observer  *Observer
+
+	handler http.Handler // built once by Handler, reused by the runtime switch
 }
 
-// Handler wires the five surfaces. Defaults are fail-closed: no agreements
-// means every name is unknown; no token means every caller is untrusted.
+// Handler wires the surfaces. Defaults are fail-closed: no agreements means
+// every name is unknown; no token means every caller is untrusted. The POST
+// /mcp surface is the smoke-alarm probe: it advertises forwarding only once
+// real agreed traffic has crossed the border.
 func (s *Server) Handler() http.Handler {
+	if s.handler != nil {
+		return s.handler
+	}
 	if s.Observer == nil {
 		s.Observer = NewObserver()
 	}
@@ -37,6 +44,8 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("GET /resolve", s.serveResolve)
 	mux.HandleFunc("POST /forward", s.serveForward)
+	mux.HandleFunc("POST /mcp", s.serveMonitor)
+	s.handler = mux
 	return mux
 }
 
