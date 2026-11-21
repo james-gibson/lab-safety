@@ -178,3 +178,17 @@ the delete is best-effort and the 5m TTL is the authority until that lands.
   `testdata/fuzz/` regressions and update the feature, not just the code — the
   `"0 ."` non-idempotence and the `%25` reparse failure found by
   `FuzzCanonicalize` are the first two examples.
+
+## The address plane is a separate process
+
+`wan-ingress` deliberately knows nothing about seed, DNS, mDNS or slots. The
+production-capable invite plane is [`cmd/seed-invite`](../cmd/seed-invite/): it
+resolves isotope names, requires a signed one-shot rotational expectation, and
+only then forwards an ordinary call to this binary. DNS and mDNS are transports
+for that announcement; the seed-scoped HMAC and the tick window are the
+authority. A node one tick ahead publishes `N+1` while peers are on `N`, and the
+monitor's `/challenge` confirms the rotation when their tick catches up.
+
+This keeps the boundary clean: seed sets addresses, the invite plane narrows
+which visitor is plausible, and the agreement plus HMAC-signed border still
+decides what may cross. The feature file and its isotope identity are unchanged.

@@ -112,6 +112,12 @@ smoke-alarm probes its `POST /mcp` surface, and adhd renders the verdict —
 without a restart, and the host's supervisor restarts a crash. See
 [`sheets/ingress/`](sheets/ingress/).
 
+A visitor reaches that front through a seed-addressed invite plane
+(`cmd/seed-invite`) that resolves the isotope name and, on the production edge,
+requires a signed rotational announcement to arm a short-lived expectation. DNS
+or mDNS carries the announcement; the seed-scoped HMAC and the cluster tick are
+the authority. The ingress itself remains unaware of seed, DNS and mDNS.
+
 ---
 
 ## The Guests

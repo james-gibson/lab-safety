@@ -110,3 +110,70 @@ as shapes, fill in the real token, HMAC key, border URL and registry, then insta
 that file. Only then does `/readyz` go green and `/mcp` advertise
 `"ingress":"forward"` — and only after agreed traffic has actually crossed the
 border.
+
+## Rotational expectations — the address plane, not the border
+
+The invite proxy in `proxy/` proves that a visitor never carries a URL. The
+production-capable twin is [`cmd/seed-invite`](../../cmd/seed-invite/): it runs on
+the edge just as it does on localhost, and adds one thing the harness proxy did
+not need — a signed, tick-scoped expectation before it forwards.
+
+The loop is:
+
+1. A seed-addressed client signs a rotation record and publishes it as a DNS
+   `TXT` record (WAN/prod) or an mDNS `TXT` announcement (localhost/LAN). The
+   payload carries `seed`, `name`, `slot`, `rotation`, `tick`, `prev`, a one-shot
+   `nonce` and an HMAC. DNS/mDNS only move the bytes; the seed-scoped HMAC is the
+   authority.
+2. `seed-invite` verifies the record, pins it to the configured seed, rejects
+   old ticks and replays, and arms a one-shot expectation that lives for two
+   ticks. A node configured with `tick_offset: 1` announces `N+1` while its peers
+   are still on `N` — that phase skew is the evidence, not a timestamp.
+3. The client calls with `X-Invite: wan-ingress` and
+   `X-Invite-Ticket: <nonce>`. The expectation is consumed, the invite is
+   resolved from the isotope registry, and the call is forwarded with the normal
+   bearer grant. The shipped `wan-ingress` binary sees an ordinary agreed call;
+   it knows nothing about DNS, mDNS, seed or slots.
+4. The upstream monitor issues an inversion challenge:
+   `GET /challenge?name=wan-ingress&rotation=…&tick=…`. The address plane checks
+   its own view *and* each peer's `/status`. A claim from the ahead node is
+   confirmed only when the peers' cluster tick catches up to the same rotation.
+
+This is deliberately fail-closed:
+
+| condition | result |
+| --- | --- |
+| no announcement for the invite | `403` before resolution |
+| expired or replayed ticket | `403`, entry removed |
+| invitation name does not match the announced name | `403` |
+| no DNS domain and no mDNS source configured | service refuses to start |
+| announcement key or seed missing | service refuses to start |
+| peer missing from an inversion challenge | `confirmed: false` |
+
+Try it locally with two shells (the announcer and the address plane share a key):
+
+```sh
+KEY="$(printf '0123456789abcdef0123456789abcdef' | base64 | tr -d '\n')"
+
+# Shell 1 — edge address plane; no call reaches the ingress without a ticket.
+go run ./cmd/seed-invite \
+  -registry http://127.0.0.1:18080 -addr 127.0.0.1:18090 \
+  -seed seed-42 -slot wan-ingress -announce-key "$KEY" \
+  -mdns -tick-seconds 5 -tick-offset 0
+
+# Shell 2 — the node one tick ahead publishes a signed rotation.
+go run ./cmd/seed-announce -key "$KEY" -seed seed-42 \
+  -slot wan-ingress -rotation rot-1 -mdns -tick-offset 1
+
+# The visitor carries an invite and the nonce the announcer printed.
+curl -H 'X-Invite: wan-ingress' -H 'X-Invite-Ticket: <nonce>' \
+  -X POST http://127.0.0.1:18090/forward
+```
+
+For the prod WAN, swap `-mdns` for `-dns-domain _rot.seed-42.lab.example.` in
+`configs/seed-invite.example.json` and publish the printed `TXT` body in that
+zone. `scripts/install-seed-invite.sh` supervises the binary with launchd or
+systemd; `scripts/build-wan-ingress.sh` emits static `seed-invite` and
+`seed-announce` artifacts alongside `wan-ingress`. The feature file and the
+registered isotope identity are unchanged — this is an address-plane addition,
+not a new claim by the border.
