@@ -1,0 +1,84 @@
+# Hardened edge stack. Fill the placeholders in configs/docker/*.json before
+# `docker compose up`. The border and smoke-alarm registry are operator-supplied
+# services; the compose command flags let their URLs be overridden without
+# editing the mounted files.
+name: lab-safety-edge
+
+x-hardening: &hardening
+  restart: unless-stopped
+  user: "65532:65532"
+  read_only: true
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp
+  pids_limit: 64
+  mem_limit: 128m
+  cpus: 0.50
+
+services:
+  wan-ingress:
+    <<: *hardening
+    build:
+      context: .
+      target: wan-ingress
+    image: lab-safety/wan-ingress:local
+    ports:
+      - "${WAN_INGRESS_PORT:-8443}:8443"
+    volumes:
+      - ./configs/docker/wan-ingress.json:/etc/lab-safety/wan-ingress.json:ro
+      - ./configs/docker/agreements.json:/etc/lab-safety/agreements.json:ro
+    command:
+      - -config
+      - /etc/lab-safety/wan-ingress.json
+      - -smoke-alarm
+      - "${SMOKE_ALARM_URL:-http://smoke-alarm:19100}"
+
+  seed-invite:
+    <<: *hardening
+    build:
+      context: .
+      target: seed-invite
+    image: lab-safety/seed-invite:local
+    depends_on:
+      wan-ingress:
+        condition: service_healthy
+    ports:
+      - "${SEED_INVITE_PORT:-8080}:8080"
+    volumes:
+      - ./configs/docker/seed-invite.json:/etc/lab-safety/seed-invite.json:ro
+    command:
+      - -config
+      - /etc/lab-safety/seed-invite.json
+      - -registry
+      - "${SMOKE_ALARM_URL:-http://smoke-alarm:19100}"
+
+  # One-shot helper: prints the signed DNS TXT body, or multicasts it with
+  # -mdns when run on a host network. Enable with `--profile announce`.
+  seed-announce:
+    profiles: ["announce"]
+    build:
+      context: .
+      target: seed-announce
+    image: lab-safety/seed-announce:local
+    user: "65532:65532"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - -key
+      - "${ANNOUNCE_KEY:-}"
+      - -seed
+      - "${SEED_ID:-seed-42}"
+      - -name
+      - wan-ingress
+      - -slot
+      - wan-ingress
+      - -dns-domain
+      - "${ANNOUNCE_DNS_DOMAIN:-_rot.seed-42.zone.example.}"
+      - -rotation
+      - "${ROTATION_ID:-}"
+      - -nonce
+      - "${NONCE:-}"

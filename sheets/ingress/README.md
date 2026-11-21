@@ -200,3 +200,7 @@ headers and stand up a lying peer; it does **not** hold the seed announcement ke
 The last case stands up the real `wan-ingress` server behind the address plane,
 so the test proves the rotation ticket is **not** a bearer token: the agreement
 and HMAC border remain the enforcement boundary.
+
+For container deployment, [`DOCKER.md`](../../DOCKER.md) builds non-root,
+read-only, distroless images for `wan-ingress`, `seed-invite` and
+`seed-announce`, with a hardened Compose stack and multi-arch bake file.

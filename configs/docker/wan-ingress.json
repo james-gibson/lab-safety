@@ -1,0 +1,7 @@
+{
+  "addr": "0.0.0.0:8443",
+  "agreements": "/etc/lab-safety/agreements.json",
+  "token": "REPLACE_WITH_ADMISSION_TOKEN",
+  "border_key": "REPLACE_WITH_BORDER_HMAC_KEY",
+  "smoke_alarm": "http://smoke-alarm:19100"
+}

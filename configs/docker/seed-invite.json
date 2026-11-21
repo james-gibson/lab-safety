@@ -1,0 +1,16 @@
+{
+  "addr": "0.0.0.0:8080",
+  "registry": "http://smoke-alarm:19100",
+  "name": "wan-ingress",
+  "token": "REPLACE_WITH_ADMISSION_TOKEN",
+  "seed": "REPLACE_WITH_SEED_ID",
+  "slot": "wan-ingress",
+  "announce_key": "REPLACE_WITH_BASE64URL_ANNOUNCEMENT_KEY",
+  "dns_domain": "_rot.REPLACE_WITH_SEED_ID.zone.example.",
+  "mdns": false,
+  "mdns_domain": "_lab-safety-rot._tcp.local.",
+  "tick_seconds": 5,
+  "tick_offset": 0,
+  "require_announcement": true,
+  "peers": []
+}

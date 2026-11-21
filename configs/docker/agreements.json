@@ -1,0 +1,11 @@
+{
+  "agreements": [
+    {
+      "id": "workspace-42",
+      "namespace": "session-42",
+      "border": "http://border:9443/cluster",
+      "aliases": ["42", "workspace-42"],
+      "rung": 2
+    }
+  ]
+}

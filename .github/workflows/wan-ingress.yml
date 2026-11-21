@@ -39,6 +39,20 @@ jobs:
           go-version-file: go.mod
       - run: ./scripts/build-wan-ingress.sh
 
+  docker:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate hardened Compose stack
+        run: docker compose config --quiet
+      - name: Build each hardened image target
+        shell: bash
+        run: |
+          for target in wan-ingress seed-invite seed-announce; do
+            docker build --target "$target" -t "lab-safety/$target:ci" .
+          done
+
   nightly-fuzz:
     if: github.event_name == 'schedule'
     strategy:
