@@ -106,6 +106,19 @@ The tools are loosely coupled: each runs as an independent binary, advertises it
 
 ```
 
+The WAN front is a guest too: it registers by name in the isotope registry,
+smoke-alarm probes its `POST /mcp` surface, and adhd renders the verdict —
+**defensive yellow, forwarding green, dead red**. SIGHUP adds agreed traffic
+without a restart, and the host's supervisor restarts a crash. See
+[`sheets/ingress/`](sheets/ingress/).
+
+A visitor reaches that front through a seed-addressed invite plane
+(`cmd/seed-invite`) that resolves the isotope name and, on the production edge,
+requires a signed rotational announcement to arm a short-lived expectation. DNS
+or mDNS carries the announcement; the seed-scoped HMAC and the cluster tick are
+the authority. The ingress itself remains unaware of seed, DNS and mDNS. For a
+hardened container deployment, see [`DOCKER.md`](DOCKER.md).
+
 ---
 
 ## The Guests
